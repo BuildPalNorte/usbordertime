@@ -3,6 +3,8 @@
 import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/locale-provider";
 import { motion, useReducedMotion } from "motion/react";
+import { HapticPad } from "./haptic-pad";
+import { haptic } from "@/lib/haptics";
 import { SPRING } from "./motion";
 
 /** Shows the language you will switch to, so it stays findable in either language. */
@@ -14,7 +16,10 @@ export function LanguageSwitch({ className }: { className?: string }) {
   return (
     <motion.button
       type="button"
-      onClick={() => setLocale(next)}
+      onClick={() => {
+        haptic("selection");
+        setLocale(next);
+      }}
       aria-label={locale === "en" ? copy.languageToSpanish : copy.languageToEnglish}
       whileTap={reduce ? undefined : { scale: 0.94 }}
       transition={SPRING.snap}
@@ -23,6 +28,7 @@ export function LanguageSwitch({ className }: { className?: string }) {
         className,
       )}
     >
+      <HapticPad />
       {next === "es" ? "ES" : "EN"}
     </motion.button>
   );

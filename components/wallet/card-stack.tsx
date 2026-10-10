@@ -4,6 +4,7 @@ import { useLocale } from "@/components/locale-provider";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import type { Copy } from "@/lib/i18n";
 import { waitLabel } from "@/lib/i18n";
+import { haptic } from "@/lib/haptics";
 import { portName, project, readLane, type Mode } from "@/lib/ports";
 import {
   AnimatePresence,
@@ -11,8 +12,8 @@ import {
   motion,
   useIsPresent,
   useMotionValue,
+  useMotionValueEvent,
   useReducedMotion,
-  useTransform,
   type PanInfo,
 } from "motion/react";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
@@ -75,14 +76,28 @@ export function CardStack({
   const [drag, setDrag] = useState<ReorderDrag | null>(null);
   const [live, setLive] = useState("");
 
-  // The open card follows the finger 1:1; the detail below reacts to the same value.
+  // The open card tracks the finger. Detail follows the same drag until a dismiss
+  // freezes it, so letting go does not yank the panel back to the open rest point.
   const dragY = useMotionValue(0);
-  const detailOpacity = useTransform(dragY, [0, 240], [1, 0.2]);
-  const detailY = useTransform(dragY, [0, 240], [0, 48]);
+  const followDetail = useRef(true);
+  const detailShift = useMotionValue(0);
+  const detailFade = useMotionValue(1);
+  useMotionValueEvent(dragY, "change", (latest) => {
+    if (!followDetail.current) return;
+    const t = clamp(latest / 240, 0, 1);
+    detailShift.set(48 * t);
+    detailFade.set(1 - t * 0.8);
+  });
 
-  function handleDragEnd(_: unknown, info: PanInfo) {
-    const projected = info.offset.y + project(info.velocity.y);
-    if (projected > DISMISS_DISTANCE) onCollapse();
+  function holdDetail() {
+    followDetail.current = false;
+  }
+
+  function armOpen() {
+    followDetail.current = true;
+    detailShift.set(0);
+    detailFade.set(1);
+    dragY.set(0);
   }
 
   function commit(portNumber: string, to: number) {
@@ -129,7 +144,12 @@ export function CardStack({
               spring={spring}
               copy={copy}
               dragY={dragY}
-              onExpand={() => onExpand(id)}
+              onExpand={() => {
+                armOpen();
+                onExpand(id);
+              }}
+              onCollapse={onCollapse}
+              onHoldDetail={holdDetail}
               onLift={() => setDrag({ id, from: index, over: index })}
               onOver={(over) =>
                 setDrag((current) =>
@@ -137,7 +157,6 @@ export function CardStack({
                 )
               }
               onCommit={(to) => commit(id, to)}
-              onDragEnd={handleDragEnd}
               checking={checking}
             />
           );
@@ -148,7 +167,7 @@ export function CardStack({
         {open && (
           <motion.div
             key="detail"
-            style={{ opacity: detailOpacity, y: detailY, paddingTop: CARD_H + 20 }}
+            style={{ opacity: detailFade, y: detailShift, paddingTop: CARD_H + 20 }}
           >
             <motion.div
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28 }}
@@ -189,10 +208,11 @@ function StackCard({
   copy,
   dragY,
   onExpand,
+  onCollapse,
+  onHoldDetail,
   onLift,
   onOver,
   onCommit,
-  onDragEnd,
   checking,
 }: {
   item: StackItem;
@@ -211,18 +231,20 @@ function StackCard({
   copy: Copy;
   dragY: ReturnType<typeof useMotionValue<number>>;
   onExpand: () => void;
+  onCollapse: () => void;
+  onHoldDetail: () => void;
   onLift: () => void;
   onOver: (over: number) => void;
   onCommit: (to: number) => void;
-  onDragEnd: (event: unknown, info: PanInfo) => void;
   checking: boolean;
 }) {
   const present = useIsPresent();
   const y = useMotionValue(reduce ? targetY : appearFrom);
   const enterDelay = useRef(intro && !reduce ? index * 0.06 : 0);
-  const pendingGesture = useRef<{ velocity: number } | null>(null);
+  const pendingGesture = useRef<{ velocity?: number; from?: number } | null>(null);
   const flight = useRef<{ stop: () => void } | null>(null);
   const [pressed, setPressed] = useState(false);
+  const dismissArmed = useRef(false);
   const [dragging, setDragging] = useState(false);
   const [raised, setRaised] = useState(false);
   const phase = useRef<"idle" | "pending" | "dragging">("idle");
@@ -232,12 +254,17 @@ function StackCard({
   const onOverRef = useRef(onOver);
   const onCommitRef = useRef(onCommit);
   const onExpandRef = useRef(onExpand);
+  const onCollapseRef = useRef(onCollapse);
+  const onHoldDetailRef = useRef(onHoldDetail);
+  const releaseY = useRef(0);
   useEffect(() => {
     countRef.current = count;
     onLiftRef.current = onLift;
     onOverRef.current = onOver;
     onCommitRef.current = onCommit;
     onExpandRef.current = onExpand;
+    onCollapseRef.current = onCollapse;
+    onHoldDetailRef.current = onHoldDetail;
   });
 
   useEffect(() => {
@@ -255,7 +282,11 @@ function StackCard({
         if (pendingGesture.current === token) pendingGesture.current = null;
       }, 0);
     }
-    const flung = gesture !== null && Math.abs(gesture.velocity) > FLING;
+    // A dismiss hands off the release point through `from`. The previous
+    // animation's stop ticks one frame toward its own target first, which would
+    // otherwise plant the card back at the open rest point.
+    if (gesture?.from !== undefined) y.set(gesture.from);
+    const flung = gesture?.velocity !== undefined && Math.abs(gesture.velocity) > FLING;
     // The stagger is only for the fan-in. Clear it after this pass so a later
     // reorder is not waiting on the entrance delay. Strict Mode re-runs the
     // effect before the timeout, so the second pass still sees the delay.
@@ -273,7 +304,7 @@ function StackCard({
         : {
             ...(flung ? SPRING.release : SPRING.move),
             delay,
-            ...(gesture ? { velocity: gesture.velocity } : {}),
+            ...(gesture?.velocity !== undefined ? { velocity: gesture.velocity } : {}),
           },
     );
     flight.current = controls;
@@ -312,6 +343,8 @@ function StackCard({
     const pointerType = event.pointerType;
     let originY = y.get();
     let lastOver = index;
+    let pastEdge = false;
+    let slottedAt = 0;
     let unlockScroll: (() => void) | null = null;
     const samples: { y: number; t: number }[] = [];
 
@@ -331,12 +364,8 @@ function StackCard({
       setPressed(false);
       setDragging(true);
       raise();
+      haptic("rigid");
       onLiftRef.current();
-      try {
-        navigator.vibrate?.(8);
-      } catch {
-        // Some browsers throw instead of silently ignoring a blocked/denied call.
-      }
     }, HOLD_MS);
 
     function beginManualScroll(startEvent: PointerEvent) {
@@ -396,9 +425,18 @@ function StackCard({
       const now = performance.now();
       samples.push({ y: next, t: now });
       if (samples.length > 5) samples.shift();
+      const overEdge = raw < 0 || raw > max;
+      if (overEdge && !pastEdge) {
+        pastEdge = true;
+        haptic("soft");
+      } else if (raw > 12 && raw < max - 12) {
+        pastEdge = false;
+      }
       const over = clamp(Math.round(next / PEEK), 0, countRef.current - 1);
       if (over !== lastOver) {
         lastOver = over;
+        slottedAt = performance.now();
+        haptic("selection");
         onOverRef.current(over);
       }
     }
@@ -417,6 +455,7 @@ function StackCard({
       }
       if (!wasDragging) return;
       if (cancelled) {
+        haptic("soft");
         pendingGesture.current = { velocity: 0 };
         setDragging(false);
         onCommitRef.current(index);
@@ -425,6 +464,11 @@ function StackCard({
       const velocity = readVelocity(samples);
       const projected = y.get() + projectRelease(velocity);
       const to = clamp(Math.round(projected / PEEK), 0, countRef.current - 1);
+      // A flick that lands past the slot under the finger gets that slot's detent.
+      // Setting down after a dwell is softer. Releasing in the same instant as a
+      // detent stays with the detent.
+      if (to !== lastOver) haptic("selection");
+      else if (performance.now() - slottedAt > 48) haptic("soft");
       pendingGesture.current = { velocity };
       setDragging(false);
       onCommitRef.current(to);
@@ -436,11 +480,64 @@ function StackCard({
     window.addEventListener("pointercancel", onUp);
   }
 
+  function rememberRelease(_: unknown, info?: PanInfo) {
+    releaseY.current = dragY.get();
+    if (!info) return;
+    const past = info.offset.y > DISMISS_DISTANCE;
+    if (past && !dismissArmed.current) {
+      dismissArmed.current = true;
+      haptic("selection");
+    } else if (info.offset.y < DISMISS_DISTANCE - 28) {
+      dismissArmed.current = false;
+    }
+  }
+
+  function onOpenDragEnd(_: unknown, info: PanInfo) {
+    const released = releaseY.current;
+    const velocity = info.velocity.y;
+    dragY.stop();
+    // Undo the frame Motion may already have pulled back toward the origin.
+    dragY.set(released);
+
+    const projected = info.offset.y + project(velocity);
+    if (projected <= DISMISS_DISTANCE) {
+      dismissArmed.current = false;
+      animate(dragY, 0, SPRING.move);
+      return;
+    }
+
+    // The threshold tick already marked the line. A flick that never crossed it
+    // still needs a tick at the moment the dismiss commits.
+    if (!dismissArmed.current) haptic("medium");
+    dismissArmed.current = false;
+
+    // The open card's visual position is this drag offset (the stack value is
+    // the open rest, 0). Move it onto the stack before the close spring starts,
+    // or the card snaps home and the close plays from that fixed point.
+    onHoldDetailRef.current();
+    flight.current?.stop();
+    y.set(y.get() + released);
+    dragY.set(0);
+    const from = y.get();
+    const destination = index * PEEK;
+    // Straight into the slot. The flick already decided to close; it should not
+    // carry the card past the place it is going.
+    if (destination === targetY) {
+      flight.current = animate(y, destination, SPRING.move);
+    } else {
+      pendingGesture.current = { from };
+    }
+    onCollapseRef.current();
+  }
+
   function onKeyDown(event: KeyboardEvent) {
     if (canReorder && event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
       event.preventDefault();
       const to = clamp(index + (event.key === "ArrowUp" ? -1 : 1), 0, count - 1);
-      if (to !== index) onCommit(to);
+      if (to !== index) {
+        haptic("selection");
+        onCommit(to);
+      }
       return;
     }
     if (!isOpen && (event.key === "Enter" || event.key === " ")) {
@@ -489,11 +586,12 @@ function StackCard({
           WebkitUserSelect: "none",
         }}
         drag={isOpen && !reduce ? "y" : false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0.04, bottom: 0.6 }}
-        dragSnapToOrigin
-        dragTransition={{ bounceStiffness: 420, bounceDamping: 34 }}
-        onDragEnd={onDragEnd}
+        dragConstraints={{ top: 0 }}
+        dragElastic={{ top: 0.04, bottom: 0 }}
+        dragMomentum={false}
+        onDragStart={rememberRelease}
+        onDrag={rememberRelease}
+        onDragEnd={onOpenDragEnd}
       >
         <CardFace port={item.port} mode={item.mode} checking={checking} />
       </motion.div>

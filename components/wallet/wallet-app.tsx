@@ -2,6 +2,7 @@
 
 import { useLocale } from "@/components/locale-provider";
 import type { BorderWaitTimes, PortWaitTime } from "@/lib/border-wait-times";
+import { haptic } from "@/lib/haptics";
 import { cityPinKey, pinStore } from "@/lib/pin-store";
 import { defaultMode, paletteFor, portName, type Mode } from "@/lib/ports";
 import { walletStore } from "@/lib/wallet-store";
@@ -123,16 +124,23 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
   useEffect(() => {
     if (!expandedId) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setRequestedId(null);
+      if (event.key !== "Escape") return;
+      haptic("light");
+      setRequestedId(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [expandedId]);
 
-  const changeTab = useCallback((next: Tab) => {
-    setPaneFrom(next === "browse" ? 28 : -28);
-    setTab(next);
-  }, []);
+  const changeTab = useCallback(
+    (next: Tab) => {
+      if (next === tab) return;
+      haptic("selection");
+      setPaneFrom(next === "browse" ? 28 : -28);
+      setTab(next);
+    },
+    [tab],
+  );
 
   // Mobile scrolls inside the shell, not the document. Start each tab at the top
   // before paint, so the fixed frame (and the bar attached to it) never shifts.
@@ -144,6 +152,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
 
   const expand = useCallback(
     (portNumber: string) => {
+      haptic("light");
       setRequestedId(portNumber);
       // Bring the header (and the Done button) into view so the open card never lands off-screen.
       const behavior = reduce ? "auto" : "smooth";
@@ -164,12 +173,20 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
       if (saved.has(port.portNumber)) {
         const index = entries.findIndex((e) => e.portNumber === port.portNumber);
         const entry = entries[index];
+        haptic("heavy");
         walletStore.remove(port.portNumber);
         showToast({
           message: copy.removedToast(name),
-          action: { label: copy.undo, onClick: () => walletStore.insertAt(entry, index) },
+          action: {
+            label: copy.undo,
+            onClick: () => {
+              haptic("success");
+              walletStore.insertAt(entry, index);
+            },
+          },
         });
       } else {
+        haptic("success");
         walletStore.add({ portNumber: port.portNumber, mode: defaultMode(port) });
         showToast({
           message: copy.addedToast(name),
@@ -186,11 +203,18 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
       const entry = entries[index];
       const port = byNumber.get(portNumber);
       if (!entry || !port) return;
+      haptic("heavy");
       setRequestedId(null);
       walletStore.remove(portNumber);
       showToast({
         message: copy.removedToast(portName(port).title),
-        action: { label: copy.undo, onClick: () => walletStore.insertAt(entry, index) },
+        action: {
+          label: copy.undo,
+          onClick: () => {
+            haptic("success");
+            walletStore.insertAt(entry, index);
+          },
+        },
       });
     },
     [entries, byNumber, showToast, copy],
@@ -211,6 +235,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     (border: string, city: string) => {
       const key = cityPinKey(border, city);
       const pinned = pinStore.toggle(key);
+      haptic(pinned ? "success" : "light");
       if (pinned) {
         const portNumbers = entries.flatMap((entry) => {
           const port = byNumber.get(entry.portNumber);
@@ -238,6 +263,8 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
   );
 
   const addSuggested = useCallback(() => {
+    if (suggested.length === 0) return;
+    haptic("success");
     walletStore.addMany(suggested.map((p) => ({ portNumber: p.portNumber, mode: defaultMode(p) })));
   }, [suggested]);
 
@@ -259,13 +286,17 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     const gen = ++checkGen.current;
     if (checkTimer.current) window.clearTimeout(checkTimer.current);
     const started = performance.now();
+    haptic("light");
     setChecking(true);
-    void refetch().finally(() => {
+    void refetch().then((result) => {
       if (checkGen.current !== gen) return;
+      const failed = result.isError;
       const wait = Math.max(0, 750 - (performance.now() - started));
       checkTimer.current = window.setTimeout(() => {
         checkTimer.current = null;
-        if (checkGen.current === gen) setChecking(false);
+        if (checkGen.current !== gen) return;
+        setChecking(false);
+        haptic(failed ? "error" : "success");
       }, wait);
     });
   }, [refetch]);
@@ -324,7 +355,14 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
               pins={pins}
               onToggle={toggleSaved}
               onPin={togglePin}
-              onRetry={() => void refetch()}
+              onRetry={() => {
+                haptic("light");
+                const started = performance.now();
+                void refetch().then((result) => {
+                  if (result.isError) haptic("error");
+                  else if (performance.now() - started > 280) haptic("success");
+                });
+              }}
             />
           </section>
         </div>

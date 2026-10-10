@@ -16,6 +16,8 @@ import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react
 import { TrashIcon } from "@heroicons-animated/react/trash";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef } from "react";
+import { HapticPad } from "./haptic-pad";
+import { haptic } from "@/lib/haptics";
 import { SPRING } from "./motion";
 
 type Props = {
@@ -49,13 +51,18 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
               type="button"
               role="radio"
               aria-checked={active}
-              onClick={() => onMode(id)}
+              onClick={() => {
+                if (active) return;
+                haptic("selection");
+                onMode(id);
+              }}
               initial={reduce ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...SPRING.move, delay: reduce ? 0 : 0.05 + index * 0.04 }}
               whileTap={reduce ? undefined : { scale: 0.97 }}
               className="relative rounded-2xl bg-surface px-3.5 py-3 text-left"
             >
+              {!active && <HapticPad />}
               {active && (
                 <motion.span
                   layoutId="lane-ring"
@@ -119,10 +126,11 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
         onPointerEnter={() => bookmark.current?.startAnimation()}
         onPointerLeave={() => bookmark.current?.stopAnimation()}
         className={cn(
-          "flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-medium transition-transform active:scale-[0.98]",
+          "relative flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-medium transition-transform active:scale-[0.98]",
           cityPinned ? "text-accent" : "text-foreground",
         )}
       >
+        <HapticPad />
         <BookmarkIcon
           ref={bookmark}
           size={18}
@@ -137,8 +145,9 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
         onClick={onRemove}
         onPointerEnter={() => trash.current?.startAnimation()}
         onPointerLeave={() => trash.current?.stopAnimation()}
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-medium text-danger transition-transform active:scale-[0.98]"
+        className="relative flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-medium text-danger transition-transform active:scale-[0.98]"
       >
+        <HapticPad />
         <TrashIcon ref={trash} size={18} aria-hidden />
         {copy.removeFromWallet}
       </button>

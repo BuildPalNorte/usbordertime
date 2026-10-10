@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 
 export type ToastState = {
@@ -38,10 +39,11 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
                   onDismiss();
                 }}
                 className={
-                  "h-10 shrink-0 rounded-full px-4 text-[15px] font-semibold text-accent active:opacity-60" +
+                  "relative h-10 shrink-0 rounded-full px-4 text-[15px] font-semibold text-accent active:opacity-60" +
                   (toast.action.mobileOnly ? " lg:hidden" : "")
                 }
               >
+                <HapticPad />
                 {toast.action.label}
               </button>
             )}

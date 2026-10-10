@@ -9,6 +9,8 @@ import { PlusIcon } from "@heroicons-animated/react/plus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { forwardRef, useRef } from "react";
 import { CardStack, type StackItem } from "./card-stack";
+import { HapticPad } from "./haptic-pad";
+import { haptic } from "@/lib/haptics";
 import { CARD_H, PEEK, SPRING } from "./motion";
 
 type Props = {
@@ -73,14 +75,18 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
               <motion.button
                 key="done"
                 type="button"
-                onClick={onCollapse}
+                onClick={() => {
+                  haptic("soft");
+                  onCollapse();
+                }}
                 initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
                 transition={SPRING.snap}
                 whileTap={reduce ? undefined : { scale: 0.94 }}
-                className="h-11 rounded-full bg-accent px-6 text-[15px] font-semibold text-accent-ink"
+                className="relative h-11 rounded-full bg-accent px-6 text-[15px] font-semibold text-accent-ink"
               >
+                <HapticPad />
                 {copy.done}
               </motion.button>
             ) : (
@@ -97,8 +103,9 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
                 exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
                 transition={SPRING.snap}
                 whileTap={reduce ? undefined : { scale: 0.92 }}
-                className="grid size-11 place-items-center rounded-full bg-surface text-foreground"
+                className="relative grid size-11 place-items-center rounded-full bg-surface text-foreground"
               >
+                <HapticPad />
                 <span
                   className="grid place-items-center"
                   style={refreshing ? { animation: "spin 0.9s linear infinite" } : undefined}
@@ -193,8 +200,9 @@ function EmptyWallet({
           onPointerLeave={() => plus.current?.stopAnimation()}
           whileTap={reduce ? undefined : { scale: 0.96 }}
           transition={SPRING.snap}
-          className="inline-flex h-12 items-center gap-2 rounded-full bg-accent px-6 text-[16px] font-semibold text-accent-ink"
+          className="relative inline-flex h-12 items-center gap-2 rounded-full bg-accent px-6 text-[16px] font-semibold text-accent-ink"
         >
+          <HapticPad />
           <PlusIcon ref={plus} size={20} aria-hidden />
           {copy.browseCrossings}
         </motion.button>
@@ -202,8 +210,9 @@ function EmptyWallet({
           <button
             type="button"
             onClick={onAddSuggested}
-            className="h-11 rounded-full px-4 text-[15px] font-medium text-accent transition-opacity active:opacity-60"
+            className="relative h-11 rounded-full px-4 text-[15px] font-medium text-accent transition-opacity active:opacity-60"
           >
+            <HapticPad />
             {copy.startWithBrownsville}
           </button>
         )}

@@ -6,6 +6,7 @@ import { MapIcon, type MapIconHandle } from "@heroicons-animated/react/map";
 import { WalletIcon, type WalletIconHandle } from "@heroicons-animated/react/wallet";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef } from "react";
+import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 
 export type Tab = "wallet" | "browse";
@@ -72,6 +73,7 @@ function TabButton({
         active ? "text-foreground" : "text-muted",
       )}
     >
+      {!active && <HapticPad />}
       {active && (
         <motion.span
           layoutId="tab-pill"

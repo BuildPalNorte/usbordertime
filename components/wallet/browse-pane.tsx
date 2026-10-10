@@ -21,6 +21,8 @@ import {
   readLane,
   TONE_DOT,
 } from "@/lib/ports";
+import { HapticPad } from "./haptic-pad";
+import { haptic } from "@/lib/haptics";
 import { LanguageSwitch } from "./language-switch";
 import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
 import { CheckIcon } from "@heroicons-animated/react/check";
@@ -178,12 +180,17 @@ export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin
               type="button"
               role="radio"
               aria-checked={active}
-              onClick={() => setBorder(filter.id)}
+              onClick={() => {
+                if (active) return;
+                haptic("selection");
+                setBorder(filter.id);
+              }}
               className={cn(
                 "relative h-10 shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors duration-200",
                 active ? "text-accent-ink" : "text-foreground active:opacity-60",
               )}
             >
+              {!active && <HapticPad />}
               {active && (
                 <motion.span
                   layoutId="border-pill"
@@ -314,10 +321,11 @@ function PinButton({
       whileTap={reduce ? undefined : { scale: 0.9 }}
       transition={SPRING.snap}
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-full",
+        "relative grid size-9 shrink-0 place-items-center rounded-full",
         pinned ? "bg-accent/15 text-accent" : "text-muted active:bg-surface-strong",
       )}
     >
+      <HapticPad />
       <BookmarkIcon
         ref={icon}
         size={18}
@@ -359,6 +367,7 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
             type="button"
             aria-label={copy.clearSearch}
             onClick={() => {
+              haptic("light");
               onChange("");
               inputRef.current?.focus();
             }}
@@ -368,6 +377,7 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
             transition={SPRING.snap}
             className="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-full bg-surface-strong text-muted"
           >
+            <HapticPad />
             <XMarkIcon size={16} aria-hidden />
           </motion.button>
         )}
@@ -406,9 +416,13 @@ function CrossingRow({
           aria-expanded={open}
           aria-controls={panelId}
           aria-label={open ? copy.hideDetails(row.title) : copy.showDetails(row.title)}
-          onClick={() => setOpen((v) => !v)}
-          className="flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
+          onClick={() => {
+            haptic("light");
+            setOpen((v) => !v);
+          }}
+          className="relative flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
         >
+          <HapticPad />
           <div
             aria-hidden
             className="relative h-9 w-14 shrink-0 overflow-hidden rounded-lg"
@@ -559,6 +573,7 @@ function AddButton({
         added ? "bg-surface-strong text-accent" : "bg-accent text-accent-ink",
       )}
     >
+      <HapticPad />
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span
           key={added ? "added" : "add"}
@@ -613,9 +628,13 @@ function NoResults({ query, onClear }: { query: string; onClear: () => void }) {
       {query && (
         <button
           type="button"
-          onClick={onClear}
-          className="mt-4 h-11 rounded-full px-5 text-[15px] font-medium text-accent active:opacity-60"
+          onClick={() => {
+            haptic("light");
+            onClear();
+          }}
+          className="relative mt-4 h-11 rounded-full px-5 text-[15px] font-medium text-accent active:opacity-60"
         >
+          <HapticPad />
           {copy.clearSearch}
         </button>
       )}
@@ -632,8 +651,9 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <button
         type="button"
         onClick={onRetry}
-        className="mt-4 h-11 rounded-full bg-accent px-6 text-[15px] font-semibold text-accent-ink active:opacity-80"
+        className="relative mt-4 h-11 rounded-full bg-accent px-6 text-[15px] font-semibold text-accent-ink active:opacity-80"
       >
+        <HapticPad />
         {copy.tryAgain}
       </button>
     </div>
