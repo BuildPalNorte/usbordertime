@@ -1,6 +1,8 @@
 "use client";
 
+import { useLocale } from "@/components/locale-provider";
 import type { BorderWaitTimes, PortWaitTime } from "@/lib/border-wait-times";
+import { cityPinKey, pinStore } from "@/lib/pin-store";
 import { defaultMode, paletteFor, portName, type Mode } from "@/lib/ports";
 import { walletStore } from "@/lib/wallet-store";
 import { useQuery } from "@tanstack/react-query";
@@ -31,6 +33,7 @@ async function fetchWaitTimes(): Promise<BorderWaitTimes> {
 }
 
 export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
+  const { copy } = useLocale();
   const reduce = useReducedMotion();
 
   // Server renders no saved cards; the client reads localStorage after hydration.
@@ -39,6 +42,11 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     walletStore.subscribe,
     walletStore.getSnapshot,
     walletStore.getServerSnapshot,
+  );
+  const pins = useSyncExternalStore(
+    pinStore.subscribe,
+    pinStore.getSnapshot,
+    pinStore.getServerSnapshot,
   );
 
   const { data, isPending, isFetching, isError, refetch } = useQuery({
@@ -53,14 +61,19 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
   const ports = data?.ports ?? EMPTY_PORTS;
   const byNumber = useMemo(() => new Map(ports.map((p) => [p.portNumber, p])), [ports]);
 
-  const items = useMemo<StackItem[]>(
-    () =>
-      entries.flatMap((entry) => {
-        const port = byNumber.get(entry.portNumber);
-        return port ? [{ port, mode: entry.mode }] : [];
-      }),
-    [entries, byNumber],
-  );
+  const items = useMemo<StackItem[]>(() => {
+    const pinIndex = new Map(pins.map((key, index) => [key, index]));
+    const list = entries.flatMap((entry) => {
+      const port = byNumber.get(entry.portNumber);
+      return port ? [{ port, mode: entry.mode }] : [];
+    });
+    // Pinned cities rise to the top of the stack. Unpinned cards keep the order they were added.
+    return [...list].sort((a, b) => {
+      const ai = pinIndex.get(cityPinKey(a.port.border, portName(a.port).city)) ?? Number.POSITIVE_INFINITY;
+      const bi = pinIndex.get(cityPinKey(b.port.border, portName(b.port).city)) ?? Number.POSITIVE_INFINITY;
+      return ai - bi;
+    });
+  }, [entries, byNumber, pins]);
   const saved = useMemo(() => new Set(entries.map((e) => e.portNumber)), [entries]);
 
   const [tab, setTab] = useState<Tab>("wallet");
@@ -76,6 +89,9 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
       ? requestedId
       : null;
   const openItem = items.find((i) => i.port.portNumber === expandedId) ?? null;
+  const openCityPinned = openItem
+    ? pins.includes(cityPinKey(openItem.port.border, portName(openItem.port).city))
+    : false;
 
   const showToast = useCallback((next: Omit<ToastState, "id">) => {
     toastId.current += 1;
@@ -126,18 +142,18 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
         const entry = entries[index];
         walletStore.remove(port.portNumber);
         showToast({
-          message: `Removed ${name}`,
-          action: { label: "Undo", onClick: () => walletStore.insertAt(entry, index) },
+          message: copy.removedToast(name),
+          action: { label: copy.undo, onClick: () => walletStore.insertAt(entry, index) },
         });
       } else {
         walletStore.add({ portNumber: port.portNumber, mode: defaultMode(port) });
         showToast({
-          message: `Added ${name}`,
-          action: { label: "View", onClick: () => changeTab("wallet"), mobileOnly: true },
+          message: copy.addedToast(name),
+          action: { label: copy.view, onClick: () => changeTab("wallet"), mobileOnly: true },
         });
       }
     },
-    [saved, entries, showToast, changeTab],
+    [saved, entries, showToast, changeTab, copy],
   );
 
   const removeOpen = useCallback(
@@ -149,11 +165,11 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
       setRequestedId(null);
       walletStore.remove(portNumber);
       showToast({
-        message: `Removed ${portName(port).title}`,
-        action: { label: "Undo", onClick: () => walletStore.insertAt(entry, index) },
+        message: copy.removedToast(portName(port).title),
+        action: { label: copy.undo, onClick: () => walletStore.insertAt(entry, index) },
       });
     },
-    [entries, byNumber, showToast],
+    [entries, byNumber, showToast, copy],
   );
 
   const suggested = useMemo(
@@ -165,6 +181,14 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
           !saved.has(p.portNumber),
       ),
     [ports, saved],
+  );
+
+  const togglePin = useCallback(
+    (border: string, city: string) => {
+      const pinned = pinStore.toggle(cityPinKey(border, city));
+      showToast({ message: pinned ? copy.pinnedToast(city) : copy.unpinnedToast(city) });
+    },
+    [showToast, copy],
   );
 
   const addSuggested = useCallback(() => {
@@ -183,7 +207,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
             className="pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6"
             data-active={tab === "wallet"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
-            aria-label="Wallet"
+            aria-label={copy.wallet}
           >
             <WalletPane
               ref={headerRef}
@@ -197,6 +221,10 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
               onExpand={expand}
               onCollapse={() => setRequestedId(null)}
               onMode={(portNumber: string, mode: Mode) => walletStore.setMode(portNumber, mode)}
+              cityPinned={openCityPinned}
+              onPinCity={() => {
+                if (openItem) togglePin(openItem.port.border, portName(openItem.port).city);
+              }}
               onRemove={removeOpen}
               onRefresh={() => void refetch()}
               onBrowse={() => changeTab("browse")}
@@ -208,14 +236,16 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
             className="pane"
             data-active={tab === "browse"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
-            aria-label="Browse crossings"
+            aria-label={copy.browseCrossings}
           >
             <BrowsePane
               ports={ports}
               loading={isPending && !data}
               error={isError}
               saved={saved}
+              pins={pins}
               onToggle={toggleSaved}
+              onPin={togglePin}
               onRetry={() => void refetch()}
             />
           </section>

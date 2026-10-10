@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
 import { MapIcon } from "@heroicons-animated/react/map";
 import { WalletIcon } from "@heroicons-animated/react/wallet";
@@ -16,16 +17,17 @@ type Props = {
 
 /** Floating translucent tab bar. Mobile only; desktop shows both panes. */
 export function TabBar({ tab, count, onChange }: Props) {
+  const { copy } = useLocale();
   const reduce = useReducedMotion();
 
   return (
     <nav
-      aria-label="Sections"
+      aria-label={copy.sections}
       className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 lg:hidden"
       style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
       <div className="glass pointer-events-auto flex gap-1 rounded-full p-1.5">
-        <TabButton active={tab === "wallet"} label="Wallet" onClick={() => onChange("wallet")}>
+        <TabButton active={tab === "wallet"} label={copy.wallet} onClick={() => onChange("wallet")}>
           <WalletIcon size={22} aria-hidden />
           {count > 0 && (
             <motion.span
@@ -40,7 +42,7 @@ export function TabBar({ tab, count, onChange }: Props) {
             </motion.span>
           )}
         </TabButton>
-        <TabButton active={tab === "browse"} label="Browse" onClick={() => onChange("browse")}>
+        <TabButton active={tab === "browse"} label={copy.browse} onClick={() => onChange("browse")}>
           <MapIcon size={22} aria-hidden />
         </TabButton>
       </div>
@@ -69,7 +71,7 @@ function TabButton({
       whileTap={reduce ? undefined : { scale: 0.94 }}
       transition={SPRING.snap}
       className={cn(
-        "relative flex h-12 w-[7.5rem] items-center justify-center gap-2 rounded-full text-[15px] font-semibold",
+        "relative flex h-12 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold whitespace-nowrap",
         active ? "text-foreground" : "text-muted",
       )}
     >

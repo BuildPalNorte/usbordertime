@@ -1,7 +1,9 @@
 "use client";
 
+import { useLocale } from "@/components/locale-provider";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import type { Mode } from "@/lib/ports";
+import { LanguageSwitch } from "./language-switch";
 import { ArrowPathIcon } from "@heroicons-animated/react/arrow-path";
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -20,6 +22,8 @@ type Props = {
   onExpand: (portNumber: string) => void;
   onCollapse: () => void;
   onMode: (portNumber: string, mode: Mode) => void;
+  cityPinned: boolean;
+  onPinCity: () => void;
   onRemove: (portNumber: string) => void;
   onRefresh: () => void;
   onBrowse: () => void;
@@ -40,6 +44,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
     onBrowse,
     onAddSuggested,
   } = props;
+  const { copy } = useLocale();
   const reduce = useReducedMotion();
   const refreshIcon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
   const open = expandedId !== null && items.some((i) => i.port.portNumber === expandedId);
@@ -47,18 +52,19 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
   const subtitle = !hydrated
     ? "\u00A0"
     : items.length === 0
-      ? "Nothing saved yet"
-      : `${items.length} ${items.length === 1 ? "crossing" : "crossings"}${updatedAt ? `, updated ${updatedAt}` : ""}`;
+      ? copy.nothingSaved
+      : copy.savedSummary(items.length, updatedAt);
 
   return (
     <div>
       <header ref={headerRef} className="flex min-h-[4.5rem] items-end justify-between gap-4 pb-5">
         <div className="min-w-0">
-          <h1 className="text-[34px] leading-none font-bold tracking-[-0.035em]">Wallet</h1>
+          <h1 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.wallet}</h1>
           <p className="mt-2 truncate text-[14px] leading-none text-muted">{subtitle}</p>
         </div>
 
-        <div className="relative flex h-11 min-w-11 items-center justify-end">
+        <div className="relative flex h-11 items-center justify-end gap-2">
+          <LanguageSwitch />
           <AnimatePresence mode="popLayout" initial={false}>
             {open ? (
               <motion.button
@@ -72,14 +78,14 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
                 whileTap={reduce ? undefined : { scale: 0.94 }}
                 className="h-11 rounded-full bg-accent px-6 text-[15px] font-semibold text-accent-ink"
               >
-                Done
+                {copy.done}
               </motion.button>
             ) : (
               <motion.button
                 key="refresh"
                 type="button"
                 onClick={onRefresh}
-                aria-label="Refresh wait times"
+                aria-label={copy.refresh}
                 onPointerEnter={() => refreshIcon.current?.startAnimation()}
                 onPointerLeave={() => refreshIcon.current?.stopAnimation()}
                 initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
@@ -109,9 +115,11 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
         <CardStack
           items={items}
           expandedId={props.expandedId}
+          cityPinned={props.cityPinned}
           onExpand={props.onExpand}
           onCollapse={props.onCollapse}
           onMode={props.onMode}
+          onPinCity={props.onPinCity}
           onRemove={props.onRemove}
         />
       )}
@@ -142,6 +150,7 @@ function EmptyWallet({
   onBrowse: () => void;
   onAddSuggested: () => void;
 }) {
+  const { copy } = useLocale();
   const reduce = useReducedMotion();
   const plus = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
 
@@ -163,10 +172,10 @@ function EmptyWallet({
 
       <div className="mt-8 text-center">
         <h2 className="text-[22px] leading-tight font-semibold tracking-[-0.025em]">
-          Your wallet is empty
+          {copy.emptyTitle}
         </h2>
-        <p className="mx-auto mt-2 max-w-[28ch] text-[15px] leading-relaxed text-muted">
-          Add the bridges you cross and see their live wait times in one stack.
+        <p className="mx-auto mt-2 max-w-[32ch] text-[15px] leading-relaxed text-muted">
+          {copy.emptyBody}
         </p>
       </div>
 
@@ -181,7 +190,7 @@ function EmptyWallet({
           className="inline-flex h-12 items-center gap-2 rounded-full bg-accent px-6 text-[16px] font-semibold text-accent-ink"
         >
           <PlusIcon ref={plus} size={20} aria-hidden />
-          Browse crossings
+          {copy.browseCrossings}
         </motion.button>
         {suggested.length > 0 && (
           <button
@@ -189,7 +198,7 @@ function EmptyWallet({
             onClick={onAddSuggested}
             className="h-11 rounded-full px-4 text-[15px] font-medium text-accent transition-opacity active:opacity-60"
           >
-            Start with Brownsville
+            {copy.startWithBrownsville}
           </button>
         )}
       </div>

@@ -1,6 +1,9 @@
 "use client";
 
+import { useLocale } from "@/components/locale-provider";
 import type { PortWaitTime } from "@/lib/border-wait-times";
+import type { Copy } from "@/lib/i18n";
+import { waitLabel } from "@/lib/i18n";
 import { portName, project, readLane, type Mode } from "@/lib/ports";
 import {
   AnimatePresence,
@@ -20,16 +23,28 @@ export type StackItem = { port: PortWaitTime; mode: Mode };
 type Props = {
   items: StackItem[];
   expandedId: string | null;
+  cityPinned: boolean;
   onExpand: (portNumber: string) => void;
   onCollapse: () => void;
   onMode: (portNumber: string, mode: Mode) => void;
+  onPinCity: () => void;
   onRemove: (portNumber: string) => void;
 };
 
 /** How far a drag must be projected to dismiss the open card. */
 const DISMISS_DISTANCE = 120;
 
-export function CardStack({ items, expandedId, onExpand, onCollapse, onMode, onRemove }: Props) {
+export function CardStack({
+  items,
+  expandedId,
+  cityPinned,
+  onExpand,
+  onCollapse,
+  onMode,
+  onPinCity,
+  onRemove,
+}: Props) {
+  const { copy } = useLocale();
   const reduce = useReducedMotion();
   const height = stackHeight(items.length);
   const open = items.find((item) => item.port.portNumber === expandedId) ?? null;
@@ -92,7 +107,7 @@ export function CardStack({ items, expandedId, onExpand, onCollapse, onMode, onR
               <motion.div
                 role="button"
                 tabIndex={isOpen ? -1 : 0}
-                aria-label={ariaLabel(item)}
+                aria-label={ariaLabel(item, copy)}
                 aria-expanded={isOpen}
                 onTap={isOpen ? undefined : () => onExpand(id)}
                 onKeyDown={(event: KeyboardEvent) => {
@@ -136,7 +151,9 @@ export function CardStack({ items, expandedId, onExpand, onCollapse, onMode, onR
               <CardDetail
                 port={open.port}
                 mode={open.mode}
+                cityPinned={cityPinned}
                 onMode={(mode) => onMode(open.port.portNumber, mode)}
+                onPinCity={onPinCity}
                 onRemove={() => onRemove(open.port.portNumber)}
               />
             </motion.div>
@@ -147,8 +164,8 @@ export function CardStack({ items, expandedId, onExpand, onCollapse, onMode, onR
   );
 }
 
-function ariaLabel(item: StackItem): string {
+function ariaLabel(item: StackItem, copy: Copy): string {
   const reading = readLane(item.port, item.mode);
-  const wait = reading.minutes !== null ? `${reading.minutes} minute wait` : reading.statusText;
+  const wait = reading.minutes !== null ? copy.minuteWait(reading.minutes) : waitLabel(reading, copy);
   return `${portName(item.port).title}, ${wait}`;
 }

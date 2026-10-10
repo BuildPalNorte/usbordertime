@@ -1,15 +1,18 @@
 "use client";
 
+import { useLocale } from "@/components/locale-provider";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import { cn } from "@/lib/cn";
 import {
-  lanesText,
-  MODE_IDS,
-  modeLabel,
-  readLane,
-  TONE_DOT,
-  type Mode,
-} from "@/lib/ports";
+  lanesLabel,
+  modeName,
+  presentClock,
+  presentHours,
+  presentPortStatus,
+  waitLabel,
+} from "@/lib/i18n";
+import { MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
+import { MapPinIcon } from "@heroicons-animated/react/map-pin";
 import { TrashIcon } from "@heroicons-animated/react/trash";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef } from "react";
@@ -18,20 +21,25 @@ import { SPRING } from "./motion";
 type Props = {
   port: PortWaitTime;
   mode: Mode;
+  cityPinned: boolean;
   onMode: (mode: Mode) => void;
+  onPinCity: () => void;
   onRemove: () => void;
 };
 
-export function CardDetail({ port, mode, onMode, onRemove }: Props) {
+export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove }: Props) {
+  const { locale, copy } = useLocale();
   const reduce = useReducedMotion();
   const trash = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
+  const pin = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
+  const city = portName(port).city;
   const selected = readLane(port, mode);
   // Only offer lane types this crossing actually publishes. The saved lane always stays selectable.
   const lanes = MODE_IDS.filter((id) => id === mode || readLane(port, id).available);
 
   return (
     <div className="space-y-3 pt-1">
-      <div role="radiogroup" aria-label="Lane type" className="grid grid-cols-2 gap-2.5">
+      <div role="radiogroup" aria-label={copy.laneType} className="grid grid-cols-2 gap-2.5">
         {lanes.map((id, index) => {
           const reading = readLane(port, id);
           const active = id === mode;
@@ -57,7 +65,7 @@ export function CardDetail({ port, mode, onMode, onRemove }: Props) {
                 />
               )}
               <span className="flex items-center justify-between gap-2 text-[13px] font-medium text-muted">
-                {modeLabel(id, port)}
+                {modeName(id, port, copy)}
                 {reading.minutes !== null && (
                   <span className={cn("size-1.5 rounded-full", TONE_DOT[reading.tone])} />
                 )}
@@ -67,15 +75,15 @@ export function CardDetail({ port, mode, onMode, onRemove }: Props) {
                   <>
                     {reading.minutes}
                     <span className="ml-1 text-[13px] font-medium tracking-normal text-muted">
-                      min
+                      {copy.minuteUnit}
                     </span>
                   </>
                 ) : (
-                  <span className="text-[15px] tracking-[-0.01em]">{reading.statusText}</span>
+                  <span className="text-[15px] tracking-[-0.01em]">{waitLabel(reading, copy)}</span>
                 )}
               </span>
               <span className="mt-1.5 block truncate text-[12px] leading-none text-muted">
-                {reading.available ? lanesText(reading) : "Not published here"}
+                {reading.available ? lanesLabel(reading, copy) : copy.notPublished}
               </span>
             </motion.button>
           );
@@ -83,19 +91,41 @@ export function CardDetail({ port, mode, onMode, onRemove }: Props) {
       </div>
 
       {port.constructionNotice && (
-        <p className="rounded-2xl bg-surface px-4 py-3 text-[13px] leading-snug text-foreground">
-          {port.constructionNotice}
-        </p>
+        <div className="rounded-2xl bg-surface px-4 py-3">
+          {locale === "es" && (
+            <p className="mb-1 text-[12px] leading-none text-muted">{copy.cbpNotice}</p>
+          )}
+          <p className="text-[13px] leading-snug text-foreground">{port.constructionNotice}</p>
+        </div>
       )}
 
       <dl className="rounded-2xl bg-surface px-4 py-1 text-[14px]">
-        <Row label="Status" value={port.portStatus || "Unknown"} />
-        <Row label="Hours" value={port.hours || "Unavailable"} />
+        <Row label={copy.status} value={presentPortStatus(port.portStatus, copy)} />
+        <Row label={copy.hours} value={presentHours(port.hours, locale, copy)} />
         <Row
-          label="Reported"
-          value={selected.reportedAt ?? `${port.time.slice(0, 5)} local`}
+          label={copy.reported}
+          value={
+            selected.reportedAt
+              ? presentClock(selected.reportedAt, locale)
+              : copy.localTime(port.time.slice(0, 5))
+          }
         />
       </dl>
+
+      <button
+        type="button"
+        aria-pressed={cityPinned}
+        onClick={onPinCity}
+        onPointerEnter={() => pin.current?.startAnimation()}
+        onPointerLeave={() => pin.current?.stopAnimation()}
+        className={cn(
+          "flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-medium transition-transform active:scale-[0.98]",
+          cityPinned ? "text-accent" : "text-foreground",
+        )}
+      >
+        <MapPinIcon ref={pin} size={18} aria-hidden />
+        {cityPinned ? copy.unpin(city) : copy.pin(city)}
+      </button>
 
       <button
         type="button"
@@ -105,7 +135,7 @@ export function CardDetail({ port, mode, onMode, onRemove }: Props) {
         className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-medium text-danger transition-transform active:scale-[0.98]"
       >
         <TrashIcon ref={trash} size={18} aria-hidden />
-        Remove from wallet
+        {copy.removeFromWallet}
       </button>
     </div>
   );

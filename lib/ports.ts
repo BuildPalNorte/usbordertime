@@ -17,23 +17,6 @@ export function isMode(value: unknown): value is Mode {
   return typeof value === "string" && (MODE_IDS as readonly string[]).includes(value);
 }
 
-export function modeLabel(mode: Mode, port: PortWaitTime): string {
-  switch (mode) {
-    case "car":
-      return "Car";
-    case "ready":
-      return "Ready lane";
-    case "sentri":
-      return port.border.toLowerCase().includes("canad") ? "NEXUS" : "SENTRI";
-    case "walk":
-      return "Walking";
-    case "truck":
-      return "Truck";
-    case "fast":
-      return "FAST truck";
-  }
-}
-
 export function laneFor(port: PortWaitTime, mode: Mode): LaneReading {
   switch (mode) {
     case "car":
@@ -59,14 +42,6 @@ function maxLanesFor(port: PortWaitTime, mode: Mode): number | null {
 
 export type Tone = "clear" | "busy" | "slow" | "closed" | "unknown";
 
-export const TONE_LABEL: Record<Tone, string> = {
-  clear: "Clear",
-  busy: "Moderate",
-  slow: "Long wait",
-  closed: "Closed",
-  unknown: "No data",
-};
-
 export const TONE_DOT: Record<Tone, string> = {
   clear: "bg-emerald-400",
   busy: "bg-amber-400",
@@ -75,13 +50,15 @@ export const TONE_DOT: Record<Tone, string> = {
   unknown: "bg-zinc-400",
 };
 
+export type StatusKey = "closed" | "notOffered" | "lanesClosed" | "pending";
+
 export type Reading = {
   tone: Tone;
   minutes: number | null;
   /** False when CBP does not publish this lane type at the crossing. */
   available: boolean;
-  /** Short text for states without a number. */
-  statusText: string;
+  /** Why there is no minute count. Ignored when minutes is set. */
+  statusKey: StatusKey;
   lanesOpen: number | null;
   maxLanes: number | null;
   reportedAt: string | null;
@@ -97,27 +74,21 @@ export function readLane(port: PortWaitTime, mode: Mode): Reading {
   };
 
   if (port.portStatus && !/open/i.test(port.portStatus)) {
-    return { ...base, tone: "closed", minutes: null, available: true, statusText: "Closed" };
+    return { ...base, tone: "closed", minutes: null, available: true, statusKey: "closed" };
   }
   if (status === "n/a") {
-    return { ...base, tone: "unknown", minutes: null, available: false, statusText: "Not offered" };
+    return { ...base, tone: "unknown", minutes: null, available: false, statusKey: "notOffered" };
   }
   if (status === "lanes closed") {
-    return { ...base, tone: "closed", minutes: null, available: true, statusText: "Lanes closed" };
+    return { ...base, tone: "closed", minutes: null, available: true, statusKey: "lanesClosed" };
   }
   if (lane.delayMinutes === null) {
-    return { ...base, tone: "unknown", minutes: null, available: true, statusText: "Update pending" };
+    return { ...base, tone: "unknown", minutes: null, available: true, statusKey: "pending" };
   }
 
   const minutes = lane.delayMinutes;
   const tone: Tone = minutes <= 15 ? "clear" : minutes <= 45 ? "busy" : "slow";
-  return { ...base, tone, minutes, available: true, statusText: `${minutes} min` };
-}
-
-export function lanesText(reading: Reading): string {
-  if (reading.lanesOpen === null) return reading.statusText;
-  const open = `${reading.lanesOpen} ${reading.lanesOpen === 1 ? "lane" : "lanes"} open`;
-  return reading.maxLanes ? `${open} of ${reading.maxLanes}` : open;
+  return { ...base, tone, minutes, available: true, statusKey: "pending" };
 }
 
 /** The lane a newly added crossing should lead with. */
@@ -158,8 +129,9 @@ export type PortName = {
   crossing: string | null;
   /** What a card or row leads with. */
   title: string;
-  /** Context under the title. */
+  /** Context under the title. A region phrase when subtitleIsRegion is set, otherwise a city name. */
   subtitle: string;
+  subtitleIsRegion: boolean;
 };
 
 export function portName(port: PortWaitTime): PortName {
@@ -171,12 +143,18 @@ export function portName(port: PortWaitTime): PortName {
     ? "Canadian border"
     : "Mexican border";
 
-  if (!crossing) return { city, crossing, title: city, subtitle: region };
+  if (!crossing) return { city, crossing, title: city, subtitle: region, subtitleIsRegion: true };
   if (GENERIC_CROSSINGS.has(crossing.toLowerCase())) {
-    return { city, crossing, title: `${city} ${crossing}`, subtitle: region };
+    return { city, crossing, title: `${city} ${crossing}`, subtitle: region, subtitleIsRegion: true };
   }
-  const subtitle = crossing.toLowerCase().includes(city.toLowerCase()) ? region : city;
-  return { city, crossing, title: crossing, subtitle };
+  const namedForCity = crossing.toLowerCase().includes(city.toLowerCase());
+  return {
+    city,
+    crossing,
+    title: crossing,
+    subtitle: namedForCity ? region : city,
+    subtitleIsRegion: namedForCity,
+  };
 }
 
 /* ----------------------------- card art ----------------------------- */

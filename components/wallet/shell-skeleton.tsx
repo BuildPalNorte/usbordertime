@@ -1,7 +1,12 @@
+"use client";
+
+import { useLocale } from "@/components/locale-provider";
 import { CARD_H, PEEK } from "./motion";
 
-/** Server-rendered placeholder shown while CBP data streams in. Matches the final stack's footprint. */
-export function ShellSkeleton() {
+/** Placeholder shown while CBP data streams in. Matches the final stack's footprint. */
+export function ShellSkeleton({ wordless = false }: { wordless?: boolean }) {
+  const { copy } = useLocale();
+
   return (
     <div
       aria-busy
@@ -10,7 +15,11 @@ export function ShellSkeleton() {
       <div className="lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14">
         <div>
           <div className="flex min-h-[4.5rem] items-end pb-5">
-            <h1 className="text-[34px] leading-none font-bold tracking-[-0.035em]">Wallet</h1>
+            {wordless ? (
+              <div className="shimmer h-8 w-36 rounded-full" />
+            ) : (
+              <h1 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.wallet}</h1>
+            )}
           </div>
           <div className="relative" style={{ height: CARD_H + PEEK * 2 }}>
             {[0, 1, 2].map((i) => (
@@ -24,7 +33,11 @@ export function ShellSkeleton() {
         </div>
         <div className="mt-10 hidden space-y-2 lg:mt-0 lg:block">
           <div className="flex min-h-[4.5rem] items-end pb-5">
-            <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">Crossings</h2>
+            {wordless ? (
+              <div className="shimmer h-8 w-40 rounded-full" />
+            ) : (
+              <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.crossings}</h2>
+            )}
           </div>
           <div className="shimmer h-12 rounded-2xl" />
           {Array.from({ length: 6 }, (_, i) => (

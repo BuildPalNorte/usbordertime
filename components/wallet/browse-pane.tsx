@@ -1,18 +1,30 @@
 "use client";
 
+import { useLocale } from "@/components/locale-provider";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import { cn } from "@/lib/cn";
 import {
+  lanesLabel,
+  modeName,
+  presentClock,
+  presentHours,
+  presentPortStatus,
+  waitLabel,
+} from "@/lib/i18n";
+import { cityPinKey } from "@/lib/pin-store";
+import {
   cardBackground,
   defaultMode,
-  modeLabel,
+  MODE_IDS,
   paletteFor,
   portName,
   readLane,
   TONE_DOT,
 } from "@/lib/ports";
+import { LanguageSwitch } from "./language-switch";
 import { CheckIcon } from "@heroicons-animated/react/check";
 import { MagnifyingGlassIcon } from "@heroicons-animated/react/magnifying-glass";
+import { MapPinIcon } from "@heroicons-animated/react/map-pin";
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { XMarkIcon } from "@heroicons-animated/react/x-mark";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -24,10 +36,10 @@ const COLLATOR = new Intl.Collator("en-US");
 
 type BorderFilter = "mexican" | "canadian" | "all";
 
-const FILTERS: { id: BorderFilter; label: string }[] = [
-  { id: "mexican", label: "Mexico" },
-  { id: "canadian", label: "Canada" },
-  { id: "all", label: "All" },
+const FILTERS: { id: BorderFilter; label: "mexico" | "canada" | "all" }[] = [
+  { id: "mexican", label: "mexico" },
+  { id: "canadian", label: "canada" },
+  { id: "all", label: "all" },
 ];
 
 type Props = {
@@ -35,13 +47,25 @@ type Props = {
   loading: boolean;
   error: boolean;
   saved: ReadonlySet<string>;
+  /** Newest pin first. */
+  pins: readonly string[];
   onToggle: (port: PortWaitTime) => void;
+  onPin: (border: string, city: string) => void;
   onRetry: () => void;
 };
 
-type Row = { port: PortWaitTime; city: string; title: string; search: string };
+type Row = { port: PortWaitTime; city: string; title: string; search: string; pinKey: string };
 
-export function BrowsePane({ ports, loading, error, saved, onToggle, onRetry }: Props) {
+type Block = {
+  id: string;
+  city: string | null;
+  pinKey: string | null;
+  rows: Row[];
+  pinned: boolean;
+};
+
+export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin, onRetry }: Props) {
+  const { copy } = useLocale();
   const [border, setBorder] = useState<BorderFilter>("mexican");
   const [query, setQuery] = useState("");
 
@@ -54,6 +78,7 @@ export function BrowsePane({ ports, loading, error, saved, onToggle, onRetry }: 
             port,
             city: name.city,
             title: name.title,
+            pinKey: cityPinKey(port.border, name.city),
             search: `${name.city} ${name.crossing ?? ""} ${port.portNumber}`.toLowerCase(),
           };
         })
@@ -80,42 +105,69 @@ export function BrowsePane({ ports, loading, error, saved, onToggle, onRetry }: 
           : row.port.border.toLowerCase().includes("canad"));
       return borderOk && (needle === "" || row.search.includes(needle));
     });
-    // Group by city. A city with one crossing named after itself needs no header,
-    // so those fold into a single headerless run instead of repeating "Andrade / Andrade".
-    const blocks: { city: string | null; rows: Row[] }[] = [];
+    const pinIndex = new Map(pins.map((key, index) => [key, index]));
     const byCity = new Map<string, Row[]>();
     for (const row of visible) {
-      const list = byCity.get(row.city);
+      const list = byCity.get(row.pinKey);
       if (list) list.push(row);
-      else byCity.set(row.city, [row]);
+      else byCity.set(row.pinKey, [row]);
     }
-    for (const [city, list] of byCity) {
+
+    // Pinned cities lead, in the order they were pinned. Everyone else stays alphabetical.
+    // A city with one crossing named after itself needs no header, so those fold into a
+    // headerless run instead of repeating "Andrade / Andrade". A pinned city always gets a header.
+    const pinned: Block[] = [];
+    const rest: Block[] = [];
+    let loose: Row[] = [];
+    const flush = () => {
+      if (loose.length === 0) return;
+      rest.push({
+        id: `loose-${loose[0].port.portNumber}`,
+        city: null,
+        pinKey: null,
+        rows: loose,
+        pinned: false,
+      });
+      loose = [];
+    };
+
+    for (const [pinKey, list] of byCity) {
+      const city = list[0].city;
       const bare = list.length === 1 && list[0].title === city;
-      const last = blocks[blocks.length - 1];
-      if (bare && last && last.city === null) last.rows.push(list[0]);
-      else blocks.push({ city: bare ? null : city, rows: list });
+      if (pinIndex.has(pinKey)) {
+        flush();
+        pinned.push({ id: pinKey, city, pinKey, rows: list, pinned: true });
+      } else if (bare) {
+        loose.push(list[0]);
+      } else {
+        flush();
+        rest.push({ id: pinKey, city, pinKey, rows: list, pinned: false });
+      }
     }
-    return blocks;
-  }, [rows, border, query]);
+    flush();
+    pinned.sort((a, b) => (pinIndex.get(a.id) ?? 0) - (pinIndex.get(b.id) ?? 0));
+    return [...pinned, ...rest];
+  }, [rows, border, query, pins]);
 
   let rowIndex = 0;
 
   return (
     <div>
-      <header className="flex min-h-[4.5rem] items-end pb-5">
+      <header className="flex min-h-[4.5rem] items-end justify-between gap-4 pb-5">
         <div>
-          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">Crossings</h2>
+          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.crossings}</h2>
           <p className="mt-2 text-[14px] leading-none text-muted">
-            {loading ? "Loading live data" : `${counts.all} crossings reported by CBP`}
+            {loading ? copy.loading : copy.reportedCount(counts.all)}
           </p>
         </div>
+        <LanguageSwitch className="lg:hidden" />
       </header>
 
       <SearchField value={query} onChange={setQuery} />
 
       <div
         role="radiogroup"
-        aria-label="Border"
+        aria-label={copy.border}
         className="no-scrollbar -mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 py-1"
       >
         {FILTERS.map((filter) => {
@@ -144,7 +196,7 @@ export function BrowsePane({ ports, loading, error, saved, onToggle, onRetry }: 
                 <span aria-hidden className="absolute inset-0 rounded-full bg-surface" />
               )}
               <span className="relative">
-                {filter.label}
+                {copy[filter.label]}
                 <span className={cn("ml-1.5 tabular-nums", active ? "opacity-75" : "text-muted")}>
                   {counts[filter.id]}
                 </span>
@@ -162,43 +214,124 @@ export function BrowsePane({ ports, loading, error, saved, onToggle, onRetry }: 
         ) : groups.length === 0 ? (
           <NoResults query={query} onClear={() => setQuery("")} />
         ) : (
-          groups.map((block) => (
-            <section key={block.rows[0].port.portNumber} aria-label={block.city ?? undefined}>
-              {block.city && (
-                <h3 className="mb-2.5 px-1 text-[13px] leading-none font-semibold tracking-[0.01em] text-muted">
-                  {block.city}
-                </h3>
-              )}
-              <ul className="space-y-2">
-                {block.rows.map((row) => {
-                  const index = rowIndex++;
-                  return (
-                    <li key={row.port.portNumber} className="rise" style={{ "--i": index } as CSSProperties}>
-                      <CrossingRow
-                        row={row}
-                        added={saved.has(row.port.portNumber)}
-                        onToggle={() => onToggle(row.port)}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))
+          groups.map((block) => {
+            const start = rowIndex;
+            rowIndex += block.rows.length;
+            return (
+              <CityBlock
+                key={block.id}
+                block={block}
+                start={start}
+                saved={saved}
+                onToggle={onToggle}
+                onPin={onPin}
+              />
+            );
+          })
         )}
       </div>
     </div>
   );
 }
 
+function CityBlock({
+  block,
+  start,
+  saved,
+  onToggle,
+  onPin,
+}: {
+  block: Block;
+  start: number;
+  saved: ReadonlySet<string>;
+  onToggle: (port: PortWaitTime) => void;
+  onPin: (border: string, city: string) => void;
+}) {
+  const reduce = useReducedMotion();
+
+  return (
+    <motion.section
+      layout={reduce ? false : "position"}
+      transition={SPRING.move}
+      aria-label={block.city ?? undefined}
+    >
+      {block.city && block.pinKey && (
+        <div className="mb-2.5 flex h-9 items-center justify-between gap-3 pl-1">
+          <h3
+            className={cn(
+              "truncate text-[13px] leading-none font-semibold tracking-[0.01em]",
+              block.pinned ? "text-foreground" : "text-muted",
+            )}
+          >
+            {block.city}
+          </h3>
+          <PinButton
+            pinned={block.pinned}
+            label={block.city}
+            onClick={() => onPin(block.rows[0].port.border, block.city!)}
+          />
+        </div>
+      )}
+      <ul className="space-y-2">
+        {block.rows.map((row, index) => (
+          <li key={row.port.portNumber} className="rise" style={{ "--i": start + index } as CSSProperties}>
+            <CrossingRow
+              row={row}
+              added={saved.has(row.port.portNumber)}
+              onToggle={() => onToggle(row.port)}
+              onPin={
+                block.city === null ? () => onPin(row.port.border, row.city) : undefined
+              }
+            />
+          </li>
+        ))}
+      </ul>
+    </motion.section>
+  );
+}
+
+function PinButton({
+  pinned,
+  label,
+  onClick,
+}: {
+  pinned: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  const { copy } = useLocale();
+  const reduce = useReducedMotion();
+  const icon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
+
+  return (
+    <motion.button
+      type="button"
+      aria-pressed={pinned}
+      aria-label={pinned ? copy.unpin(label) : copy.pin(label)}
+      onClick={onClick}
+      onPointerEnter={() => icon.current?.startAnimation()}
+      onPointerLeave={() => icon.current?.stopAnimation()}
+      whileTap={reduce ? undefined : { scale: 0.9 }}
+      transition={SPRING.snap}
+      className={cn(
+        "grid size-9 shrink-0 place-items-center rounded-full",
+        pinned ? "bg-accent/15 text-accent" : "text-muted active:bg-surface-strong",
+      )}
+    >
+      <MapPinIcon ref={icon} size={18} aria-hidden />
+    </motion.button>
+  );
+}
+
 function SearchField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { copy } = useLocale();
   const inputRef = useRef<HTMLInputElement>(null);
   const reduce = useReducedMotion();
 
   return (
     <div className="relative">
       <label htmlFor="crossing-search" className="sr-only">
-        Search crossings
+        {copy.searchLabel}
       </label>
       <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-muted">
         <MagnifyingGlassIcon size={18} aria-hidden />
@@ -212,14 +345,14 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
         enterKeyHint="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Search a bridge or city"
+        placeholder={copy.searchPlaceholder}
         className="h-12 w-full appearance-none rounded-2xl bg-surface pr-11 pl-11 text-[16px] text-foreground outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-accent [&::-webkit-search-cancel-button]:hidden"
       />
       <AnimatePresence>
         {value && (
           <motion.button
             type="button"
-            aria-label="Clear search"
+            aria-label={copy.clearSearch}
             onClick={() => {
               onChange("");
               inputRef.current?.focus();
@@ -242,45 +375,152 @@ function CrossingRow({
   row,
   added,
   onToggle,
+  onPin,
 }: {
   row: Row;
   added: boolean;
   onToggle: () => void;
+  /** Present when this row is the whole city, so the pin lives on the row. */
+  onPin?: () => void;
 }) {
+  const { copy } = useLocale();
   const { port } = row;
   const mode = defaultMode(port);
   const reading = readLane(port, mode);
   const palette = paletteFor(port.portNumber);
+  const [open, setOpen] = useState(false);
+  const { locale } = useLocale();
+  const panelId = `details-${port.portNumber}`;
+  const lanes = MODE_IDS.filter((id) => readLane(port, id).available);
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-surface p-3">
+    <div className="rounded-2xl bg-surface">
+      <div className="flex items-center gap-3 p-3">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          aria-label={open ? copy.hideDetails(row.title) : copy.showDetails(row.title)}
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
+        >
+          <div
+            aria-hidden
+            className="relative h-9 w-14 shrink-0 overflow-hidden rounded-lg"
+            style={{
+              background: cardBackground(palette),
+              boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.25)",
+            }}
+          >
+            <span className="absolute inset-x-1.5 top-1.5 h-0.5 rounded-full bg-white/40" />
+            <span className="absolute inset-x-1.5 top-3 h-0.5 w-5 rounded-full bg-white/25" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[16px] leading-tight font-semibold tracking-[-0.015em]">
+              {row.title}
+            </p>
+            <p className="mt-1 flex items-center gap-1.5 truncate text-[13px] leading-none text-muted">
+              {reading.minutes !== null && (
+                <span className={cn("size-1.5 shrink-0 rounded-full", TONE_DOT[reading.tone])} />
+              )}
+              <span className="truncate">
+                {modeName(mode, port, copy)}, {waitLabel(reading, copy)}
+              </span>
+            </p>
+          </div>
+
+          <svg
+            aria-hidden
+            viewBox="0 0 20 20"
+            className={cn(
+              "size-4 shrink-0 text-muted transition-transform duration-200",
+              open && "rotate-180",
+            )}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m5 8 5 5 5-5" />
+          </svg>
+        </button>
+
+        {onPin && <PinButton pinned={false} label={row.city} onClick={onPin} />}
+        <AddButton added={added} label={row.title} onToggle={onToggle} />
+      </div>
+
       <div
-        aria-hidden
-        className="relative h-9 w-14 shrink-0 overflow-hidden rounded-lg"
-        style={{
-          background: cardBackground(palette),
-          boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.25)",
-        }}
+        id={panelId}
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
       >
-        <span className="absolute inset-x-1.5 top-1.5 h-0.5 rounded-full bg-white/40" />
-        <span className="absolute inset-x-1.5 top-3 h-0.5 w-5 rounded-full bg-white/25" />
-      </div>
+        <div className="overflow-hidden" inert={!open}>
+          <div className="space-y-2.5 px-3 pb-3">
+            <div className="grid grid-cols-2 gap-2">
+              {lanes.map((id) => {
+                const lane = readLane(port, id);
+                return (
+                  <div key={id} className="rounded-xl bg-surface-strong px-3 py-2.5">
+                    <span className="flex items-center justify-between gap-2 text-[12px] font-medium text-muted">
+                      {modeName(id, port, copy)}
+                      {lane.minutes !== null && (
+                        <span className={cn("size-1.5 rounded-full", TONE_DOT[lane.tone])} />
+                      )}
+                    </span>
+                    <span className="mt-1 block text-[18px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
+                      {lane.minutes !== null ? (
+                        <>
+                          {lane.minutes}
+                          <span className="ml-1 text-[12px] font-medium tracking-normal text-muted">
+                            {copy.minuteUnit}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-[14px]">{waitLabel(lane, copy)}</span>
+                      )}
+                    </span>
+                    <span className="mt-1 block truncate text-[11px] leading-none text-muted">
+                      {lanesLabel(lane, copy)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[16px] leading-tight font-semibold tracking-[-0.015em]">
-          {row.title}
-        </p>
-        <p className="mt-1 flex items-center gap-1.5 truncate text-[13px] leading-none text-muted">
-          {reading.minutes !== null && (
-            <span className={cn("size-1.5 shrink-0 rounded-full", TONE_DOT[reading.tone])} />
-          )}
-          <span className="truncate">
-            {modeLabel(mode, port)}, {reading.statusText}
-          </span>
-        </p>
-      </div>
+            {port.constructionNotice && (
+              <p className="rounded-xl bg-surface-strong px-3 py-2.5 text-[13px] leading-snug">
+                {port.constructionNotice}
+              </p>
+            )}
 
-      <AddButton added={added} label={row.title} onToggle={onToggle} />
+            <dl className="rounded-xl bg-surface-strong px-3 text-[13px]">
+              <DetailRow label={copy.status} value={presentPortStatus(port.portStatus, copy)} />
+              <DetailRow label={copy.hours} value={presentHours(port.hours, locale, copy)} />
+              <DetailRow
+                label={copy.reported}
+                value={
+                  reading.reportedAt
+                    ? presentClock(reading.reportedAt, locale)
+                    : copy.localTime(port.time.slice(0, 5))
+                }
+              />
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-2.5">
+      <dt className="text-muted">{label}</dt>
+      <dd className="text-right font-medium">{value}</dd>
     </div>
   );
 }
@@ -294,6 +534,7 @@ function AddButton({
   label: string;
   onToggle: () => void;
 }) {
+  const { copy } = useLocale();
   const reduce = useReducedMotion();
   const plus = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
   const check = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
@@ -302,14 +543,14 @@ function AddButton({
     <motion.button
       type="button"
       aria-pressed={added}
-      aria-label={added ? `Remove ${label} from wallet` : `Add ${label} to wallet`}
+      aria-label={added ? copy.removeFromWalletNamed(label) : copy.addToWallet(label)}
       onClick={onToggle}
       onPointerEnter={() => (added ? check : plus).current?.startAnimation()}
       onPointerLeave={() => (added ? check : plus).current?.stopAnimation()}
       whileTap={reduce ? undefined : { scale: 0.93 }}
       transition={SPRING.snap}
       className={cn(
-        "relative grid h-10 w-[5.5rem] shrink-0 place-items-center overflow-hidden rounded-full text-[14px] font-semibold transition-colors duration-200",
+        "relative grid h-10 w-[6.75rem] shrink-0 place-items-center overflow-hidden rounded-full text-[14px] font-semibold whitespace-nowrap transition-colors duration-200",
         added ? "bg-surface-strong text-accent" : "bg-accent text-accent-ink",
       )}
     >
@@ -325,12 +566,12 @@ function AddButton({
           {added ? (
             <>
               <CheckIcon ref={check} size={16} aria-hidden />
-              Added
+              {copy.added}
             </>
           ) : (
             <>
               <PlusIcon ref={plus} size={16} aria-hidden />
-              Add
+              {copy.add}
             </>
           )}
         </motion.span>
@@ -349,7 +590,7 @@ function ListSkeleton() {
             <div className="shimmer h-3.5 w-2/3 rounded-full" />
             <div className="shimmer h-3 w-1/3 rounded-full" />
           </div>
-          <div className="shimmer h-10 w-[5.5rem] rounded-full" />
+          <div className="shimmer h-10 w-[6.75rem] rounded-full" />
         </div>
       ))}
     </div>
@@ -357,19 +598,20 @@ function ListSkeleton() {
 }
 
 function NoResults({ query, onClear }: { query: string; onClear: () => void }) {
+  const { copy } = useLocale();
   return (
     <div className="rounded-2xl bg-surface px-6 py-10 text-center">
       <p className="text-[17px] font-semibold tracking-[-0.02em]">
-        {query ? `No crossings match "${query}"` : "No crossings here"}
+        {query ? copy.noMatch(query) : copy.noCrossings}
       </p>
-      <p className="mt-1.5 text-[14px] text-muted">Try a city name or switch borders.</p>
+      <p className="mt-1.5 text-[14px] text-muted">{copy.noMatchHint}</p>
       {query && (
         <button
           type="button"
           onClick={onClear}
           className="mt-4 h-11 rounded-full px-5 text-[15px] font-medium text-accent active:opacity-60"
         >
-          Clear search
+          {copy.clearSearch}
         </button>
       )}
     </div>
@@ -377,18 +619,17 @@ function NoResults({ query, onClear }: { query: string; onClear: () => void }) {
 }
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const { copy } = useLocale();
   return (
     <div role="alert" className="rounded-2xl bg-surface px-6 py-10 text-center">
-      <p className="text-[17px] font-semibold tracking-[-0.02em]">Could not load wait times</p>
-      <p className="mt-1.5 text-[14px] text-muted">
-        The CBP feed did not respond. Check your connection and try again.
-      </p>
+      <p className="text-[17px] font-semibold tracking-[-0.02em]">{copy.loadErrorTitle}</p>
+      <p className="mt-1.5 text-[14px] text-muted">{copy.loadErrorBody}</p>
       <button
         type="button"
         onClick={onRetry}
         className="mt-4 h-11 rounded-full bg-accent px-6 text-[15px] font-semibold text-accent-ink active:opacity-80"
       >
-        Try again
+        {copy.tryAgain}
       </button>
     </div>
   );
