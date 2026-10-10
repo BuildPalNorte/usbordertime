@@ -12,7 +12,7 @@ import {
   waitLabel,
 } from "@/lib/i18n";
 import { MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
-import { MapPinIcon } from "@heroicons-animated/react/map-pin";
+import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
 import { TrashIcon } from "@heroicons-animated/react/trash";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef } from "react";
@@ -30,8 +30,8 @@ type Props = {
 export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove }: Props) {
   const { locale, copy } = useLocale();
   const reduce = useReducedMotion();
+  const bookmark = useRef<BookmarkIconHandle>(null);
   const trash = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
-  const pin = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
   const city = portName(port).city;
   const selected = readLane(port, mode);
   // Only offer lane types this crossing actually publishes. The saved lane always stays selectable.
@@ -116,15 +116,20 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
         type="button"
         aria-pressed={cityPinned}
         onClick={onPinCity}
-        onPointerEnter={() => pin.current?.startAnimation()}
-        onPointerLeave={() => pin.current?.stopAnimation()}
+        onPointerEnter={() => bookmark.current?.startAnimation()}
+        onPointerLeave={() => bookmark.current?.stopAnimation()}
         className={cn(
           "flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-medium transition-transform active:scale-[0.98]",
           cityPinned ? "text-accent" : "text-foreground",
         )}
       >
-        <MapPinIcon ref={pin} size={18} aria-hidden />
-        {cityPinned ? copy.unpin(city) : copy.pin(city)}
+        <BookmarkIcon
+          ref={bookmark}
+          size={18}
+          aria-hidden
+          className={cityPinned ? "[&_svg]:fill-current" : undefined}
+        />
+        {cityPinned ? copy.removeBookmark(city) : copy.bookmark(city)}
       </button>
 
       <button

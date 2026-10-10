@@ -22,9 +22,9 @@ import {
   TONE_DOT,
 } from "@/lib/ports";
 import { LanguageSwitch } from "./language-switch";
+import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
 import { CheckIcon } from "@heroicons-animated/react/check";
 import { MagnifyingGlassIcon } from "@heroicons-animated/react/magnifying-glass";
-import { MapPinIcon } from "@heroicons-animated/react/map-pin";
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { XMarkIcon } from "@heroicons-animated/react/x-mark";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -301,13 +301,13 @@ function PinButton({
 }) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
-  const icon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
+  const icon = useRef<BookmarkIconHandle>(null);
 
   return (
     <motion.button
       type="button"
       aria-pressed={pinned}
-      aria-label={pinned ? copy.unpin(label) : copy.pin(label)}
+      aria-label={pinned ? copy.removeBookmark(label) : copy.bookmark(label)}
       onClick={onClick}
       onPointerEnter={() => icon.current?.startAnimation()}
       onPointerLeave={() => icon.current?.stopAnimation()}
@@ -318,7 +318,12 @@ function PinButton({
         pinned ? "bg-accent/15 text-accent" : "text-muted active:bg-surface-strong",
       )}
     >
-      <MapPinIcon ref={icon} size={18} aria-hidden />
+      <BookmarkIcon
+        ref={icon}
+        size={18}
+        aria-hidden
+        className={pinned ? "[&_svg]:fill-current" : undefined}
+      />
     </motion.button>
   );
 }

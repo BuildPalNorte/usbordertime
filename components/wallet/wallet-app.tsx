@@ -186,7 +186,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
   const togglePin = useCallback(
     (border: string, city: string) => {
       const pinned = pinStore.toggle(cityPinKey(border, city));
-      showToast({ message: pinned ? copy.pinnedToast(city) : copy.unpinnedToast(city) });
+      showToast({ message: pinned ? copy.bookmarkedToast(city) : copy.removedBookmarkToast(city) });
     },
     [showToast, copy],
   );

@@ -80,10 +80,10 @@ export type Copy = {
   minutes: (count: number) => string;
   minuteWait: (count: number) => string;
   lanesOpen: (open: number, max: number | null) => string;
-  pin: (city: string) => string;
-  unpin: (city: string) => string;
-  pinnedToast: (city: string) => string;
-  unpinnedToast: (city: string) => string;
+  bookmark: (city: string) => string;
+  removeBookmark: (city: string) => string;
+  bookmarkedToast: (city: string) => string;
+  removedBookmarkToast: (city: string) => string;
   addedToast: (name: string) => string;
   removedToast: (name: string) => string;
   mode: ModeCopy;
@@ -166,10 +166,10 @@ export const COPY: Record<Locale, Copy> = {
       const base = `${open} ${open === 1 ? "lane" : "lanes"} open`;
       return max ? `${base} of ${max}` : base;
     },
-    pin: (city) => `Pin ${city}`,
-    unpin: (city) => `Unpin ${city}`,
-    pinnedToast: (city) => `Pinned ${city}`,
-    unpinnedToast: (city) => `Unpinned ${city}`,
+    bookmark: (city) => `Bookmark ${city}`,
+    removeBookmark: (city) => `Remove bookmark for ${city}`,
+    bookmarkedToast: (city) => `Bookmarked ${city}`,
+    removedBookmarkToast: (city) => `Removed bookmark for ${city}`,
     addedToast: (name) => `Added ${name}`,
     removedToast: (name) => `Removed ${name}`,
     mode: {
@@ -268,10 +268,10 @@ export const COPY: Record<Locale, Copy> = {
       const base = `${open} ${unit}`;
       return max ? `${base} de ${max}` : base;
     },
-    pin: (city) => `Fijar ${city}`,
-    unpin: (city) => `Dejar de fijar ${city}`,
-    pinnedToast: (city) => `${city} fijada`,
-    unpinnedToast: (city) => `${city} ya no está fijada`,
+    bookmark: (city) => `Marcar ${city}`,
+    removeBookmark: (city) => `Quitar marcador de ${city}`,
+    bookmarkedToast: (city) => `${city} marcada`,
+    removedBookmarkToast: (city) => `Se quitó el marcador de ${city}`,
     addedToast: (name) => `Se agregó ${name}`,
     removedToast: (name) => `Se quitó ${name}`,
     mode: {
