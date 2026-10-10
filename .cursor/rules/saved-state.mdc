@@ -1,0 +1,17 @@
+---
+description: Browser stores for the wallet and city bookmarks
+globs: lib/wallet-store.ts,lib/pin-store.ts,components/wallet/wallet-app.tsx
+alwaysApply: false
+---
+
+# Saved state
+
+There is no account and no server write. Both stores are module singletons read with `useSyncExternalStore`. `getServerSnapshot` is empty, so the server render has no saved cards. Read them after hydration (`hydrated` in `WalletApp`).
+
+`walletStore` uses `usbordertime.wallet.v1`. Each entry is `{ portNumber, mode }`, one per port. `add` ignores a port that is already saved. Order is insertion order. `insertAt` is how undo puts a card back.
+
+`pinStore` uses `usbordertime.pins.v1`. Keys come from `cityPinKey` and look like `mx:City` or `ca:City`. The newest pin is first. Pinning a city does not add its crossings. `WalletApp` lifts pinned cities to the top of the stack and leaves the other cards in wallet order.
+
+Bad JSON is dropped. If `localStorage` cannot be written, the in-memory list still works for the session. Other tabs update through the `storage` event.
+
+Do not rename a storage key without a migration. Existing wallets would come back empty.

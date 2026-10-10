@@ -1,0 +1,21 @@
+---
+description: How the wallet screen is composed and how its motion works
+globs: components/wallet/**/*.tsx,components/wallet/motion.ts
+alwaysApply: false
+---
+
+# Wallet UI
+
+`WalletApp` owns the query, both stores, the open card, the tab, and toasts. Panes receive data and callbacks. They do not fetch, and they do not write storage.
+
+The `["wait-times"]` query starts from the server snapshot, treats it as fresh for 30 seconds, and refetches every 60 seconds. `loading` means `isPending && !data`, so a failed first load can show the error state.
+
+Below 1024px, `.pane[data-active]` shows one tab and `TabBar` switches them. At `lg` and up the tab bar is hidden and both panes stay on the page. The wallet column scrolls inside its own sticky pane.
+
+`WalletPane` renders `CardStack` (`CardFace` and `CardDetail`). `expandedId` is derived: if that port leaves the stack, the card closes. Escape closes it too.
+
+`BrowsePane` searches and filters the snapshot already in memory (`mexican`, `canadian`, or `all`). Sorting uses a fixed `en-US` collator so the server and client agree.
+
+Motion lives in `motion.ts`. Use `SPRING.move` for layout, `snap` for small state changes, `release` after a flick, and `pop` for badges. When `useReducedMotion()` is set, use `REDUCED` or skip the travel. Card height is `CARD_H` (212) and the visible strip is `PEEK` (76). Stack height comes from `stackHeight`.
+
+The empty wallet suggests unsaved Mexican crossings whose city is Brownsville.

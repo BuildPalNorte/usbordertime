@@ -1,0 +1,32 @@
+---
+description: Lane modes, wait colors, and how a crossing gets its display name
+globs: lib/ports.ts
+alwaysApply: false
+---
+
+# Lanes and names
+
+`lib/ports.ts` is client-safe. No server imports.
+
+A `Mode` picks one lane. Keep this mapping in `laneFor`. Do not add a second one.
+
+| Mode | Lane |
+| --- | --- |
+| `car` | `passenger.standard` |
+| `ready` | `passenger.ready` |
+| `sentri` | `passenger.nexusSentri` |
+| `walk` | `pedestrian.standard` |
+| `truck` | `commercial.standard` |
+| `fast` | `commercial.fast` |
+
+`readLane` is the only place a wait becomes a `Tone`:
+
+- Port status that does not match `/open/i` → `closed`
+- Lane status `n/a` → not offered (`available: false`)
+- `lanes closed` → `closed`
+- `delayMinutes` is `null` → `pending`
+- Otherwise ≤15 `clear`, ≤45 `busy`, above that `slow`
+
+`defaultMode` is the lane a newly saved crossing leads with: the first of `car`, `walk`, `truck` whose status is not `n/a`, otherwise `car`.
+
+`portName` turns CBP's uppercase names into `title` and `subtitle`. Cards and toasts use `title`. City bookmarks use `city`. `paletteFor(portNumber)` is a stable hash, so a port keeps its card color.

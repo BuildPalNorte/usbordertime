@@ -1,0 +1,17 @@
+---
+description: How the CBP wait-times feed is fetched, cached, normalized, and served
+globs: lib/border-wait-times.ts,app/api/wait-times/**/*.ts,app/page.tsx
+alwaysApply: false
+---
+
+# CBP feed
+
+`getBorderWaitTimes()` in `lib/border-wait-times.ts` is the only fetch of `https://bwt.cbp.gov/api/waittimes`. It uses `"use cache"` and `cacheLife("minutes")`. `cacheComponents` is enabled in `next.config.ts`. Do not add a second fetch or `unstable_cache`.
+
+The raw body is a JSON array of snake_case port objects. `normalizePort` drops an entry with no `port_number` or `port_name`. A non-array body or an empty list throws `BorderWaitTimesError`. A missing lane group becomes `EMPTY_LANE` (`operationalStatus: "N/A"`, counts `null`). `""` and `"N/A"` counts are `null`, not `0`.
+
+`app/page.tsx` calls `getBorderWaitTimes()` inside Suspense and passes the snapshot as `initial`. A thrown error becomes `initial={null}` so the client can retry. Do not fail the page.
+
+`GET /api/wait-times` reuses that cached snapshot. `border` must be omitted, `mexican`, or `canadian` (400 otherwise). `port` matches port number, port name, or crossing name. A CBP failure or an empty feed returns 502. The response cache is `public, max-age=60, stale-while-revalidate=300`.
+
+The wallet requests `/api/wait-times` with no query string. On-screen filtering happens in the browser.
