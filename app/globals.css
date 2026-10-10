@@ -154,6 +154,17 @@ body {
   }
 }
 
+/* Reduced-motion stand-in for the refresh digit flip: a pulse, no travel. */
+.wait-checking {
+  animation: wait-checking 700ms linear infinite;
+}
+
+@keyframes wait-checking {
+  50% {
+    opacity: 0.4;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pane[data-active="true"],
   .rise {

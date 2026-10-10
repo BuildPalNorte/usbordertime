@@ -243,6 +243,33 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
 
   const updatedAt = ports[0]?.time ? ports[0].time.slice(0, 5) : null;
 
+  // Manual refresh only. The minute poll should not scramble numbers someone is reading.
+  // Held long enough that a fast response still shows the digits flip.
+  const [checking, setChecking] = useState(false);
+  const checkGen = useRef(0);
+  const checkTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (checkTimer.current) window.clearTimeout(checkTimer.current);
+    };
+  }, []);
+
+  const refresh = useCallback(() => {
+    const gen = ++checkGen.current;
+    if (checkTimer.current) window.clearTimeout(checkTimer.current);
+    const started = performance.now();
+    setChecking(true);
+    void refetch().finally(() => {
+      if (checkGen.current !== gen) return;
+      const wait = Math.max(0, 750 - (performance.now() - started));
+      checkTimer.current = window.setTimeout(() => {
+        checkTimer.current = null;
+        if (checkGen.current === gen) setChecking(false);
+      }, wait);
+    });
+  }, [refetch]);
+
   return (
     <div className="relative min-h-[100dvh] max-lg:fixed max-lg:inset-0 max-lg:min-h-0 max-lg:overflow-hidden">
       <Glow palette={openItem && tab === "wallet" ? paletteFor(openItem.port.portNumber) : null} />
@@ -263,7 +290,8 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
               items={items}
               hydrated={hydrated}
               loading={isPending && !data}
-              refreshing={isFetching}
+              refreshing={isFetching || checking}
+              checking={checking}
               updatedAt={updatedAt}
               expandedId={expandedId}
               suggested={suggested}
@@ -276,7 +304,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
               }}
               onRemove={removeOpen}
               onReorder={reorder}
-              onRefresh={() => void refetch()}
+              onRefresh={refresh}
               onBrowse={() => changeTab("browse")}
               onAddSuggested={addSuggested}
             />

@@ -2,9 +2,10 @@
 
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
-import { MapIcon } from "@heroicons-animated/react/map";
-import { WalletIcon } from "@heroicons-animated/react/wallet";
+import { MapIcon, type MapIconHandle } from "@heroicons-animated/react/map";
+import { WalletIcon, type WalletIconHandle } from "@heroicons-animated/react/wallet";
 import { motion, useReducedMotion } from "motion/react";
+import { useRef } from "react";
 import { SPRING } from "./motion";
 
 export type Tab = "wallet" | "browse";
@@ -17,6 +18,16 @@ type Props = {
 /** Floating translucent tab bar. Mobile only; desktop shows both panes. */
 export function TabBar({ tab, onChange }: Props) {
   const { copy } = useLocale();
+  const reduce = useReducedMotion();
+  const wallet = useRef<WalletIconHandle>(null);
+  const map = useRef<MapIconHandle>(null);
+
+  function select(next: Tab) {
+    if (!reduce && next !== tab) {
+      (next === "wallet" ? wallet : map).current?.startAnimation();
+    }
+    onChange(next);
+  }
 
   return (
     <nav
@@ -25,11 +36,11 @@ export function TabBar({ tab, onChange }: Props) {
       style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
       <div className="glass pointer-events-auto flex gap-1 rounded-full p-1.5">
-        <TabButton active={tab === "wallet"} label={copy.wallet} onClick={() => onChange("wallet")}>
-          <WalletIcon size={22} aria-hidden />
+        <TabButton active={tab === "wallet"} label={copy.wallet} onClick={() => select("wallet")}>
+          <WalletIcon ref={wallet} size={22} aria-hidden />
         </TabButton>
-        <TabButton active={tab === "browse"} label={copy.browse} onClick={() => onChange("browse")}>
-          <MapIcon size={22} aria-hidden />
+        <TabButton active={tab === "browse"} label={copy.browse} onClick={() => select("browse")}>
+          <MapIcon ref={map} size={22} aria-hidden className="[perspective:48px]" />
         </TabButton>
       </div>
     </nav>

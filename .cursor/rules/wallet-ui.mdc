@@ -14,10 +14,16 @@ Below 1024px, `.pane[data-active]` shows one tab and `TabBar` switches them. The
 
 `WalletPane` renders `CardStack` (`CardFace` and `CardDetail`). `expandedId` is derived: if that port leaves the stack, the card closes. Escape closes it too.
 
-A short tap on a closed card opens it. Holding one still for about half a second picks it up; the card then tracks the finger and the others spring into the gap. `CardStack` reports the drop through `onReorder` and does not write storage. Reorder is off while a card is open, and with a single card. Alt+ArrowUp and Alt+ArrowDown move the focused card for the keyboard.
+A short tap on a closed card opens it. Holding one still for about half a second picks it up; the card then tracks the finger, fades to 82% opacity so the drop target underneath stays visible, and the others spring into the gap. `CardStack` reports the drop through `onReorder` and does not write storage. Reorder is off while a card is open, and with a single card. Alt+ArrowUp and Alt+ArrowDown move the focused card for the keyboard.
+
+A card that can be reordered keeps `touch-action: none` from the very first touch, not just once the hold completes. `touch-action` is decided once at the start of a touch gesture and ignores later changes, so turning it off only after the hold would be too late — the browser would already be panning the page. Because `touch-action` is off the whole time, an early move that cancels the hold (over `SLOP` before `HOLD_MS`) does its own scroll of `document.scrollingElement` by hand, so swiping past a card still scrolls the list normally.
 
 `BrowsePane` searches and filters the snapshot already in memory (`mexican`, `canadian`, or `all`). Sorting uses a fixed `en-US` collator so the server and client agree.
 
 Motion lives in `motion.ts`. Use `SPRING.move` for layout, `snap` for small state changes, `release` after a flick, and `pop` for badges. When `useReducedMotion()` is set, use `REDUCED` or skip the travel. Card height is `CARD_H` (212) and the visible strip is `PEEK` (76). Stack height comes from `stackHeight`.
+
+A tap on refresh flips the wait digits on the cards while that check runs, then they settle. The minute refetch does not flip them. Reduced motion pulses the number instead of moving it.
+
+A tap that switches tabs plays that tab's icon animation. Reduced motion skips it.
 
 The empty wallet suggests unsaved Mexican crossings whose city is Brownsville.

@@ -32,6 +32,7 @@ type Props = {
   onPinCity: () => void;
   onRemove: (portNumber: string) => void;
   onReorder: (portNumber: string, toIndex: number) => void;
+  checking?: boolean;
 };
 
 type ReorderDrag = { id: string; from: number; over: number };
@@ -55,6 +56,7 @@ export function CardStack({
   onPinCity,
   onRemove,
   onReorder,
+  checking = false,
 }: Props) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
@@ -136,6 +138,7 @@ export function CardStack({
               }
               onCommit={(to) => commit(id, to)}
               onDragEnd={handleDragEnd}
+              checking={checking}
             />
           );
         })}
@@ -190,6 +193,7 @@ function StackCard({
   onOver,
   onCommit,
   onDragEnd,
+  checking,
 }: {
   item: StackItem;
   index: number;
@@ -211,6 +215,7 @@ function StackCard({
   onOver: (over: number) => void;
   onCommit: (to: number) => void;
   onDragEnd: (event: unknown, info: PanInfo) => void;
+  checking: boolean;
 }) {
   const present = useIsPresent();
   const y = useMotionValue(reduce ? targetY : appearFrom);
@@ -222,7 +227,6 @@ function StackCard({
   const [raised, setRaised] = useState(false);
   const phase = useRef<"idle" | "pending" | "dragging">("idle");
   const stopListening = useRef<(() => void) | null>(null);
-  const settleTimer = useRef<number | null>(null);
   const countRef = useRef(count);
   const onLiftRef = useRef(onLift);
   const onOverRef = useRef(onOver);
@@ -273,6 +277,14 @@ function StackCard({
           },
     );
     flight.current = controls;
+    // A drop keeps the card raised above its neighbors until it actually arrives,
+    // then z-index settles in the same instant the motion stops — no separate
+    // timer to fall out of sync with the spring's real duration.
+    if (gesture) {
+      void controls.finished.then(() => {
+        if (flight.current === controls) setRaised(false);
+      });
+    }
     return () => {
       controls.stop();
       if (flight.current === controls) flight.current = null;
@@ -282,21 +294,11 @@ function StackCard({
   useEffect(() => {
     return () => {
       stopListening.current?.();
-      if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     };
   }, []);
 
   function raise() {
-    if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     setRaised(true);
-  }
-
-  function scheduleLower() {
-    if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
-    settleTimer.current = window.setTimeout(() => {
-      settleTimer.current = null;
-      setRaised(false);
-    }, reduce ? 200 : 600);
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -307,6 +309,7 @@ function StackCard({
     const startX = event.clientX;
     const startY = event.clientY;
     const pointerId = event.pointerId;
+    const pointerType = event.pointerType;
     let originY = y.get();
     let lastOver = index;
     let unlockScroll: (() => void) | null = null;
@@ -329,8 +332,31 @@ function StackCard({
       setDragging(true);
       raise();
       onLiftRef.current();
-      if (typeof navigator.vibrate === "function") navigator.vibrate(8);
+      try {
+        navigator.vibrate?.(8);
+      } catch {
+        // Some browsers throw instead of silently ignoring a blocked/denied call.
+      }
     }, HOLD_MS);
+
+    function beginManualScroll(startEvent: PointerEvent) {
+      const scroller = document.scrollingElement ?? document.documentElement;
+      let lastY = startEvent.clientY;
+      function onScrollMove(event: PointerEvent) {
+        if (event.pointerId !== pointerId) return;
+        scroller.scrollTop += lastY - event.clientY;
+        lastY = event.clientY;
+      }
+      function stop(event: PointerEvent) {
+        if (event.pointerId !== pointerId) return;
+        window.removeEventListener("pointermove", onScrollMove);
+        window.removeEventListener("pointerup", stop);
+        window.removeEventListener("pointercancel", stop);
+      }
+      window.addEventListener("pointermove", onScrollMove);
+      window.addEventListener("pointerup", stop);
+      window.addEventListener("pointercancel", stop);
+    }
 
     function finishListen() {
       window.clearTimeout(hold);
@@ -351,6 +377,13 @@ function StackCard({
           phase.current = "idle";
           setPressed(false);
           finishListen();
+          // touch-action is fixed for this gesture at the touchstart that began
+          // it, so flipping the CSS value later has no effect on an in-flight
+          // touch. We hold touch-action at "none" while a card could be picked
+          // up (see render), which means the browser will not pan the page on
+          // its own here — forward the rest of this touch to the scroller by
+          // hand so an early move still scrolls normally.
+          if (pointerType === "touch") beginManualScroll(event);
         }
         return;
       }
@@ -386,7 +419,6 @@ function StackCard({
       if (cancelled) {
         pendingGesture.current = { velocity: 0 };
         setDragging(false);
-        scheduleLower();
         onCommitRef.current(index);
         return;
       }
@@ -395,7 +427,6 @@ function StackCard({
       const to = clamp(Math.round(projected / PEEK), 0, countRef.current - 1);
       pendingGesture.current = { velocity };
       setDragging(false);
-      scheduleLower();
       onCommitRef.current(to);
     }
 
@@ -426,7 +457,7 @@ function StackCard({
       className="absolute inset-x-0 top-0"
       style={{ y, zIndex, pointerEvents: dimmed ? "none" : "auto" }}
       initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
-      animate={{ opacity: dimmed ? 0 : 1, scale: dimmed ? 0.95 : 1 }}
+      animate={{ opacity: dimmed ? 0 : dragging ? 0.82 : 1, scale: dimmed ? 0.95 : 1 }}
       exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92, transition: SPRING.move }}
       transition={{ ...spring, delay: reduce ? 0 : intro ? index * 0.06 : 0 }}
     >
@@ -447,7 +478,12 @@ function StackCard({
         style={{
           y: isOpen ? dragY : 0,
           cursor: dragging ? "grabbing" : isOpen || canReorder ? "grab" : "pointer",
-          touchAction: dragging ? "none" : "pan-y",
+          // touch-action is locked in for a touch gesture at its start and can't
+          // change mid-gesture, so this must already be "none" before the hold
+          // completes — otherwise the browser pans the page instead of handing
+          // the drag to us. Cancelled holds fall back to a manual scroll (see
+          // onMove) so the page still scrolls normally on an early move.
+          touchAction: canReorder ? "none" : "pan-y",
           transformOrigin: "50% 36px",
           WebkitTouchCallout: "none",
           WebkitUserSelect: "none",
@@ -459,7 +495,7 @@ function StackCard({
         dragTransition={{ bounceStiffness: 420, bounceDamping: 34 }}
         onDragEnd={onDragEnd}
       >
-        <CardFace port={item.port} mode={item.mode} />
+        <CardFace port={item.port} mode={item.mode} checking={checking} />
       </motion.div>
     </motion.div>
   );

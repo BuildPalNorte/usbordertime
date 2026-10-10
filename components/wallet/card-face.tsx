@@ -14,7 +14,15 @@ import { WaitNumber } from "./wait-number";
  * The physical card. The top ~76px is the "peek" that stays visible when cards stack,
  * so the name and the live wait must both live up there.
  */
-export function CardFace({ port, mode }: { port: PortWaitTime; mode: Mode }) {
+export function CardFace({
+  port,
+  mode,
+  checking = false,
+}: {
+  port: PortWaitTime;
+  mode: Mode;
+  checking?: boolean;
+}) {
   const { locale, copy } = useLocale();
   const palette = paletteFor(port.portNumber);
   const name = portName(port);
@@ -82,6 +90,7 @@ export function CardFace({ port, mode }: { port: PortWaitTime; mode: Mode }) {
                 <WaitNumber
                   key={mode}
                   value={reading.minutes}
+                  checking={checking}
                   className="text-[36px] leading-none font-semibold tracking-[-0.045em]"
                 />
                 <span className="text-[13px] font-medium opacity-[0.72]">{copy.minuteUnit}</span>

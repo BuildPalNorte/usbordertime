@@ -16,6 +16,7 @@ type Props = {
   hydrated: boolean;
   loading: boolean;
   refreshing: boolean;
+  checking: boolean;
   updatedAt: string | null;
   expandedId: string | null;
   suggested: PortWaitTime[];
@@ -37,6 +38,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
     hydrated,
     loading,
     refreshing,
+    checking,
     updatedAt,
     expandedId,
     suggested,
@@ -87,6 +89,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
                 type="button"
                 onClick={onRefresh}
                 aria-label={copy.refresh}
+                aria-busy={checking}
                 onPointerEnter={() => refreshIcon.current?.startAnimation()}
                 onPointerLeave={() => refreshIcon.current?.stopAnimation()}
                 initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
@@ -123,6 +126,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
           onPinCity={props.onPinCity}
           onRemove={props.onRemove}
           onReorder={props.onReorder}
+          checking={checking}
         />
       )}
     </div>
