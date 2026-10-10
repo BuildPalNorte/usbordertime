@@ -46,6 +46,8 @@ const HOLD_MS = 480;
 const SLOP = 10;
 /** Past this release speed, the settle may bounce. A slow place does not. */
 const FLING = 120;
+/** How far a horizontal swipe must be projected to send the front card back. */
+const SWIPE_DISTANCE = 88;
 
 export function CardStack({
   items,
@@ -100,21 +102,22 @@ export function CardStack({
     dragY.set(0);
   }
 
-  function commit(portNumber: string, to: number) {
+  function commit(portNumber: string, to: number, kind?: "back") {
     setDrag((current) => (current?.id === portNumber ? null : current));
     const from = items.findIndex((item) => item.port.portNumber === portNumber);
     if (from < 0 || from === to) return;
     onReorder(portNumber, to);
     const item = items[from];
     if (!item) return;
-    const message = copy.movedTo(portName(item.port).title, to + 1, items.length);
+    const title = portName(item.port).title;
+    const message = kind === "back" ? copy.sentToBack(title) : copy.movedTo(title, to + 1, items.length);
     setLive((previous) => (previous === message ? `${message}\u00A0` : message));
   }
 
   const spring = reduce ? REDUCED : SPRING.move;
 
   return (
-    <div className="relative" style={{ minHeight: height }}>
+    <div className="relative overflow-x-clip" style={{ minHeight: height }}>
       <div className="sr-only" aria-live="polite">
         {live}
       </div>
@@ -157,6 +160,7 @@ export function CardStack({
                 )
               }
               onCommit={(to) => commit(id, to)}
+              onSendBack={() => commit(id, 0, "back")}
               checking={checking}
             />
           );
@@ -213,6 +217,7 @@ function StackCard({
   onLift,
   onOver,
   onCommit,
+  onSendBack,
   checking,
 }: {
   item: StackItem;
@@ -236,6 +241,7 @@ function StackCard({
   onLift: () => void;
   onOver: (over: number) => void;
   onCommit: (to: number) => void;
+  onSendBack: () => void;
   checking: boolean;
 }) {
   const present = useIsPresent();
@@ -247,7 +253,15 @@ function StackCard({
   const dismissArmed = useRef(false);
   const [dragging, setDragging] = useState(false);
   const [raised, setRaised] = useState(false);
-  const phase = useRef<"idle" | "pending" | "dragging">("idle");
+  const [swiping, setSwiping] = useState(false);
+  const swipeX = useMotionValue(0);
+  const tilt = useMotionValue(0);
+  const swipeFade = useMotionValue(1);
+  const swipeFlight = useRef<{ stop: () => void } | null>(null);
+  const swipeArmed = useRef(false);
+  const expectBack = useRef(false);
+  const cardWidth = useRef(320);
+  const phase = useRef<"idle" | "pending" | "dragging" | "swiping">("idle");
   const stopListening = useRef<(() => void) | null>(null);
   const countRef = useRef(count);
   const onLiftRef = useRef(onLift);
@@ -256,6 +270,7 @@ function StackCard({
   const onExpandRef = useRef(onExpand);
   const onCollapseRef = useRef(onCollapse);
   const onHoldDetailRef = useRef(onHoldDetail);
+  const onSendBackRef = useRef(onSendBack);
   const releaseY = useRef(0);
   useEffect(() => {
     countRef.current = count;
@@ -265,6 +280,7 @@ function StackCard({
     onExpandRef.current = onExpand;
     onCollapseRef.current = onCollapse;
     onHoldDetailRef.current = onHoldDetail;
+    onSendBackRef.current = onSendBack;
   });
 
   useEffect(() => {
@@ -273,7 +289,33 @@ function StackCard({
       const controls = animate(y, y.get() + 160, SPRING.move);
       return () => controls.stop();
     }
-    if (dragging) return;
+    if (dragging || swiping) return;
+    // Stay invisible on the back slot until this card actually is the back card.
+    // Fading in earlier would paint it over the stack for a frame.
+    let arrive: { stop: () => void } | null = null;
+    if (expectBack.current) {
+      y.set(0);
+      swipeFade.set(0);
+      if (index !== 0) return;
+      window.setTimeout(() => {
+        expectBack.current = false;
+      }, 0);
+      const move = animate(swipeX, 0, reduce ? REDUCED : SPRING.snap);
+      const fade = animate(swipeFade, 1, reduce ? REDUCED : { duration: 0.22, ease: [0.23, 1, 0.32, 1] });
+      arrive = {
+        stop() {
+          move.stop();
+          fade.stop();
+        },
+      };
+      swipeFlight.current = arrive;
+      void move.finished.then(
+        () => {
+          if (swipeFlight.current === arrive) swipeFlight.current = null;
+        },
+        () => {},
+      );
+    }
     // Leave the handoff in place across Strict Mode's extra effect pass.
     const gesture = pendingGesture.current;
     if (gesture) {
@@ -318,13 +360,22 @@ function StackCard({
     }
     return () => {
       controls.stop();
+      arrive?.stop();
+      if (swipeFlight.current === arrive) swipeFlight.current = null;
       if (flight.current === controls) flight.current = null;
     };
-  }, [present, dragging, targetY, y, reduce]);
+  }, [present, dragging, swiping, targetY, y, reduce, index, swipeX, swipeFade]);
+
+  useEffect(() => {
+    if (swiping) return;
+    const controls = animate(tilt, !reduce && dragging ? -1.25 : 0, reduce ? REDUCED : SPRING.snap);
+    return () => controls.stop();
+  }, [dragging, swiping, reduce, tilt]);
 
   useEffect(() => {
     return () => {
       stopListening.current?.();
+      swipeFlight.current?.stop();
     };
   }, []);
 
@@ -332,41 +383,133 @@ function StackCard({
     setRaised(true);
   }
 
+  function springSwipeHome(velocity: number) {
+    swipeArmed.current = false;
+    const controls = animate(swipeX, 0, reduce ? REDUCED : { ...SPRING.move, velocity });
+    if (!reduce) animate(tilt, 0, SPRING.move);
+    swipeFlight.current = controls;
+    void controls.finished.then(
+      () => {
+        if (swipeFlight.current !== controls) return;
+        swipeFlight.current = null;
+        setSwiping(false);
+      },
+      () => {},
+    );
+  }
+
+  function landAtBack(dir: number) {
+    // Park on the back slot while invisible. The slot effect fades it in once
+    // the reorder has actually moved this card behind the others.
+    expectBack.current = true;
+    pendingGesture.current = null;
+    y.set(0);
+    tilt.set(0);
+    swipeFade.set(0);
+    swipeX.set(reduce ? 0 : dir * 36);
+    swipeFlight.current = null;
+    onSendBackRef.current();
+    setSwiping(false);
+  }
+
+  function flingAway(dir: number, velocity: number) {
+    if (!swipeArmed.current) haptic("medium");
+    swipeArmed.current = false;
+    if (reduce) {
+      landAtBack(0);
+      return;
+    }
+    const width = cardWidth.current;
+    if (Math.abs(swipeX.get()) >= width * 0.85) {
+      landAtBack(dir);
+      return;
+    }
+    const dest = dir * (width + 28);
+    const controls = animate(swipeX, dest, { ...SPRING.release, velocity });
+    const tiltFlight = animate(tilt, dir * 8, SPRING.release);
+    const fadeFlight = animate(swipeFade, 0, { duration: 0.18, ease: [0.23, 1, 0.32, 1] });
+    swipeFlight.current = controls;
+    let sent = false;
+    function send() {
+      if (sent) return;
+      sent = true;
+      stopWatch();
+      tiltFlight.stop();
+      fadeFlight.stop();
+      if (swipeFlight.current === controls) swipeFlight.current = null;
+      controls.stop();
+      landAtBack(dir);
+    }
+    // Hand off once the card has left the stack, so it can reappear at the back
+    // without waiting out the rest of the spring offscreen.
+    const stopWatch = swipeX.on("change", (latest) => {
+      if (Math.abs(latest) >= width * 0.85) send();
+    });
+    void controls.finished.then(send, () => {});
+  }
+
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!canReorder || event.button !== 0) return;
+    if (event.button !== 0) return;
     stopListening.current?.();
-    setPressed(true);
-    phase.current = "pending";
+    const offset = swipeX.get();
+    const front = canReorder && index === count - 1;
+    const grabbed = front && Math.abs(offset) > 1;
+    swipeFlight.current?.stop();
+    swipeFlight.current = null;
+    if (!grabbed) {
+      swipeX.set(0);
+      tilt.set(0);
+      swipeFade.set(1);
+      if (swiping) setSwiping(false);
+    }
+    if (!canReorder) return;
+    cardWidth.current = event.currentTarget.offsetWidth || cardWidth.current;
     const startX = event.clientX;
     const startY = event.clientY;
     const pointerId = event.pointerId;
     const pointerType = event.pointerType;
+    const originX = grabbed ? offset : 0;
     let originY = y.get();
     let lastOver = index;
     let pastEdge = false;
     let slottedAt = 0;
     let unlockScroll: (() => void) | null = null;
-    const samples: { y: number; t: number }[] = [];
+    const samples: { v: number; t: number }[] = [];
+    const xSamples: { v: number; t: number }[] = [];
 
-    const hold = window.setTimeout(() => {
-      if (phase.current !== "pending") return;
-      phase.current = "dragging";
-      // Stop the slot spring now. Waiting for the effect would let it fight the finger.
+    if (grabbed) {
+      phase.current = "swiping";
       flight.current?.stop();
       enterDelay.current = 0;
-      originY = y.get();
-      const root = document.documentElement;
-      const previousTouch = root.style.touchAction;
-      root.style.touchAction = "none";
-      unlockScroll = () => {
-        root.style.touchAction = previousTouch;
-      };
+      swipeFade.set(1);
       setPressed(false);
-      setDragging(true);
-      raise();
-      haptic("rigid");
-      onLiftRef.current();
-    }, HOLD_MS);
+      setSwiping(true);
+    } else {
+      setPressed(true);
+      phase.current = "pending";
+    }
+
+    const hold = grabbed
+      ? 0
+      : window.setTimeout(() => {
+          if (phase.current !== "pending") return;
+          phase.current = "dragging";
+          // Stop the slot spring now. Waiting for the effect would let it fight the finger.
+          flight.current?.stop();
+          enterDelay.current = 0;
+          originY = y.get();
+          const root = document.documentElement;
+          const previousTouch = root.style.touchAction;
+          root.style.touchAction = "none";
+          unlockScroll = () => {
+            root.style.touchAction = previousTouch;
+          };
+          setPressed(false);
+          setDragging(true);
+          raise();
+          haptic("rigid");
+          onLiftRef.current();
+        }, HOLD_MS);
 
     function beginManualScroll(startEvent: PointerEvent) {
       const scroller = document.scrollingElement ?? document.documentElement;
@@ -397,12 +540,44 @@ function StackCard({
       if (stopListening.current === finishListen) stopListening.current = null;
     }
 
+    function trackSwipe(event: PointerEvent) {
+      event.preventDefault();
+      const next = originX + (event.clientX - startX);
+      swipeX.set(next);
+      if (!reduce) tilt.set(clamp(next / 22, -10, 10));
+      const now = performance.now();
+      xSamples.push({ v: next, t: now });
+      if (xSamples.length > 5) xSamples.shift();
+      const past = Math.abs(next) >= SWIPE_DISTANCE;
+      if (past && !swipeArmed.current) {
+        swipeArmed.current = true;
+        haptic("selection");
+      } else if (swipeArmed.current && Math.abs(next) < SWIPE_DISTANCE - 28) {
+        swipeArmed.current = false;
+      }
+    }
+
     function onMove(event: PointerEvent) {
       if (event.pointerId !== pointerId) return;
+      if (phase.current === "swiping") {
+        trackSwipe(event);
+        return;
+      }
       if (phase.current === "pending") {
         const dx = event.clientX - startX;
         const dy = event.clientY - startY;
         if (dx * dx + dy * dy > SLOP * SLOP) {
+          // The front card's horizontal move is a swipe. Anything else still scrolls.
+          if (front && Math.abs(dx) > Math.abs(dy)) {
+            window.clearTimeout(hold);
+            phase.current = "swiping";
+            flight.current?.stop();
+            enterDelay.current = 0;
+            setPressed(false);
+            setSwiping(true);
+            trackSwipe(event);
+            return;
+          }
           phase.current = "idle";
           setPressed(false);
           finishListen();
@@ -423,7 +598,7 @@ function StackCard({
       const next = resist(raw, 0, max);
       y.set(next);
       const now = performance.now();
-      samples.push({ y: next, t: now });
+      samples.push({ v: next, t: now });
       if (samples.length > 5) samples.shift();
       const overEdge = raw < 0 || raw > max;
       if (overEdge && !pastEdge) {
@@ -446,9 +621,26 @@ function StackCard({
       const cancelled = event.type === "pointercancel";
       const wasPending = phase.current === "pending";
       const wasDragging = phase.current === "dragging";
+      const wasSwiping = phase.current === "swiping";
       phase.current = "idle";
       setPressed(false);
       finishListen();
+      if (wasSwiping) {
+        if (cancelled) {
+          springSwipeHome(0);
+          return;
+        }
+        const velocity = readVelocity(xSamples);
+        // Looser than a reorder flick: a sideways throw should leave, not creep one slot.
+        const projected = swipeX.get() + projectRelease(velocity, 0.995);
+        if (Math.abs(projected) < SWIPE_DISTANCE) {
+          springSwipeHome(velocity);
+          return;
+        }
+        const dir = Math.sign(projected) || Math.sign(swipeX.get()) || 1;
+        flingAway(dir, velocity);
+        return;
+      }
       if (wasPending) {
         if (!cancelled) onExpandRef.current();
         return;
@@ -547,7 +739,8 @@ function StackCard({
   }
 
   const label = ariaLabel(item, copy);
-  const zIndex = raised || lifted ? count + 8 : isOpen ? count + 1 : slot + 1;
+  const isFront = canReorder && index === count - 1;
+  const zIndex = raised || lifted || swiping ? count + 8 : isOpen ? count + 1 : slot + 1;
 
   return (
     <motion.div
@@ -561,7 +754,9 @@ function StackCard({
       <motion.div
         role="button"
         tabIndex={isOpen ? -1 : 0}
-        aria-label={canReorder ? `${label}. ${copy.reorderHint}` : label}
+        aria-label={
+          canReorder ? `${label}. ${isFront ? `${copy.sendBackHint}. ` : ""}${copy.reorderHint}` : label
+        }
         aria-expanded={isOpen}
         aria-keyshortcuts={canReorder ? "Alt+ArrowUp Alt+ArrowDown" : undefined}
         onPointerDown={onPointerDown}
@@ -569,11 +764,13 @@ function StackCard({
         onKeyDown={onKeyDown}
         transition={SPRING.snap}
         animate={{
-          scale: reduce ? 1 : dragging ? 1.04 : pressed ? 0.985 : 1,
-          rotate: reduce || !dragging ? 0 : -1.25,
+          scale: reduce ? 1 : swiping ? 1.03 : dragging ? 1.04 : pressed ? 0.985 : 1,
         }}
         style={{
+          x: swipeX,
           y: isOpen ? dragY : 0,
+          rotate: tilt,
+          opacity: swipeFade,
           cursor: dragging ? "grabbing" : isOpen || canReorder ? "grab" : "pointer",
           // touch-action is locked in for a touch gesture at its start and can't
           // change mid-gesture, so this must already be "none" before the hold
@@ -633,12 +830,12 @@ function projectRelease(velocity: number, decelerationRate = 0.99) {
   return (velocity / 1000) * decelerationRate / (1 - decelerationRate);
 }
 
-function readVelocity(samples: { y: number; t: number }[]) {
+function readVelocity(samples: { v: number; t: number }[]) {
   if (samples.length < 2) return 0;
   const first = samples[0];
   const last = samples[samples.length - 1];
   if (!first || !last) return 0;
   const dt = last.t - first.t;
   if (dt <= 0) return 0;
-  return ((last.y - first.y) / dt) * 1000;
+  return ((last.v - first.v) / dt) * 1000;
 }

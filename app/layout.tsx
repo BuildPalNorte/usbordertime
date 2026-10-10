@@ -20,6 +20,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Border Time",
   description: COPY.en.metaDescription,
+  applicationName: "Border Time",
+  appleWebApp: {
+    capable: true,
+    title: "Border Time",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {

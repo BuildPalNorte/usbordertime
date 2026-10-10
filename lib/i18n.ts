@@ -87,6 +87,8 @@ export type Copy = {
   addedToast: (name: string) => string;
   removedToast: (name: string) => string;
   reorderHint: string;
+  sendBackHint: string;
+  sentToBack: (name: string) => string;
   movedTo: (name: string, position: number, total: number) => string;
   mode: ModeCopy;
   tone: Record<Tone, string>;
@@ -175,6 +177,8 @@ export const COPY: Record<Locale, Copy> = {
     addedToast: (name) => `Added ${name}`,
     removedToast: (name) => `Removed ${name}`,
     reorderHint: "Hold and drag to rearrange",
+    sendBackHint: "Swipe left or right to send it back",
+    sentToBack: (name) => `${name} sent to the back`,
     movedTo: (name, position, total) => `${name} moved to ${position} of ${total}`,
     mode: {
       car: "Car",
@@ -279,6 +283,8 @@ export const COPY: Record<Locale, Copy> = {
     addedToast: (name) => `Se agregó ${name}`,
     removedToast: (name) => `Se quitó ${name}`,
     reorderHint: "Mantén pulsado y arrastra para reordenar",
+    sendBackHint: "Desliza a la izquierda o a la derecha para enviarla atrás",
+    sentToBack: (name) => `${name} pasó atrás`,
     movedTo: (name, position, total) => `${name} pasó al puesto ${position} de ${total}`,
     mode: {
       car: "Auto",

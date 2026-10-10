@@ -16,6 +16,8 @@ Below 1024px, `.pane[data-active]` shows one tab and `TabBar` switches them. The
 
 A short tap on a closed card opens it. Holding one still for about half a second picks it up; the card then tracks the finger, fades to 82% opacity so the drop target underneath stays visible, and the others spring into the gap. `CardStack` reports the drop through `onReorder` and does not write storage. Reorder is off while a card is open, and with a single card. Alt+ArrowUp and Alt+ArrowDown move the focused card for the keyboard.
 
+Swiping the front card — the last one, fully visible — left or right sends it to the back of the stack. It tracks the finger. Past a short distance, or on a flick, it leaves that way and settles into the back. A short swipe springs back. The same move is off while a card is open, and with a single card. A horizontal move on a card behind the front still cancels the hold; a vertical move still scrolls.
+
 Dragging the open card down closes it. That close starts where the finger let go and settles straight into the card's slot. A short drag springs back to the open card.
 
 A card that can be reordered keeps `touch-action: none` from the very first touch, not just once the hold completes. `touch-action` is decided once at the start of a touch gesture and ignores later changes, so turning it off only after the hold would be too late — the browser would already be panning the page. Because `touch-action` is off the whole time, an early move that cancels the hold (over `SLOP` before `HOLD_MS`) does its own scroll of `document.scrollingElement` by hand, so swiping past a card still scrolls the list normally.
@@ -26,7 +28,7 @@ Motion lives in `motion.ts`. Use `SPRING.move` for layout, `snap` for small stat
 
 A tap on refresh flips the wait digits on the cards while that check runs, then they settle. The minute refetch does not flip them. Reduced motion pulses the number instead of moving it.
 
-Haptics are `haptic()` in `lib/haptics.ts`. A control ticks only when its value changes. Tabs, lanes, the border filter, and the language switch are selection ticks. Saving a crossing or pinning a city confirms. Removing a card is heavier. Refresh ticks on press and again when the digits settle. The minute refetch stays quiet. Picking a card up, crossing a reorder slot, setting it down, rubbing past the ends of the stack, and dragging an open card past the dismiss line each tick with the gesture. On iPhone a tap lands on `HapticPad`, a transparent switch, because that is the tick Safari still plays. Drags call `haptic()` directly. Reduced motion does not mute haptics.
+Haptics are `haptic()` in `lib/haptics.ts`. A control ticks only when its value changes. Tabs, lanes, the border filter, and the language switch are selection ticks. Saving a crossing or pinning a city confirms. Removing a card is heavier. Refresh ticks on press and again when the digits settle. The minute refetch stays quiet. Picking a card up, crossing a reorder slot, setting it down, rubbing past the ends of the stack, dragging an open card past the dismiss line, and swiping the front card past the send-back line each tick with the gesture. A flick that sends the card back without having crossed that line ticks when it commits. On iPhone a tap lands on `HapticPad`, a transparent switch, because that is the tick Safari still plays. Drags call `haptic()` directly. Reduced motion does not mute haptics.
 
 A tap that switches tabs plays that tab's icon animation. Reduced motion skips it.
 
