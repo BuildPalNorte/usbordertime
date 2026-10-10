@@ -428,23 +428,29 @@ function StackCard({
     const controls = animate(swipeX, dest, { ...SPRING.release, velocity });
     const tiltFlight = animate(tilt, dir * 8, SPRING.release);
     const fadeFlight = animate(swipeFade, 0, { duration: 0.18, ease: [0.23, 1, 0.32, 1] });
-    swipeFlight.current = controls;
     let sent = false;
+    let stopWatch = () => {};
+    const token = {
+      stop() {
+        if (sent) return;
+        sent = true;
+        stopWatch();
+        tiltFlight.stop();
+        fadeFlight.stop();
+        controls.stop();
+      },
+    };
     function send() {
       if (sent) return;
-      sent = true;
-      stopWatch();
-      tiltFlight.stop();
-      fadeFlight.stop();
-      if (swipeFlight.current === controls) swipeFlight.current = null;
-      controls.stop();
+      token.stop();
       landAtBack(dir);
     }
     // Hand off once the card has left the stack, so it can reappear at the back
     // without waiting out the rest of the spring offscreen.
-    const stopWatch = swipeX.on("change", (latest) => {
+    stopWatch = swipeX.on("change", (latest) => {
       if (Math.abs(latest) >= width * 0.85) send();
     });
+    swipeFlight.current = token;
     void controls.finished.then(send, () => {});
   }
 
