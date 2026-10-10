@@ -86,6 +86,8 @@ export type Copy = {
   removedBookmarkToast: (city: string) => string;
   addedToast: (name: string) => string;
   removedToast: (name: string) => string;
+  reorderHint: string;
+  movedTo: (name: string, position: number, total: number) => string;
   mode: ModeCopy;
   tone: Record<Tone, string>;
   laneStatus: Record<StatusKey, string>;
@@ -172,6 +174,8 @@ export const COPY: Record<Locale, Copy> = {
     removedBookmarkToast: (city) => `Removed bookmark for ${city}`,
     addedToast: (name) => `Added ${name}`,
     removedToast: (name) => `Removed ${name}`,
+    reorderHint: "Hold and drag to rearrange",
+    movedTo: (name, position, total) => `${name} moved to ${position} of ${total}`,
     mode: {
       car: "Car",
       ready: "Ready lane",
@@ -274,6 +278,8 @@ export const COPY: Record<Locale, Copy> = {
     removedBookmarkToast: (city) => `Se quitó el marcador de ${city}`,
     addedToast: (name) => `Se agregó ${name}`,
     removedToast: (name) => `Se quitó ${name}`,
+    reorderHint: "Mantén pulsado y arrastra para reordenar",
+    movedTo: (name, position, total) => `${name} pasó al puesto ${position} de ${total}`,
     mode: {
       car: "Auto",
       ready: "Carril Ready",

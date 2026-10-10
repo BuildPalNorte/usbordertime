@@ -8,9 +8,11 @@ alwaysApply: false
 
 There is no account and no server write. Both stores are module singletons read with `useSyncExternalStore`. `getServerSnapshot` is empty, so the server render has no saved cards. Read them after hydration (`hydrated` in `WalletApp`).
 
-`walletStore` uses `usbordertime.wallet.v1`. Each entry is `{ portNumber, mode }`, one per port. `add` ignores a port that is already saved. Order is insertion order. `insertAt` is how undo puts a card back.
+`walletStore` uses `usbordertime.wallet.v1`. Each entry is `{ portNumber, mode }`, one per port. `add` ignores a port that is already saved. The array order is the stack order. `orderAs` is how a long-press reorder writes it. `insertAt` is how undo puts a card back.
 
-`pinStore` uses `usbordertime.pins.v1`. Keys come from `cityPinKey` and look like `mx:City` or `ca:City`. The newest pin is first. Pinning a city does not add its crossings. `WalletApp` lifts pinned cities to the top of the stack and leaves the other cards in wallet order.
+`pinStore` uses `usbordertime.pins.v1`. Keys come from `cityPinKey` and look like `mx:City` or `ca:City`. The newest pin is first. Pinning a city does not add its crossings. Pinning a city moves that city's saved cards to the front of the wallet. Unpinning leaves them where they are. Browse still lists pinned cities first.
+
+The first visit after reorder shipped, `adoptOrder` copies the old pin-sorted stack into the wallet array and sets `usbordertime.wallet.seeded.v1`, so an existing stack does not jump. Do not drop that key; the next load would sort by pins again and undo a custom order.
 
 Bad JSON is dropped. If `localStorage` cannot be written, the in-memory list still works for the session. Other tabs update through the `storage` event.
 

@@ -25,6 +25,7 @@ type Props = {
   cityPinned: boolean;
   onPinCity: () => void;
   onRemove: (portNumber: string) => void;
+  onReorder: (portNumber: string, toIndex: number) => void;
   onRefresh: () => void;
   onBrowse: () => void;
   onAddSuggested: () => void;
@@ -121,6 +122,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
           onMode={props.onMode}
           onPinCity={props.onPinCity}
           onRemove={props.onRemove}
+          onReorder={props.onReorder}
         />
       )}
     </div>

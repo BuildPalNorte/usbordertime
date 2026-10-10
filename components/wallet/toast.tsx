@@ -15,7 +15,7 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] lg:bottom-8"
+      className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] lg:fixed lg:bottom-8"
       aria-live="polite"
       role="status"
     >
