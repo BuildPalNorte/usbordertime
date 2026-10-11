@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { guideIndexJsonLd, guideJsonLd } from "@/lib/guide-schema";
 import { COPY, type Locale } from "@/lib/i18n";
 import { GUIDES, guideById, guideIndexPath, guidePath, type Guide } from "@/lib/guides";
 import Image from "next/image";
@@ -6,6 +7,15 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
 const OTHER: Record<Locale, Locale> = { en: "es", es: "en" };
+
+function JsonLd({ data }: { data: object }) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}
 
 function number(guide: Guide): string {
   return String(GUIDES.findIndex((item) => item.id === guide.id) + 1).padStart(2, "0");
@@ -174,6 +184,7 @@ export function GuideIndex({ locale }: { locale: Locale }) {
   const copy = COPY[locale];
   return (
     <div lang={locale} className="min-h-[100dvh] pb-[max(3rem,env(safe-area-inset-bottom))]">
+      <JsonLd data={guideIndexJsonLd(locale)} />
       <main>
         <Stage
           locale={locale}
@@ -209,6 +220,7 @@ export function GuideArticle({ locale, guide }: { locale: Locale; guide: Guide }
 
   return (
     <div lang={locale} className="min-h-[100dvh] pb-[max(3rem,env(safe-area-inset-bottom))]">
+      <JsonLd data={guideJsonLd(locale, guide)} />
       <main>
         <Stage locale={locale} otherHref={guidePath(OTHER[locale], guide)} title={text.title} lead={text.lead}>
           <article className="mx-auto mt-10 max-w-2xl px-1 sm:mt-20 sm:px-4">
