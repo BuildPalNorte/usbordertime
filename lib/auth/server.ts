@@ -3,20 +3,19 @@ import { nextCookies } from "better-auth/next-js";
 import { Pool } from "pg";
 
 function required(name: "DATABASE_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET"): string {
-  const value = process.env[name];
-  if (value) return value;
-  // `next build` imports the auth route and may prerender the gate. Secrets live on Vercel at runtime.
-  if (process.env.NEXT_PHASE === "phase-production-build") return `build-placeholder-${name}`;
-  throw new Error(`Missing ${name}`);
-}
-
-export function authConfigured(): boolean {
-  return Boolean(
-    process.env.DATABASE_URL &&
-      process.env.BETTER_AUTH_SECRET &&
-      process.env.GOOGLE_CLIENT_ID &&
-      process.env.GOOGLE_CLIENT_SECRET,
-  );
+  // Static reads, same as the rest of the server. A computed `process.env[name]`
+  // is empty in the production bundle, and the build-phase stand-in then pointed
+  // Google sign-in at a database host that does not exist.
+  const value =
+    name === "DATABASE_URL"
+      ? process.env.DATABASE_URL
+      : name === "BETTER_AUTH_SECRET"
+        ? process.env.BETTER_AUTH_SECRET
+        : name === "GOOGLE_CLIENT_ID"
+          ? process.env.GOOGLE_CLIENT_ID
+          : process.env.GOOGLE_CLIENT_SECRET;
+  if (!value) throw new Error(`Missing ${name}`);
+  return value;
 }
 
 type Auth = ReturnType<typeof createAuth>;
