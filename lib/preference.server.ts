@@ -32,7 +32,7 @@ function database() {
 
 let ensuring: Promise<void> | null = null;
 
-function ensurePreferenceTable(): Promise<void> {
+export function ensurePreferenceTable(): Promise<void> {
   if (!ensuring) {
     const sql = database();
     ensuring = sql`

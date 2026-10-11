@@ -1,0 +1,39 @@
+---
+description: Wait alerts, Web Push, the cron check, and the Home Screen install flow
+globs: lib/alert.ts,lib/alert.server.ts,lib/alert-check.server.ts,lib/push.server.ts,lib/push-client.ts,lib/install-store.ts,lib/session.server.ts,app/api/alerts/**/*.ts,app/api/push-subscription/**/*.ts,app/api/cron/**/*.ts,public/sw.js,vercel.json,components/wallet/alert-control.tsx,components/wallet/alert-sync.tsx,components/wallet/use-alerts.ts,components/wallet/install-prompt.tsx
+alwaysApply: false
+---
+
+# Wait alerts and install
+
+An alert is "tell me when this lane at this crossing drops under N minutes." It is not part of `preference`. `wait_alert` is one row per `(user_id, port_number, mode)` with `threshold` (5 to 180, whole minutes) and `below`, the server's memory of the last check. `push_subscription` is one row per device, keyed by the push `endpoint`. Both tables cascade from `profile` and are created on first use by `ensureTables()`. An account holds at most `MAX_ALERTS`.
+
+`lib/alert.ts` is client-safe. Do not import server modules into it. `parsePushDevice` only accepts `https` endpoints on the real push services (Google, Mozilla, Apple, Windows), because the server posts to that address.
+
+## The check
+
+`GET /api/cron/alerts` runs once a minute from `vercel.json`. It requires `Authorization: Bearer $CRON_SECRET`, and a missing `CRON_SECRET` rejects everything. `runAlertCheck()` reads `getBorderWaitTimes()` (the one cached CBP fetch, so the check can lag the feed by its cache window), then for each alert uses `readLane`:
+
+- `minutes < threshold` and `below` is false: `claimBelow` flips it in one `update ... where below = false`, so overlapping runs notify once. Then it pushes to every device of that account. If no device accepted, `below` goes back to false and the next minute retries.
+- `below` is true and `minutes >= threshold + REARM_SLACK`: `below` goes false, so the next drop notifies again.
+- `minutes` is null: a closed lane (`tone === "closed"`) re-arms. A pending update changes nothing.
+
+A new alert saves `below` from the current reading, so setting one on an already-short lane waits for the next drop. A push that answers 404 or 410 deletes that device. The payload is written in the owner's `preference.locale` (English when unset), has a 10 minute TTL, and its `tag` is `port:mode` so a newer alert replaces the old one. It links to `crossingSharePath`.
+
+## The device
+
+`public/sw.js` only shows pushes and handles taps. It caches nothing and does not touch fetches. A tap focuses an open window or opens the card, same origin only.
+
+`POST /api/alerts/test` sends one test to every device on the signed-in account and changes no alert. The "Send a test" button on `AlertControl` calls it after `enablePush()`. The payload sets `stay`, and the service worker keeps that notification up until it is dismissed.
+
+`enablePush()` runs from the tap on a threshold chip or the test button. It asks permission first, with nothing awaited before it, then registers the worker, subscribes with `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, and `PUT`s `/api/push-subscription`. A device belongs to whoever registered it last. Sign-out calls `disablePush()` while the session still exists, which deletes the device row and unsubscribes. `AlertSync` re-registers the device on open when the account has alerts and permission is already granted. It never prompts.
+
+iPhone Safari has no `PushManager` until the site runs from the Home Screen, so `pushSupport()` reports `needs-install` there and the alert control points at the install steps instead of prompting. The Home Screen copy has its own storage, so the person signs in again inside it.
+
+Env: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`. Generate the pair with `web-push generate-vapid-keys`. Changing the public key invalidates every existing subscription. Per-minute cron needs Vercel Pro; Hobby allows once a day. Anywhere else, any scheduler that sends the bearer token works.
+
+## Install
+
+`installStore` (client-only; its server snapshot offers nothing) holds Chrome's `beforeinstallprompt` event until our button uses it, and reports `standalone`, `ios`, and `offerable`. Safari has no prompt, so `start()` opens `InstallSheet` with steps. `InstallBanner` sits under the wallet header below `lg`, hides while a card is open, and "Not now" holds it back 14 days (`usbordertime.install.dismissed.v1`). The account menu entry stays available while `offerable`. Nothing shows once the app runs from the Home Screen.
+
+All copy is `COPY` in `lib/i18n.ts`, in both languages. The privacy page names alerts and device addresses; keep it true when this changes.

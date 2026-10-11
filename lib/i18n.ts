@@ -121,6 +121,32 @@ export type Copy = {
   sendBackHint: string;
   sentToBack: (name: string) => string;
   movedTo: (name: string, position: number, total: number) => string;
+  alertTitle: string;
+  alertOff: string;
+  alertGroup: string;
+  alertHintOff: string;
+  alertHintOn: (lane: string, minutes: number) => string;
+  alertOnToast: (name: string, lane: string, minutes: number) => string;
+  alertOffToast: (name: string) => string;
+  alertDenied: string;
+  alertUnsupported: string;
+  alertNeedsInstall: string;
+  alertFailed: string;
+  alertTest: string;
+  alertTestTitle: string;
+  alertTestBody: string;
+  alertTestSent: string;
+  alertTestFailed: string;
+  alertPushBody: (lane: string, minutes: number, threshold: number) => string;
+  installTitle: string;
+  installBody: string;
+  installAdd: string;
+  installDismiss: string;
+  installMenu: string;
+  installSheetTitle: string;
+  installStepsIos: readonly string[];
+  installStepsOther: readonly string[];
+  installDone: string;
   mode: ModeCopy;
   tone: Record<Tone, string>;
   laneStatus: Record<StatusKey, string>;
@@ -189,7 +215,7 @@ export const COPY: Record<Locale, Copy> = {
     signInSample: "Sample",
     privacyPolicy: "Privacy policy",
     privacyTitle: "Privacy policy",
-    privacyUpdated: "Updated October 10, 2026",
+    privacyUpdated: "Updated October 11, 2026",
     privacyLead:
       "Border Time shows live wait times at U.S. land ports. This page is what we keep.",
     privacySections: [
@@ -206,12 +232,16 @@ export const COPY: Record<Locale, Copy> = {
         body: "Wait times come from the public CBP feed. Those requests ask for ports and hours, not for anything about you. Nuevo and Viejo play a live camera from IPCamLive in the browser. We do not record that video. When a camera address stops working, we look up the new one and save it for the next visit. That address is not part of your account.",
       },
       {
+        heading: "Wait alerts",
+        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. Signing out removes this device's push address.",
+      },
+      {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
-        body: "Signing out ends the session in this browser. The profile, saved bridges, bookmarks, language, and appearance stay in the database. The app has no button to delete them. This browser keeps its copy until you clear the site's data.",
+        body: "Signing out ends the session in this browser. The profile, saved bridges, bookmarks, language, and appearance stay in the database. The app has no button to delete them. Wait alerts stay until you turn them off. This browser keeps its copy until you clear the site's data.",
       },
       {
         heading: "Children",
@@ -273,6 +303,41 @@ export const COPY: Record<Locale, Copy> = {
     sendBackHint: "Swipe left or right to send it back",
     sentToBack: (name) => `${name} sent to the back`,
     movedTo: (name, position, total) => `${name} moved to ${position} of ${total}`,
+    alertTitle: "Wait alert",
+    alertOff: "Off",
+    alertGroup: "Notify me when the wait is under",
+    alertHintOff: "Pick a wait and we'll notify you when this lane drops under it.",
+    alertHintOn: (lane, minutes) => `We'll notify you when ${lane} drops under ${minutes} min.`,
+    alertOnToast: (name, lane, minutes) => `Alert on: ${name}, ${lane}, under ${minutes} min`,
+    alertOffToast: (name) => `Alert off for ${name}`,
+    alertDenied: "Notifications are blocked. Allow them for this site in your browser settings.",
+    alertUnsupported: "This browser can't send notifications.",
+    alertNeedsInstall: "On iPhone, alerts need Border Time on your Home Screen. Add it, then open it from there.",
+    alertFailed: "Could not save the alert. Try again.",
+    alertTest: "Send a test",
+    alertTestTitle: "Border Time",
+    alertTestBody: "This is a test. A real alert names the bridge and the wait.",
+    alertTestSent: "Test sent. Look for it in a moment.",
+    alertTestFailed: "The test didn't go out. Try again.",
+    alertPushBody: (lane, minutes, threshold) =>
+      `${lane} is ${minutes} min, under your ${threshold} min alert.`,
+    installTitle: "Add Border Time to your Home Screen",
+    installBody: "Open it like an app and get wait alerts.",
+    installAdd: "Add",
+    installDismiss: "Not now",
+    installMenu: "Add to Home Screen",
+    installSheetTitle: "Add to Home Screen",
+    installStepsIos: [
+      "Tap the Share button in Safari's toolbar, or under the ••• menu.",
+      "Scroll down and tap Add to Home Screen.",
+      "Tap Add. Then open Border Time from your Home Screen and sign in there. It keeps its own sign-in.",
+    ],
+    installStepsOther: [
+      "Open your browser's menu.",
+      "Tap Install app, or Add to Home screen.",
+      "Confirm. Border Time opens from your Home Screen.",
+    ],
+    installDone: "Got it",
     mode: {
       car: "Car",
       ready: "Ready lane",
@@ -356,7 +421,7 @@ export const COPY: Record<Locale, Copy> = {
     signInSample: "Ejemplo",
     privacyPolicy: "Política de privacidad",
     privacyTitle: "Política de privacidad",
-    privacyUpdated: "Actualizada el 10 de octubre de 2026",
+    privacyUpdated: "Actualizada el 11 de octubre de 2026",
     privacyLead:
       "Border Time muestra los tiempos de espera en vivo de los puertos terrestres de Estados Unidos. Esta página dice qué guardamos.",
     privacySections: [
@@ -373,12 +438,16 @@ export const COPY: Record<Locale, Copy> = {
         body: "Los tiempos de espera vienen del feed público de CBP. Esas consultas piden puertos y horarios, no datos sobre ti. Nuevo y Viejo reproducen una cámara en vivo de IPCamLive en el navegador. No grabamos ese video. Cuando una dirección de cámara deja de funcionar, buscamos la nueva y la guardamos para la siguiente visita. Esa dirección no forma parte de tu cuenta.",
       },
       {
+        heading: "Alertas de espera",
+        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
+      },
+      {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",
-        body: "Cerrar sesión termina la sesión en este navegador. El perfil, los puentes guardados, las ciudades fijadas, el idioma y la apariencia permanecen en la base de datos. La app no tiene un botón para borrarlos. Este navegador guarda su copia hasta que borres los datos del sitio.",
+        body: "Cerrar sesión termina la sesión en este navegador. El perfil, los puentes guardados, las ciudades fijadas, el idioma y la apariencia permanecen en la base de datos. La app no tiene un botón para borrarlos. Las alertas de espera permanecen hasta que las apagues. Este navegador guarda su copia hasta que borres los datos del sitio.",
       },
       {
         heading: "Menores",
@@ -441,6 +510,41 @@ export const COPY: Record<Locale, Copy> = {
     sendBackHint: "Desliza a la izquierda o a la derecha para enviarla atrás",
     sentToBack: (name) => `${name} pasó atrás`,
     movedTo: (name, position, total) => `${name} pasó al puesto ${position} de ${total}`,
+    alertTitle: "Alerta de espera",
+    alertOff: "Apagada",
+    alertGroup: "Avísame cuando la espera sea menor a",
+    alertHintOff: "Elige una espera y te avisamos cuando este carril baje de ella.",
+    alertHintOn: (lane, minutes) => `Te avisamos cuando ${lane} baje de ${minutes} min.`,
+    alertOnToast: (name, lane, minutes) => `Alerta activa: ${name}, ${lane}, menos de ${minutes} min`,
+    alertOffToast: (name) => `Alerta apagada para ${name}`,
+    alertDenied: "Las notificaciones están bloqueadas. Permítelas para este sitio en los ajustes del navegador.",
+    alertUnsupported: "Este navegador no puede enviar notificaciones.",
+    alertNeedsInstall: "En iPhone, las alertas necesitan Border Time en tu pantalla de inicio. Agrégala y ábrela desde ahí.",
+    alertFailed: "No se pudo guardar la alerta. Intenta de nuevo.",
+    alertTest: "Enviar una prueba",
+    alertTestTitle: "Border Time",
+    alertTestBody: "Esto es una prueba. Una alerta real dice el puente y la espera.",
+    alertTestSent: "Prueba enviada. Búscala en un momento.",
+    alertTestFailed: "La prueba no salió. Intenta de nuevo.",
+    alertPushBody: (lane, minutes, threshold) =>
+      `${lane} está a ${minutes} min, menos de tu alerta de ${threshold} min.`,
+    installTitle: "Agrega Border Time a tu pantalla de inicio",
+    installBody: "Ábrela como una app y recibe alertas de espera.",
+    installAdd: "Agregar",
+    installDismiss: "Ahora no",
+    installMenu: "Agregar a pantalla de inicio",
+    installSheetTitle: "Agregar a pantalla de inicio",
+    installStepsIos: [
+      "Toca el botón Compartir en la barra de Safari, o en el menú •••.",
+      "Baja y toca Agregar a pantalla de inicio.",
+      "Toca Agregar. Luego abre Border Time desde tu pantalla de inicio e inicia sesión ahí. Guarda su propia sesión.",
+    ],
+    installStepsOther: [
+      "Abre el menú de tu navegador.",
+      "Toca Instalar app, o Agregar a pantalla de inicio.",
+      "Confirma. Border Time se abre desde tu pantalla de inicio.",
+    ],
+    installDone: "Entendido",
     mode: {
       car: "Auto",
       ready: "Carril Ready",

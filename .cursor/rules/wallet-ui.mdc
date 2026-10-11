@@ -44,4 +44,6 @@ A tap that switches tabs plays that tab's icon animation. Reduced motion skips i
 
 Below `lg`, sign-in is a translucent card over the bottom of the sign-in screen: "Sign in with Google" and "Swipe up", with light spilling from its top edge and two chevrons pointing up. The card is the swipe area and tracks the finger. Passing the commit line ticks `medium`. Letting go ticks `success` and starts Google sign-in when the release projects past that line, or ticks `soft` and the card springs home when it does not. The page behind stays put. A tap on the card's button still signs in. At `lg` and up the card is hidden and the Google button on the page remains. While Google takes the page, a veil covers the screen with a spinner and the signing-in line. Reduced motion keeps the light and chevrons still, and pulses the spinner instead of turning it.
 
+`CardDetail` ends its lane and status rows with `AlertControl` for the lane on screen, and `WalletPane` shows `InstallBanner` under the header while no card is open. Both are described in `alerts.mdc`.
+
 The empty wallet suggests unsaved Mexican crossings whose city is Brownsville.

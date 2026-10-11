@@ -3,18 +3,22 @@
 import { useLocale } from "@/components/locale-provider";
 import { authClient } from "@/lib/auth/client";
 import { haptic } from "@/lib/haptics";
+import { installStore } from "@/lib/install-store";
+import { disablePush } from "@/lib/push-client";
 import { currentCallbackURL } from "@/lib/routes";
 import { cn } from "@/lib/cn";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { HapticPad } from "./haptic-pad";
+import { useInstall } from "./install-prompt";
 import { SPRING } from "./motion";
 import { GoogleMark } from "./sign-in-screen";
 
 export function AccountButton({ className }: { className?: string }) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
+  const install = useInstall();
   const { data: session, isPending } = authClient.useSession();
   // Session is read in the browser. The server render stays signed out so hydration matches.
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
@@ -78,6 +82,8 @@ export function AccountButton({ className }: { className?: string }) {
     haptic("light");
     setOpen(false);
     setBusy(true);
+    // While still signed in, so the server accepts it. This phone stops getting the account's alerts.
+    await disablePush();
     await authClient.signOut();
     window.location.assign("/");
   };
@@ -150,6 +156,21 @@ export function AccountButton({ className }: { className?: string }) {
               <>
                 <p className="truncate px-3 pt-2 text-[14px] font-semibold">{user.name}</p>
                 <p className="truncate px-3 pb-2 text-[12px] text-muted">{user.email}</p>
+                {install.offerable && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      haptic("selection");
+                      setOpen(false);
+                      void installStore.start();
+                    }}
+                    className="relative flex h-10 w-full items-center rounded-xl px-3 text-left text-[14px] font-medium"
+                  >
+                    <HapticPad />
+                    {copy.installMenu}
+                  </button>
+                )}
                 <Link
                   href="/privacy"
                   role="menuitem"

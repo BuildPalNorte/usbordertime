@@ -12,6 +12,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { forwardRef, useRef } from "react";
 import { CardStack, type StackItem } from "./card-stack";
 import { HapticPad } from "./haptic-pad";
+import { InstallBanner } from "./install-prompt";
 import { haptic } from "@/lib/haptics";
 import { CARD_H, PEEK, SPRING } from "./motion";
 
@@ -122,6 +123,8 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
           <AccountButton />
         </div>
       </header>
+
+      {!open && <InstallBanner />}
 
       {!hydrated || loading ? (
         <StackSkeleton />

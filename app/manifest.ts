@@ -7,6 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Border Time",
     short_name: "Border Time",
     description: COPY.en.metaDescription,
+    id: "/",
     start_url: "/",
     scope: "/",
     display: "standalone",

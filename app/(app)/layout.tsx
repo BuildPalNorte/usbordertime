@@ -1,3 +1,4 @@
+import { AlertSync } from "@/components/wallet/alert-sync";
 import { PreferenceSync } from "@/components/wallet/preference-sync";
 import { SessionGate } from "@/components/wallet/session-gate";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
@@ -55,6 +56,7 @@ async function GatedHome({ children }: { children: ReactNode }) {
   return (
     <SessionGate>
       <PreferenceSync userId={user.id} initial={preference} ready={preferenceReady} />
+      <AlertSync />
       <LiveWallet>{children}</LiveWallet>
     </SessionGate>
   );

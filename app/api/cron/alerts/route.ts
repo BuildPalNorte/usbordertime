@@ -1,0 +1,25 @@
+import { runAlertCheck } from "@/lib/alert-check.server";
+import { timingSafeEqual } from "node:crypto";
+
+const NO_STORE = { "Cache-Control": "private, no-store" };
+
+function authorized(request: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  // No secret configured means nobody can call this. It must never fall open.
+  if (!secret) return false;
+  const given = Buffer.from(request.headers.get("authorization") ?? "");
+  const expected = Buffer.from(`Bearer ${secret}`);
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
+
+/** Once a minute: compare every wait alert with the cached CBP snapshot and send what is due. */
+export async function GET(request: Request) {
+  if (!authorized(request)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
+  }
+  try {
+    return Response.json(await runAlertCheck(), { headers: NO_STORE });
+  } catch {
+    return Response.json({ error: "Alert check failed." }, { status: 502, headers: NO_STORE });
+  }
+}

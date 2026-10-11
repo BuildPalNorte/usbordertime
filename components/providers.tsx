@@ -2,6 +2,7 @@
 
 import { LocaleProvider } from "@/components/locale-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { InstallSheet } from "@/components/wallet/install-prompt";
 import { PortraitLock } from "@/components/wallet/portrait-lock";
 import type { Locale } from "@/lib/i18n";
 import type { ThemeChoice } from "@/lib/theme";
@@ -30,6 +31,7 @@ export function Providers({
         <LocaleProvider locale={locale}>
           <PortraitLock />
           {children}
+          <InstallSheet />
         </LocaleProvider>
       </ThemeProvider>
     </QueryClientProvider>
