@@ -106,12 +106,22 @@ export function AlertButton({
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
-    const onScroll = () => setOpen(false);
+    // Opening focuses the dialog, which can nudge the scroller. Ignore that
+    // before a real scroll should dismiss the picker.
+    let armed = false;
+    const arm = window.setTimeout(() => {
+      armed = true;
+    }, 300);
+    const onScroll = () => {
+      if (!armed) return;
+      setOpen(false);
+    };
     document.addEventListener("pointerdown", onPointer, true);
     window.addEventListener("keydown", onKey);
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onScroll);
     return () => {
+      window.clearTimeout(arm);
       document.removeEventListener("pointerdown", onPointer, true);
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", onScroll, true);
