@@ -157,6 +157,20 @@ body {
   }
 }
 
+/*
+ * Guide nav. The mark is navy on a clear background, so a dark page draws it in white.
+ * brightness(0) first, or the blue clock would invert to amber.
+ */
+:root[data-theme="dark"] .brand-logo {
+  filter: brightness(0) invert(1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand-logo {
+    filter: brightness(0) invert(1);
+  }
+}
+
 /* Staggered list entrance, indexed with --i. */
 .rise {
   animation: rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;

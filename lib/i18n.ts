@@ -15,6 +15,21 @@ type ModeCopy = Record<Exclude<Mode, "sentri">, string>;
 export type Copy = {
   metaTitle: string;
   metaDescription: string;
+  guidesTitle: string;
+  guidesDescription: string;
+  guidesLead: string;
+  guideStartHere: string;
+  guideRelated: string;
+  guideLiveHeading: string;
+  guideLiveBody: string;
+  guideOpenApp: string;
+  guideSourceNote: string;
+  guideOtherLanguage: string;
+  guideAllGuides: string;
+  guideLangName: string;
+  guideBadge: string;
+  guideRead: string;
+  guideOpenShort: string;
   wallet: string;
   crossings: string;
   browse: string;
@@ -249,6 +264,23 @@ export const COPY: Record<Locale, Copy> = {
   en: {
     metaTitle: "Border Time",
     metaDescription: "Live US border wait times for the bridges you cross.",
+    guidesTitle: "Border crossing guides",
+    guidesDescription:
+      "Plain guides to the busiest U.S.–Mexico crossings: which bridge, which lane, and how to read the wait CBP posts.",
+    guidesLead:
+      "Which bridge to take, which lane to use, and what a posted wait really means. For the live number, open Border Time.",
+    guideStartHere: "Start here",
+    guideRelated: "Keep reading",
+    guideLiveHeading: "See the wait right now",
+    guideLiveBody: "Waits change every few minutes. Sign in to Border Time to see the live number for these crossings and save the ones you use.",
+    guideOpenApp: "Open Border Time",
+    guideSourceNote: "Wait times come from U.S. Customs and Border Protection. Which lanes a crossing offers can change, so CBP is the final word.",
+    guideOtherLanguage: "Leer en español",
+    guideAllGuides: "All guides",
+    guideLangName: "English",
+    guideBadge: "Crossing guide",
+    guideRead: "Read guide",
+    guideOpenShort: "Open app",
     wallet: "Bridges",
     crossings: "Crossings",
     browse: "Browse",
@@ -527,6 +559,23 @@ export const COPY: Record<Locale, Copy> = {
   es: {
     metaTitle: "Border Time",
     metaDescription: "Tiempos de espera en vivo de los puentes que cruzas.",
+    guidesTitle: "Guías para cruzar la frontera",
+    guidesDescription:
+      "Guías claras de los cruces más usados entre México y Estados Unidos: qué puente, qué carril y cómo leer el tiempo que publica CBP.",
+    guidesLead:
+      "Qué puente tomar, qué carril usar y qué significa de verdad el tiempo publicado. Para el número en vivo, abre Border Time.",
+    guideStartHere: "Empieza aquí",
+    guideRelated: "Sigue leyendo",
+    guideLiveHeading: "Mira la espera ahora mismo",
+    guideLiveBody: "Las esperas cambian cada pocos minutos. Inicia sesión en Border Time para ver el número en vivo de estos cruces y guardar los que usas.",
+    guideOpenApp: "Abrir Border Time",
+    guideSourceNote: "Los tiempos vienen de la Oficina de Aduanas y Protección Fronteriza de EE. UU. (CBP). Los carriles de cada cruce pueden cambiar, así que CBP tiene la última palabra.",
+    guideOtherLanguage: "Read in English",
+    guideAllGuides: "Todas las guías",
+    guideLangName: "Español",
+    guideBadge: "Guía de cruce",
+    guideRead: "Leer guía",
+    guideOpenShort: "Abrir app",
     wallet: "Puentes",
     crossings: "Cruces",
     browse: "Explorar",
