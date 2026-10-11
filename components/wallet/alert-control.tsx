@@ -8,7 +8,7 @@ import { haptic } from "@/lib/haptics";
 import { modeName } from "@/lib/i18n";
 import { installStore } from "@/lib/install-store";
 import type { Mode } from "@/lib/ports";
-import { enablePush, pushSupport, type PushSupport } from "@/lib/push-client";
+import { enablePush, pushEndpoint, pushSupport, type PushSupport } from "@/lib/push-client";
 import { BellIcon, type BellIconHandle } from "@heroicons-animated/react/bell";
 import { useReducedMotion } from "motion/react";
 import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -122,10 +122,11 @@ export function AlertControl({ port, mode }: { port: PortWaitTime; mode: Mode })
     }
 
     try {
+      const endpoint = await pushEndpoint();
       const response = await fetch("/api/alerts/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ portNumber: port.portNumber, mode }),
+        body: JSON.stringify({ portNumber: port.portNumber, mode, endpoint }),
       });
       setTesting(false);
       if (response.ok) {

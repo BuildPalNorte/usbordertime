@@ -45,6 +45,9 @@ function ensureTables(): Promise<void> {
       await sql`
         create index if not exists push_subscription_user_idx on push_subscription (user_id)
       `;
+      await sql`
+        alter table push_subscription add column if not exists device_key text
+      `;
     })().catch((error: unknown) => {
       ensuring = null;
       throw error;
@@ -117,18 +120,34 @@ export async function deleteAlert(
   `;
 }
 
-/** A device belongs to whoever signed in last. The same phone never serves two accounts. */
-export async function savePushDevice(userId: string, device: PushDevice): Promise<void> {
+/**
+ * A device belongs to whoever signed in last. The same phone never serves two accounts.
+ * `deviceKey` is this browser. Saving replaces that browser's previous address, and any address
+ * saved before device keys existed, so one browser does not collect a stack of them.
+ */
+export async function savePushDevice(
+  userId: string,
+  device: PushDevice,
+  deviceKey: string | null,
+): Promise<void> {
   await ensureTables();
   const sql = database();
   await sql`
-    insert into push_subscription (endpoint, user_id, p256dh, auth)
-    values (${device.endpoint}, ${userId}, ${device.keys.p256dh}, ${device.keys.auth})
+    insert into push_subscription (endpoint, user_id, p256dh, auth, device_key)
+    values (${device.endpoint}, ${userId}, ${device.keys.p256dh}, ${device.keys.auth}, ${deviceKey})
     on conflict (endpoint) do update
     set user_id = excluded.user_id,
         p256dh = excluded.p256dh,
         auth = excluded.auth,
+        device_key = coalesce(excluded.device_key, push_subscription.device_key),
         updated_at = now()
+  `;
+  if (!deviceKey) return;
+  await sql`
+    delete from push_subscription
+    where user_id = ${userId}
+      and endpoint <> ${device.endpoint}
+      and (device_key is null or device_key = ${deviceKey})
   `;
 }
 

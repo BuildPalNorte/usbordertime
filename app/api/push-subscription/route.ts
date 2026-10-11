@@ -1,4 +1,4 @@
-import { parsePushDevice } from "@/lib/alert";
+import { parseDeviceKey, parsePushDevice } from "@/lib/alert";
 import { deletePushDevice, savePushDevice } from "@/lib/alert.server";
 import {
   badRequest,
@@ -21,9 +21,10 @@ export async function PUT(request: Request) {
   }
   const device = parsePushDevice(body);
   if (!device) return badRequest("Expected a push subscription.");
+  const deviceKey = parseDeviceKey((body as { deviceKey?: unknown }).deviceKey);
 
   try {
-    await savePushDevice(userId, device);
+    await savePushDevice(userId, device, deviceKey);
     return Response.json({ ok: true }, { headers: NO_STORE });
   } catch {
     return serverError("Could not save this device.");

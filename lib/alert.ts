@@ -85,6 +85,13 @@ export function parsePushDevice(value: unknown): PushDevice | null {
   return { endpoint: record.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } };
 }
 
+const DEVICE_KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** A stable id for this browser, so a new push address replaces the old one instead of stacking. */
+export function parseDeviceKey(value: unknown): string | null {
+  return typeof value === "string" && DEVICE_KEY.test(value) ? value : null;
+}
+
 export function alertKey(portNumber: string, mode: Mode): string {
   return `${portNumber}:${mode}`;
 }

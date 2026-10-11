@@ -22,9 +22,9 @@ A new alert saves `below` from the current reading, so setting one on an already
 
 ## The device
 
-`public/sw.js` shows pushes, tells a visible window to show `PushBanner`, and handles taps. It caches nothing and does not touch fetches. `next.config.ts` serves it with `Cache-Control: no-cache`. A tap focuses an open window or opens the card, same origin only.
+`public/sw.js` shows pushes and handles taps. It caches nothing and does not touch fetches. `next.config.ts` serves it with `Cache-Control: no-cache`. A tap focuses an open window or opens the card, same origin only.
 
-`POST /api/alerts/test` sends one test to every device on the signed-in account and changes no alert. The "Send a test" button on `AlertControl` calls it after `enablePush()`. Each test uses a new tag. Do not set `requireInteraction`: on macOS that skips the banner and only fills Notification Center. While a window of this site is visible, the service worker also posts `wait-alert` and `PushBanner` shows it, because the system will not banner a notification from the app in front.
+`POST /api/alerts/test` sends one test to every device on the signed-in account and changes no alert. The "Send a test" button on `AlertControl` calls it after `enablePush()`. Each test uses a new tag. Do not set `requireInteraction`: on macOS that skips the banner and only fills Notification Center. Do not also show the alert inside the page. The system notification is the only one.
 
 `enablePush()` runs from the tap on a threshold chip or the test button. It asks permission first, with nothing awaited before it, then registers the worker, subscribes with `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, and `PUT`s `/api/push-subscription`. A device belongs to whoever registered it last. Sign-out calls `disablePush()` while the session still exists, which deletes the device row and unsubscribes. `AlertSync` re-registers the device on open when the account has alerts and permission is already granted. It never prompts.
 

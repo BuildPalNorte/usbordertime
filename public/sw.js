@@ -1,5 +1,5 @@
-/* Border Time service worker. It shows a wait alert and, when this site is on screen,
-   asks the page to show the same alert. It does not cache pages or intercept requests. */
+/* Border Time service worker. It does one job: show a wait alert pushed by the server.
+   It does not cache pages or intercept requests. */
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
@@ -13,28 +13,16 @@ self.addEventListener("push", (event) => {
   }
   if (!data || typeof data.title !== "string") return;
 
-  const title = data.title;
-  const body = typeof data.body === "string" ? data.body : "";
-  const url = typeof data.url === "string" ? data.url : "/";
-
+  // No requireInteraction: on a Mac that option skips the banner and only fills Notification Center.
   event.waitUntil(
-    (async () => {
-      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      // macOS does not banner a notification from the app you're looking at. The open page shows it.
-      for (const client of windows) {
-        if (client.visibilityState !== "visible") continue;
-        client.postMessage({ type: "wait-alert", title, body, url });
-      }
-      // No requireInteraction: on a Mac that option skips the banner and only fills Notification Center.
-      await self.registration.showNotification(title, {
-        body,
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
-        tag: typeof data.tag === "string" ? data.tag : undefined,
-        renotify: true,
-        data: { url },
-      });
-    })(),
+    self.registration.showNotification(data.title, {
+      body: typeof data.body === "string" ? data.body : "",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: typeof data.tag === "string" ? data.tag : undefined,
+      renotify: true,
+      data: { url: typeof data.url === "string" ? data.url : "/" },
+    }),
   );
 });
 

@@ -1,5 +1,20 @@
 import { isIOS, isStandalone } from "@/lib/install-store";
 
+const DEVICE_KEY = "usbordertime.push-device.v1";
+
+/** One id per browser, so a new push address replaces the old one instead of adding another. */
+function deviceKey(): string {
+  try {
+    const stored = window.localStorage.getItem(DEVICE_KEY);
+    if (stored && /^[0-9a-f-]{36}$/i.test(stored)) return stored;
+    const next = crypto.randomUUID();
+    window.localStorage.setItem(DEVICE_KEY, next);
+    return next;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
 /** Browser side of wait alerts. Client-only. */
 
 export type PushSupport =
@@ -40,9 +55,17 @@ async function upload(subscription: PushSubscription): Promise<boolean> {
   const response = await fetch("/api/push-subscription", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(subscription.toJSON()),
+    body: JSON.stringify({ ...subscription.toJSON(), deviceKey: deviceKey() }),
   });
   return response.ok;
+}
+
+/** The push address of this browser, after it has subscribed. */
+export async function pushEndpoint(): Promise<string | null> {
+  if (!("serviceWorker" in navigator)) return null;
+  const registered = await navigator.serviceWorker.getRegistration("/sw.js");
+  const subscription = await registered?.pushManager.getSubscription();
+  return subscription?.endpoint ?? null;
 }
 
 export type EnableResult = "ok" | "denied" | "unsupported" | "needs-install" | "failed";
