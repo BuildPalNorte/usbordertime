@@ -119,10 +119,12 @@ export function AccountButton({ className }: { className?: string }) {
               alt=""
               referrerPolicy="no-referrer"
               onError={() => setImageFailed(true)}
-              className="size-11 object-cover"
+              className="size-5 rounded-full object-cover"
             />
           ) : (
-            <span className="text-[15px] font-semibold">{initial}</span>
+            <span className="flex size-5 items-center justify-center rounded-full bg-muted/40 text-[10px] font-semibold leading-none">
+              {initial}
+            </span>
           )
         ) : (
           <GoogleMark />

@@ -73,7 +73,6 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
         <div className="relative flex h-11 items-center justify-end gap-2">
           <ThemeSwitch />
           <LanguageSwitch />
-          <AccountButton />
           <AnimatePresence mode="popLayout" initial={false}>
             {open ? (
               <motion.button
@@ -119,6 +118,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
               </motion.button>
             )}
           </AnimatePresence>
+          <AccountButton />
         </div>
       </header>
 
