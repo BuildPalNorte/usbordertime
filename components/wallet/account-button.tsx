@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/locale-provider";
+import { ArrowDownTrayIcon } from "@heroicons-animated/react/arrow-down-tray";
 import { authClient } from "@/lib/auth/client";
 import { haptic } from "@/lib/haptics";
 import { installStore } from "@/lib/install-store";
@@ -12,8 +13,10 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { HapticPad } from "./haptic-pad";
 import { useInstall } from "./install-prompt";
+import { LanguageSwitch } from "./language-switch";
 import { SPRING } from "./motion";
 import { GoogleMark } from "./sign-in-screen";
+import { ThemeSwitch } from "./theme-switch";
 
 export function AccountButton({ className }: { className?: string }) {
   const { copy } = useLocale();
@@ -147,7 +150,7 @@ export function AccountButton({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
             transition={SPRING.snap}
-            className="glass absolute top-[calc(100%+0.5rem)] right-0 z-30 w-56 origin-top-right rounded-2xl p-1.5"
+            className="glass absolute top-[calc(100%+0.5rem)] right-0 z-30 w-72 origin-top-right rounded-2xl p-1.5"
           >
             {failed && (
               <p className="px-3 py-2 text-[13px] leading-snug text-danger">{copy.signInFailed}</p>
@@ -156,6 +159,9 @@ export function AccountButton({ className }: { className?: string }) {
               <>
                 <p className="truncate px-3 pt-2 text-[14px] font-semibold">{user.name}</p>
                 <p className="truncate px-3 pb-2 text-[12px] text-muted">{user.email}</p>
+                <LanguageSwitch variant="menu" />
+                <ThemeSwitch variant="menu" />
+                <div role="separator" className="mx-2 my-1 h-px bg-foreground/10" />
                 {install.offerable && (
                   <button
                     type="button"
@@ -165,9 +171,10 @@ export function AccountButton({ className }: { className?: string }) {
                       setOpen(false);
                       void installStore.start();
                     }}
-                    className="relative flex h-10 w-full items-center rounded-xl px-3 text-left text-[14px] font-medium"
+                    className="relative flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium"
                   >
                     <HapticPad />
+                    <ArrowDownTrayIcon size={20} aria-hidden className="shrink-0" />
                     {copy.installMenu}
                   </button>
                 )}

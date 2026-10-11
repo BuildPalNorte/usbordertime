@@ -13,17 +13,47 @@ import { SPRING } from "./motion";
  * Which icon and name are visible is decided in CSS, so the first paint
  * matches the system scheme before this component hydrates.
  */
-export function ThemeSwitch({ className }: { className?: string }) {
+export function ThemeSwitch({
+  variant = "button",
+  className,
+}: {
+  variant?: "button" | "menu";
+  className?: string;
+}) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
+
+  const onClick = () => {
+    haptic("selection");
+    themeStore.toggle();
+  };
+
+  if (variant === "menu") {
+    return (
+      <button
+        type="button"
+        role="menuitem"
+        onClick={onClick}
+        className={cn(
+          "relative flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium",
+          className,
+        )}
+      >
+        <HapticPad />
+        <span className="grid size-5 shrink-0 place-items-center" aria-hidden>
+          <SunIcon className="theme-for-dark col-start-1 row-start-1 size-5" />
+          <MoonIcon className="theme-for-light col-start-1 row-start-1 size-5" />
+        </span>
+        <span className="theme-for-dark">{copy.themeToLight}</span>
+        <span className="theme-for-light">{copy.themeToDark}</span>
+      </button>
+    );
+  }
 
   return (
     <motion.button
       type="button"
-      onClick={() => {
-        haptic("selection");
-        themeStore.toggle();
-      }}
+      onClick={onClick}
       whileTap={reduce ? undefined : { scale: 0.94 }}
       transition={SPRING.snap}
       className={cn(
