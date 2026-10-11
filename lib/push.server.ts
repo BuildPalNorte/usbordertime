@@ -7,8 +7,6 @@ export type PushPayload = {
   url: string;
   /** A newer alert for the same lane replaces the one still on the screen. */
   tag: string;
-  /** A test stays until it is dismissed, so it is not missed while the page is open. */
-  stay?: boolean;
 };
 
 let configured = false;

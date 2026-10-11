@@ -4,6 +4,7 @@ import { LocaleProvider } from "@/components/locale-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { InstallSheet } from "@/components/wallet/install-prompt";
 import { PortraitLock } from "@/components/wallet/portrait-lock";
+import { PushBanner } from "@/components/wallet/push-banner";
 import type { Locale } from "@/lib/i18n";
 import type { ThemeChoice } from "@/lib/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -32,6 +33,7 @@ export function Providers({
           <PortraitLock />
           {children}
           <InstallSheet />
+          <PushBanner />
         </LocaleProvider>
       </ThemeProvider>
     </QueryClientProvider>

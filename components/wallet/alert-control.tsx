@@ -116,7 +116,7 @@ export function AlertControl({ port, mode }: { port: PortWaitTime; mode: Mode })
             ? "unsupported"
             : enabled === "needs-install"
               ? "install"
-              : "failed",
+              : "test",
       );
       return;
     }

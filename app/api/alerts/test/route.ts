@@ -43,8 +43,9 @@ export async function POST(request: Request) {
           title: copy.alertTestTitle,
           body: copy.alertTestBody,
           url: portNumber && mode ? crossingSharePath(portNumber, mode, locale) : "/",
-          tag: "test",
-          stay: true,
+          // A fresh tag every time. Reusing one replaces the old alert in place, and macOS
+          // then files it in Notification Center without showing a banner.
+          tag: `test:${Date.now()}`,
         });
         if (result === "gone") await forgetPushDevice(device.endpoint);
         return result;
