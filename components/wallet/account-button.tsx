@@ -6,10 +6,13 @@ import { authClient } from "@/lib/auth/client";
 import { haptic } from "@/lib/haptics";
 import { installStore } from "@/lib/install-store";
 import { disablePush } from "@/lib/push-client";
-import { currentCallbackURL } from "@/lib/routes";
+import { currentCallbackURL, EXPLORE_PATH, SCHEDULES_PATH } from "@/lib/routes";
+import { ClockIcon } from "@heroicons-animated/react/clock";
+import { MapIcon } from "@heroicons-animated/react/map";
 import { cn } from "@/lib/cn";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { HapticPad } from "./haptic-pad";
 import { useInstall } from "./install-prompt";
@@ -33,6 +36,7 @@ export function AccountButton({ className }: { className?: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+  const onSchedules = usePathname() === SCHEDULES_PATH;
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -162,6 +166,23 @@ export function AccountButton({ className }: { className?: string }) {
                 <LanguageSwitch variant="menu" />
                 <ThemeSwitch variant="menu" />
                 <div role="separator" className="mx-2 my-1 h-px bg-foreground/10" />
+                {/* Phones have the tab bar. A desktop has no tab bar, so the menu is the way over. */}
+                <Link
+                  href={onSchedules ? EXPLORE_PATH : SCHEDULES_PATH}
+                  role="menuitem"
+                  onClick={() => {
+                    haptic("selection");
+                    setOpen(false);
+                  }}
+                  className="hidden h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium lg:flex"
+                >
+                  {onSchedules ? (
+                    <MapIcon size={20} aria-hidden className="shrink-0 [perspective:48px]" />
+                  ) : (
+                    <ClockIcon size={20} aria-hidden className="shrink-0" />
+                  )}
+                  {onSchedules ? copy.browse : copy.schedules}
+                </Link>
                 {install.offerable && (
                   <button
                     type="button"

@@ -3,30 +3,35 @@
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
 import { notePadTick } from "@/lib/haptics";
+import { ClockIcon, type ClockIconHandle } from "@heroicons-animated/react/clock";
 import { MapIcon, type MapIconHandle } from "@heroicons-animated/react/map";
 import { WalletIcon, type WalletIconHandle } from "@heroicons-animated/react/wallet";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 
-export type Tab = "wallet" | "browse";
+export type Tab = "wallet" | "browse" | "schedules";
 
 type Props = {
   tab: Tab;
   onChange: (tab: Tab) => void;
 };
 
-/** Floating translucent tab bar. Mobile only; desktop shows both panes. */
+/**
+ * Floating translucent tab bar. Mobile only; desktop shows both panes.
+ * Three labels would not fit a phone, so only the tab you are on shows its name.
+ */
 export function TabBar({ tab, onChange }: Props) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
   const wallet = useRef<WalletIconHandle>(null);
   const map = useRef<MapIconHandle>(null);
+  const clock = useRef<ClockIconHandle>(null);
 
   function select(next: Tab) {
     if (!reduce && next !== tab) {
-      (next === "wallet" ? wallet : map).current?.startAnimation();
+      (next === "wallet" ? wallet : next === "browse" ? map : clock).current?.startAnimation();
     }
     onChange(next);
   }
@@ -44,6 +49,13 @@ export function TabBar({ tab, onChange }: Props) {
         </TabButton>
         <TabButton active={tab === "browse"} label={copy.browse} onClick={() => select("browse")}>
           <MapIcon ref={map} size={22} aria-hidden className="[perspective:48px]" />
+        </TabButton>
+        <TabButton
+          active={tab === "schedules"}
+          label={copy.schedules}
+          onClick={() => select("schedules")}
+        >
+          <ClockIcon ref={clock} size={22} aria-hidden />
         </TabButton>
       </div>
     </nav>
@@ -106,6 +118,7 @@ function TabButton({
     <motion.button
       type="button"
       aria-current={active ? "page" : undefined}
+      aria-label={label}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerCancel={() => {
@@ -115,8 +128,8 @@ function TabButton({
       whileTap={reduce ? undefined : { scale: 0.94 }}
       transition={SPRING.snap}
       className={cn(
-        "relative z-[1] flex h-12 cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold whitespace-nowrap",
-        active ? "text-foreground" : "text-muted",
+        "relative z-[1] flex h-12 cursor-pointer touch-manipulation items-center justify-center rounded-full text-[15px] font-semibold whitespace-nowrap",
+        active ? "px-5 text-foreground" : "px-[18px] text-muted",
       )}
     >
       {!active && <HapticPad />}
@@ -129,9 +142,22 @@ function TabButton({
           transition={SPRING.snap}
         />
       )}
-      <span className="relative flex items-center gap-2">
+      <span className="relative flex items-center">
         {children}
-        {label}
+        <AnimatePresence initial={false}>
+          {active && (
+            <motion.span
+              key="label"
+              initial={reduce ? { opacity: 0 } : { opacity: 0, width: 0 }}
+              animate={reduce ? { opacity: 1 } : { opacity: 1, width: "auto" }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, width: 0 }}
+              transition={reduce ? { duration: 0.12 } : SPRING.snap}
+              className="overflow-hidden"
+            >
+              <span className="block pl-2">{label}</span>
+            </motion.span>
+          )}
+        </AnimatePresence>
       </span>
     </motion.button>
   );

@@ -169,6 +169,90 @@ body {
   }
 }
 
+/*
+ * The two bells ring in a short burst, then rest about half a second. The burst keeps the same
+ * pace as before; the idle tail is what got shorter. It plays twice each time the pane is shown
+ * (display toggling restarts it), then stops.
+ */
+.schedule-bell {
+  transform-box: view-box;
+  animation: schedule-bell-left 0.85s ease-in-out 2;
+}
+
+.schedule-bell-right {
+  animation-name: schedule-bell-right;
+}
+
+@keyframes schedule-bell-left {
+  0%,
+  45%,
+  100% {
+    transform: translateX(0);
+  }
+  7% {
+    transform: translateX(-1.4px);
+  }
+  16% {
+    transform: translateX(1.4px);
+  }
+  25% {
+    transform: translateX(-1.1px);
+  }
+  34% {
+    transform: translateX(0.6px);
+  }
+}
+
+@keyframes schedule-bell-right {
+  0%,
+  45%,
+  100% {
+    transform: translateX(0);
+  }
+  7% {
+    transform: translateX(1.4px);
+  }
+  16% {
+    transform: translateX(-1.4px);
+  }
+  25% {
+    transform: translateX(1.1px);
+  }
+  34% {
+    transform: translateX(-0.6px);
+  }
+}
+
+/*
+ * The clock body (face, hands, feet) rocks on its own axis as one piece, on the same
+ * 0.85s ring-then-rest timing as the bells, and stops after the same two plays.
+ */
+.schedule-wobble {
+  transform-box: view-box;
+  transform-origin: 12px 13px;
+  animation: schedule-wobble 0.85s ease-in-out 2;
+}
+
+@keyframes schedule-wobble {
+  0%,
+  45%,
+  100% {
+    transform: rotate(0deg);
+  }
+  7% {
+    transform: rotate(-3deg);
+  }
+  16% {
+    transform: rotate(3deg);
+  }
+  25% {
+    transform: rotate(-2deg);
+  }
+  34% {
+    transform: rotate(1deg);
+  }
+}
+
 .shimmer {
   background: linear-gradient(
     100deg,
@@ -412,7 +496,9 @@ body {
   }
   .shimmer,
   .sign-in-card-light,
-  .sign-in-chevrons > svg {
+  .sign-in-chevrons > svg,
+  .schedule-bell,
+  .schedule-wobble {
     animation: none;
   }
   .sign-in-spinner {

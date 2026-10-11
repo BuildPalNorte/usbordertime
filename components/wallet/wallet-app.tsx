@@ -3,11 +3,18 @@
 import { useLocale } from "@/components/locale-provider";
 import { NotFoundScreen } from "@/components/not-found-screen";
 import type { BorderWaitTimes, PortWaitTime } from "@/lib/border-wait-times";
+import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { cityPinKey, pinStore } from "@/lib/pin-store";
 import { shareMessage } from "@/lib/i18n";
 import { defaultMode, isMode, paletteFor, portName, readLane, type Mode } from "@/lib/ports";
-import { crossingPath, crossingSharePath, EXPLORE_PATH, parseAppPath } from "@/lib/routes";
+import {
+  crossingPath,
+  crossingSharePath,
+  EXPLORE_PATH,
+  parseAppPath,
+  SCHEDULES_PATH,
+} from "@/lib/routes";
 import { walletStore } from "@/lib/wallet-store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReducedMotion } from "motion/react";
@@ -26,11 +33,20 @@ import { CameraStreamProvider } from "./camera-streams";
 import { BrowsePane } from "./browse-pane";
 import type { StackItem } from "./card-stack";
 import { Glow } from "./glow";
+import { SchedulesPane } from "./schedules-pane";
 import { TabBar, type Tab } from "./tab-bar";
 import { Toast, type ToastState } from "./toast";
 import { WalletPane } from "./wallet-pane";
 
 const NAV = { scroll: false } as const;
+
+/** Left to right in the tab bar, so a pane slides in from the side you moved toward. */
+const TAB_ORDER: readonly Tab[] = ["wallet", "browse", "schedules"];
+const TAB_PATH: Record<Tab, string> = {
+  wallet: "/",
+  browse: EXPLORE_PATH,
+  schedules: SCHEDULES_PATH,
+};
 
 function laneFromLocation(): Mode | null {
   const lane = new URLSearchParams(window.location.search).get("lane");
@@ -187,6 +203,7 @@ export function WalletApp({
   useEffect(() => {
     router.prefetch("/");
     router.prefetch(EXPLORE_PATH);
+    router.prefetch(SCHEDULES_PATH);
   }, [router]);
 
   useEffect(() => {
@@ -194,7 +211,9 @@ export function WalletApp({
       ? copy.pageTitle(shareMessage(openItem.port, openItem.mode, copy).title)
       : tab === "browse"
         ? copy.pageTitle(copy.browse)
-        : copy.metaTitle;
+        : tab === "schedules"
+          ? copy.pageTitle(copy.schedules)
+          : copy.metaTitle;
   }, [openItem, tab, copy]);
 
   useEffect(() => {
@@ -238,7 +257,7 @@ export function WalletApp({
   const prevTab = useRef(tab);
   useLayoutEffect(() => {
     if (prevTab.current === tab) return;
-    setPaneFrom(tab === "browse" ? 28 : -28);
+    setPaneFrom(TAB_ORDER.indexOf(tab) > TAB_ORDER.indexOf(prevTab.current) ? 28 : -28);
     prevTab.current = tab;
   }, [tab]);
 
@@ -246,8 +265,8 @@ export function WalletApp({
     (next: Tab) => {
       if (next === tab) return;
       haptic("selection");
-      setPaneFrom(next === "browse" ? 28 : -28);
-      go(next === "browse" ? EXPLORE_PATH : "/");
+      setPaneFrom(TAB_ORDER.indexOf(next) > TAB_ORDER.indexOf(tab) ? 28 : -28);
+      go(TAB_PATH[next]);
     },
     [tab, go],
   );
@@ -514,7 +533,8 @@ export function WalletApp({
           </section>
 
           <section
-            className="pane"
+            // On a desktop the right column holds Browse, or Schedules while that tab is open.
+            className={cn("pane", tab === "schedules" && "lg:hidden")}
             data-active={tab === "browse"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
             aria-label={copy.browseCrossings}
@@ -535,6 +555,20 @@ export function WalletApp({
                   else if (performance.now() - started > 280) haptic("success");
                 });
               }}
+            />
+          </section>
+
+          <section
+            className={cn("pane", tab !== "schedules" && "lg:hidden")}
+            data-active={tab === "schedules"}
+            style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
+            aria-label={copy.schedules}
+          >
+            <SchedulesPane
+              ports={ports}
+              items={items}
+              hydrated={hydrated}
+              onBrowse={() => changeTab("browse")}
             />
           </section>
         </div>

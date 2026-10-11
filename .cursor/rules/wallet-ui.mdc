@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Wallet UI
 
-`WalletApp` owns the wait-times query, both stores, the open card, the tab, and toasts. The tab and open card are the URL: `/` is Puentes, `/explore` is Explorar, and `/{portNumber}` is that card open. Panes receive that snapshot and callbacks. They do not write storage. A crossing loads its own hourly average when it is on screen.
+`WalletApp` owns the wait-times query, both stores, the open card, the tab, and toasts. The tab and open card are the URL: `/` is Puentes, `/explore` is Explorar, `/schedules` is Horarios, and `/{portNumber}` is that card open. The tab bar has three tabs and only the active one shows its name. Panes receive that snapshot and callbacks. They do not write storage. A crossing loads its own hourly average when it is on screen.
 
 The `["wait-times"]` query starts from the server snapshot, treats it as fresh for 30 seconds, and refetches every 60 seconds. `loading` means `isPending && !data`, so a failed first load can show the error state.
 

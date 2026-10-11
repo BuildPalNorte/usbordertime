@@ -14,7 +14,7 @@ function database() {
 let ensuring: Promise<void> | null = null;
 
 /** `wait_alert` is the rule; `push_subscription` is the device. Both belong to a profile. */
-function ensureTables(): Promise<void> {
+export function ensureTables(): Promise<void> {
   if (!ensuring) {
     const sql = database();
     ensuring = (async () => {

@@ -1,6 +1,6 @@
 ---
 description: Wait alerts, Web Push, the cron check, and the Home Screen install flow
-globs: lib/alert.ts,lib/alert.server.ts,lib/alert-check.server.ts,lib/push.server.ts,lib/push-client.ts,lib/install-store.ts,lib/session.server.ts,app/api/alerts/**/*.ts,app/api/push-subscription/**/*.ts,app/api/cron/**/*.ts,public/sw.js,vercel.json,components/wallet/alert-control.tsx,components/wallet/alert-sync.tsx,components/wallet/use-alerts.ts,components/wallet/install-prompt.tsx
+globs: lib/schedule.ts,lib/schedule.server.ts,lib/schedule-check.server.ts,app/api/schedules/**/*.ts,components/wallet/schedules-pane.tsx,components/wallet/schedule-sheet.tsx,components/wallet/use-schedules.ts,lib/alert.ts,lib/alert.server.ts,lib/alert-check.server.ts,lib/push.server.ts,lib/push-client.ts,lib/install-store.ts,lib/session.server.ts,app/api/alerts/**/*.ts,app/api/push-subscription/**/*.ts,app/api/cron/**/*.ts,public/sw.js,vercel.json,components/wallet/alert-control.tsx,components/wallet/alert-sync.tsx,components/wallet/use-alerts.ts,components/wallet/install-prompt.tsx
 alwaysApply: false
 ---
 
@@ -19,6 +19,16 @@ An alert is "tell me when this lane at this crossing drops under N minutes." It 
 - `minutes` is null: a closed lane (`tone === "closed"`) re-arms. A pending update changes nothing.
 
 A new alert saves `below` from the current reading, so setting one on an already-short lane waits for the next drop. A push that answers 404 or 410 deletes that device. The payload is written in the owner's `preference.locale` (English when unset), has a 10 minute TTL, and its `tag` is `port:mode` so a newer alert replaces the old one. It links to `crossingSharePath`.
+
+## Schedules
+
+A schedule is "at this time, on these days, send me the current wait at these bridges." It is separate from `wait_alert` and `preference`. `schedule` is one row per schedule (`id`, `minute` after local midnight in 5 minute steps, `days` as a bitmask with Sunday as bit 0, `time_zone`, one `mode` for the whole schedule, `ports` as jsonb, `enabled`, `last_sent_on` as a local `YYYY-MM-DD`). It cascades from `profile` and is created on first use. An account holds at most `MAX_SCHEDULES` (8), each with at most `MAX_SCHEDULE_PORTS` (6) bridges. `lib/schedule.ts` is client-safe; `schedule.server.ts` and `schedule-check.server.ts` are not.
+
+The same cron route runs `runScheduleCheck()` after the alert check; one failing does not stop the other. A schedule is due when, on the wall clock of its own time zone, today is one of its days, the time is within `SEND_WINDOW` (5) minutes after its time, and `last_sent_on` is not today. Comparing wall-clock time, not a stored UTC hour, is what keeps it right across daylight saving. `claimSend` sets `last_sent_on` in one statement so overlapping runs send once. If no device accepted, `releaseSend` clears it and the next minute in the window retries. If none of its bridges are in the feed, the day stays claimed and nothing is sent. Saving a schedule whose time has already passed today marks today as sent, so it starts tomorrow.
+
+The push is one notification: title `time · lane`, one body line per bridge (`readLane`, with the status when there is no minute count), in the owner's locale, tagged `schedule:id:date`. A tap opens `/`. The time zone is the device's, sent on every save. `AlertSync` re-registers the device for an account with alerts or schedules. Saving asks for notification permission from the tap, like a wait alert.
+
+The screen is the third tab, `/schedules`: `SchedulesPane` (cards with a pause switch) and `ScheduleSheet`. Creating or editing walks bridge, then time, then days. The bridge step lists the wallet (a new schedule starts with none chosen) and the lane sits there with it. At `lg` it takes the right column from Browse, and the account menu switches between the two. `parseAppPath` checks `/schedules` before the port rule because the word is shaped like a port number.
 
 ## The device
 

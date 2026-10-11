@@ -133,6 +133,41 @@ export type Copy = {
   alertNeedsInstall: string;
   alertFailed: string;
   alertSchedule: string;
+  schedules: string;
+  schedulesSummary: (count: number) => string;
+  scheduleEmptyTitle: string;
+  scheduleEmptyBody: string;
+  scheduleNeedBridge: string;
+  scheduleNew: string;
+  scheduleNewTitle: string;
+  scheduleEditTitle: string;
+  scheduleStepBridge: string;
+  scheduleStepTime: string;
+  scheduleStepDays: string;
+  scheduleNext: string;
+  scheduleBack: string;
+  scheduleTime: string;
+  scheduleDays: string;
+  scheduleEveryDay: string;
+  scheduleWeekdays: string;
+  scheduleLane: string;
+  scheduleBridges: string;
+  scheduleBridgesHint: (selected: number, max: number) => string;
+  scheduleNoBridges: string;
+  scheduleZone: (zone: string) => string;
+  scheduleSave: string;
+  scheduleSaving: string;
+  scheduleDelete: string;
+  scheduleClose: string;
+  schedulePause: (time: string) => string;
+  scheduleResume: (time: string) => string;
+  schedulePaused: string;
+  scheduleLimit: string;
+  scheduleFailed: string;
+  scheduleMissing: string;
+  scheduleTitle: (time: string, lane: string) => string;
+  scheduleWait: (name: string, minutes: number) => string;
+  scheduleStatus: (name: string, status: string) => string;
   alertTestTitle: string;
   alertTestBody: string;
   alertPushBody: (lane: string, minutes: number, threshold: number) => string;
@@ -231,11 +266,11 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Wait alerts",
-        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. Signing out removes this device's push address.",
+        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make a schedule, we also save its time, days, time zone, lane, and bridges with your account, and send one notification with the current waits at that time. Deleting a schedule deletes it. Signing out removes this device's push address.",
       },
       {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts, your schedules, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
@@ -312,7 +347,44 @@ export const COPY: Record<Locale, Copy> = {
     alertUnsupported: "This browser can't send notifications.",
     alertNeedsInstall: "On iPhone, alerts need Border Time on your Home Screen. Add it, then open it from there.",
     alertFailed: "Could not save the alert. Try again.",
-    alertSchedule: "Schedule a notification",
+    alertSchedule: "Set a wait alert",
+    schedules: "Schedules",
+    schedulesSummary: (count) =>
+      count === 0 ? "Nothing scheduled" : count === 1 ? "1 schedule" : `${count} schedules`,
+    scheduleEmptyTitle: "A wait report, on time",
+    scheduleEmptyBody:
+      "Choose a bridge you saved, a time, and the days. We send the current wait to your phone, right then.",
+    scheduleNeedBridge: "Save a bridge first. Schedules report on the bridges in your wallet.",
+    scheduleNew: "New schedule",
+    scheduleNewTitle: "New schedule",
+    scheduleEditTitle: "Edit schedule",
+    scheduleStepBridge: "Which bridge?",
+    scheduleStepTime: "What time?",
+    scheduleStepDays: "Which days?",
+    scheduleNext: "Continue",
+    scheduleBack: "Back",
+    scheduleTime: "Send at",
+    scheduleDays: "On",
+    scheduleEveryDay: "Every day",
+    scheduleWeekdays: "Weekdays",
+    scheduleLane: "Lane",
+    scheduleBridges: "Bridges",
+    scheduleBridgesHint: (selected, max) => `${selected} of ${max} chosen`,
+    scheduleNoBridges: "Choose at least one bridge.",
+    scheduleZone: (zone) => `Times follow ${zone.replaceAll("_", " ")}`,
+    scheduleSave: "Save schedule",
+    scheduleSaving: "Saving…",
+    scheduleDelete: "Delete",
+    scheduleClose: "Close",
+    schedulePause: (time) => `Pause the ${time} schedule`,
+    scheduleResume: (time) => `Resume the ${time} schedule`,
+    schedulePaused: "Paused",
+    scheduleLimit: "You can keep up to 8 schedules. Delete one to add another.",
+    scheduleFailed: "Could not save the schedule. Try again.",
+    scheduleMissing: "That schedule no longer exists.",
+    scheduleTitle: (time, lane) => `${time} · ${lane}`,
+    scheduleWait: (name, minutes) => `${name}: ${minutes} min`,
+    scheduleStatus: (name, status) => `${name}: ${status}`,
     alertTestTitle: "Border Time",
     alertTestBody: "This is a test. A real alert names the bridge and the wait.",
     alertPushBody: (lane, minutes, threshold) =>
@@ -435,11 +507,11 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Alertas de espera",
-        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
+        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas un horario, también guardamos con tu cuenta su hora, días, zona horaria, carril y puentes, y enviamos una notificación con las esperas actuales a esa hora. Al eliminar un horario, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
       },
       {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus horarios y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",
@@ -517,7 +589,44 @@ export const COPY: Record<Locale, Copy> = {
     alertUnsupported: "Este navegador no puede enviar notificaciones.",
     alertNeedsInstall: "En iPhone, las alertas necesitan Border Time en tu pantalla de inicio. Agrégala y ábrela desde ahí.",
     alertFailed: "No se pudo guardar la alerta. Intenta de nuevo.",
-    alertSchedule: "Programar una notificación",
+    alertSchedule: "Poner una alerta de espera",
+    schedules: "Horarios",
+    schedulesSummary: (count) =>
+      count === 0 ? "Nada programado" : count === 1 ? "1 horario" : `${count} horarios`,
+    scheduleEmptyTitle: "Tu reporte de espera, a tiempo",
+    scheduleEmptyBody:
+      "Elige un puente que guardaste, una hora y los días. Te mandamos la espera actual al teléfono, justo entonces.",
+    scheduleNeedBridge: "Guarda un puente primero. Los horarios reportan los puentes de tu cartera.",
+    scheduleNew: "Nuevo horario",
+    scheduleNewTitle: "Nuevo horario",
+    scheduleEditTitle: "Editar horario",
+    scheduleStepBridge: "¿Qué puente?",
+    scheduleStepTime: "¿A qué hora?",
+    scheduleStepDays: "¿Qué días?",
+    scheduleNext: "Continuar",
+    scheduleBack: "Atrás",
+    scheduleTime: "Enviar a las",
+    scheduleDays: "Los días",
+    scheduleEveryDay: "Todos los días",
+    scheduleWeekdays: "Entre semana",
+    scheduleLane: "Carril",
+    scheduleBridges: "Puentes",
+    scheduleBridgesHint: (selected, max) => `${selected} de ${max} elegidos`,
+    scheduleNoBridges: "Elige al menos un puente.",
+    scheduleZone: (zone) => `Las horas siguen ${zone.replaceAll("_", " ")}`,
+    scheduleSave: "Guardar horario",
+    scheduleSaving: "Guardando…",
+    scheduleDelete: "Eliminar",
+    scheduleClose: "Cerrar",
+    schedulePause: (time) => `Pausar el horario de las ${time}`,
+    scheduleResume: (time) => `Reanudar el horario de las ${time}`,
+    schedulePaused: "En pausa",
+    scheduleLimit: "Puedes tener hasta 8 horarios. Elimina uno para agregar otro.",
+    scheduleFailed: "No se pudo guardar el horario. Intenta de nuevo.",
+    scheduleMissing: "Ese horario ya no existe.",
+    scheduleTitle: (time, lane) => `${time} · ${lane}`,
+    scheduleWait: (name, minutes) => `${name}: ${minutes} min`,
+    scheduleStatus: (name, status) => `${name}: ${status}`,
     alertTestTitle: "Border Time",
     alertTestBody: "Esto es una prueba. Una alerta real dice el puente y la espera.",
     alertPushBody: (lane, minutes, threshold) =>

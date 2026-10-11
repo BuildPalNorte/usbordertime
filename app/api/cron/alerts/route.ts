@@ -1,4 +1,5 @@
 import { runAlertCheck } from "@/lib/alert-check.server";
+import { runScheduleCheck } from "@/lib/schedule-check.server";
 import { timingSafeEqual } from "node:crypto";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
@@ -12,14 +13,23 @@ function authorized(request: Request): boolean {
   return given.length === expected.length && timingSafeEqual(given, expected);
 }
 
-/** Once a minute: compare every wait alert with the cached CBP snapshot and send what is due. */
+/**
+ * Once a minute: compare every wait alert with the cached CBP snapshot and send what is due,
+ * then send the scheduled summaries whose time has come. One failing does not stop the other.
+ */
 export async function GET(request: Request) {
   if (!authorized(request)) {
     return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
   }
-  try {
-    return Response.json(await runAlertCheck(), { headers: NO_STORE });
-  } catch {
+  const [alerts, schedules] = await Promise.allSettled([runAlertCheck(), runScheduleCheck()]);
+  if (alerts.status === "rejected" && schedules.status === "rejected") {
     return Response.json({ error: "Alert check failed." }, { status: 502, headers: NO_STORE });
   }
+  return Response.json(
+    {
+      ...(alerts.status === "fulfilled" ? alerts.value : { error: "Alert check failed." }),
+      schedules: schedules.status === "fulfilled" ? schedules.value : { error: "Schedule check failed." },
+    },
+    { headers: NO_STORE },
+  );
 }
