@@ -8,6 +8,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
+import { GoogleMark } from "./sign-in-screen";
 
 export function AccountButton({ className }: { className?: string }) {
   const { copy } = useLocale();
@@ -76,7 +77,7 @@ export function AccountButton({ className }: { className?: string }) {
     setOpen(false);
     setBusy(true);
     await authClient.signOut();
-    setBusy(false);
+    window.location.assign("/");
   };
 
   const label = user ? copy.signedInAs(user.name || user.email) : copy.signInWithGoogle;
@@ -164,26 +165,3 @@ export function AccountButton({ className }: { className?: string }) {
 }
 
 const emptySubscribe = () => () => {};
-
-function GoogleMark() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-5">
-      <path
-        fill="#4285F4"
-        d="M23.04 12.26c0-.82-.07-1.6-.2-2.36H12v4.47h6.2a5.3 5.3 0 0 1-2.3 3.48v2.89h3.72c2.18-2 3.42-4.96 3.42-8.48Z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.72-2.89c-1.07.72-2.44 1.15-4.22 1.15-3.24 0-5.99-2.19-6.97-5.13H1.2v2.98A12 12 0 0 0 12 24Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.03 14.22A7.2 7.2 0 0 1 4.65 12c0-.77.13-1.52.38-2.22V6.8H1.2A12 12 0 0 0 0 12c0 1.94.46 3.77 1.2 5.2l3.83-2.98Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.23 2.69 1.2 6.8l3.83 2.98c.98-2.94 3.73-5.01 6.97-5.01Z"
-      />
-    </svg>
-  );
-}

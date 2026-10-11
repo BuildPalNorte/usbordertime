@@ -65,10 +65,13 @@ export type Copy = {
   languageToEnglish: string;
   themeToLight: string;
   themeToDark: string;
+  signInTitle: string;
+  signInBody: string;
   signInWithGoogle: string;
   signOut: string;
   signedInAs: (name: string) => string;
   signInFailed: string;
+  profileError: string;
   canadianBorder: string;
   mexicanBorder: string;
   cbpNotice: string;
@@ -160,10 +163,13 @@ export const COPY: Record<Locale, Copy> = {
     languageToEnglish: "Switch to English",
     themeToLight: "Switch to light mode",
     themeToDark: "Switch to dark mode",
+    signInTitle: "Border Time",
+    signInBody: "Sign in with Google to see the bridges you cross.",
     signInWithGoogle: "Sign in with Google",
     signOut: "Sign out",
     signedInAs: (name) => `Signed in as ${name}`,
     signInFailed: "Could not sign in with Google",
+    profileError: "Your profile could not be saved. Try again.",
     canadianBorder: "Canadian border",
     mexicanBorder: "Mexican border",
     cbpNotice: "CBP notice, in English",
@@ -276,10 +282,13 @@ export const COPY: Record<Locale, Copy> = {
     languageToEnglish: "Switch to English",
     themeToLight: "Cambiar a modo claro",
     themeToDark: "Cambiar a modo oscuro",
+    signInTitle: "Border Time",
+    signInBody: "Inicia sesión con Google para ver los puentes que cruzas.",
     signInWithGoogle: "Iniciar sesión con Google",
     signOut: "Cerrar sesión",
     signedInAs: (name) => `Sesión de ${name}`,
     signInFailed: "No se pudo iniciar sesión con Google",
+    profileError: "No se pudo guardar tu perfil. Intenta de nuevo.",
     canadianBorder: "Frontera con Canadá",
     mexicanBorder: "Frontera con México",
     cbpNotice: "Aviso de CBP, en inglés",
