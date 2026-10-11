@@ -5,6 +5,7 @@ import { ArrowDownTrayIcon } from "@heroicons-animated/react/arrow-down-tray";
 import { authClient } from "@/lib/auth/client";
 import { haptic } from "@/lib/haptics";
 import { installStore } from "@/lib/install-store";
+import { nextMilestone, streakLevel } from "@/lib/streak";
 import { disablePush } from "@/lib/push-client";
 import { currentCallbackURL, EXPLORE_PATH, SCHEDULES_PATH } from "@/lib/routes";
 import { ClockIcon } from "@heroicons-animated/react/clock";
@@ -20,6 +21,9 @@ import { LanguageSwitch } from "./language-switch";
 import { SPRING } from "./motion";
 import { GoogleMark } from "./sign-in-screen";
 import { ThemeSwitch } from "./theme-switch";
+import { DevStreakPicker } from "./dev-streak-picker";
+import { LEVEL_COLOR, LevelIcon, useIconLoop } from "./streak-chip";
+import { useStreak } from "./use-streak";
 
 export function AccountButton({ className }: { className?: string }) {
   const { copy } = useLocale();
@@ -36,6 +40,10 @@ export function AccountButton({ className }: { className?: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+  const streak = useStreak();
+  const level = streakLevel(streak?.current ?? 0);
+  const levelColor = LEVEL_COLOR[level] ?? LEVEL_COLOR[0];
+  const levelHandle = useIconLoop(level, open);
   const onSchedules = usePathname() === SCHEDULES_PATH;
 
   useEffect(() => {
@@ -163,6 +171,38 @@ export function AccountButton({ className }: { className?: string }) {
               <>
                 <p className="truncate px-3 pt-2 text-[14px] font-semibold">{user.name}</p>
                 <p className="truncate px-3 pb-2 text-[12px] text-muted">{user.email}</p>
+                {streak && streak.current > 0 && (
+                  <div
+                    className="mx-2 mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5"
+                    style={{ backgroundColor: `color-mix(in srgb, ${levelColor} 14%, transparent)` }}
+                  >
+                    <span className="shrink-0" style={{ color: levelColor }}>
+                      <LevelIcon size={24} level={level} handle={levelHandle} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[14px] leading-tight font-semibold">
+                        {copy.streakDays(streak.current)}
+                        <span className="ml-1.5 text-[12px] font-semibold" style={{ color: levelColor }}>
+                          {copy.streakLevels[level]}
+                        </span>
+                      </p>
+                      <p className="truncate text-[12px] leading-tight text-muted">
+                        {streak.current === 1
+                          ? copy.streakStart
+                          : copy.streakDetail(streak.longest, streak.totalDays)}
+                      </p>
+                      {streak.current > 1 && nextMilestone(streak.current) !== null && (
+                        <p className="truncate text-[12px] leading-tight text-muted">
+                          {copy.streakNext(
+                            (nextMilestone(streak.current) ?? 0) - streak.current,
+                            nextMilestone(streak.current) ?? 0,
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {process.env.NODE_ENV === "development" && <DevStreakPicker />}
                 <LanguageSwitch variant="menu" />
                 <ThemeSwitch variant="menu" />
                 <div role="separator" className="mx-2 my-1 h-px bg-foreground/10" />

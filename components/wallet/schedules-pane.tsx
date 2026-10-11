@@ -21,6 +21,7 @@ import { PlusIcon } from "@heroicons-animated/react/plus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { AccountButton } from "./account-button";
+import { StreakChip } from "./streak-chip";
 import { HapticPad } from "./haptic-pad";
 import { REDUCED, SPRING } from "./motion";
 import { ScheduleSheet } from "./schedule-sheet";
@@ -100,6 +101,7 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
               <PlusIcon size={20} aria-hidden />
             </motion.button>
           )}
+          <StreakChip className="lg:hidden" />
           <AccountButton className="lg:hidden" />
         </div>
       </header>

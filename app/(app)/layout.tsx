@@ -1,6 +1,7 @@
 import { AlertSync } from "@/components/wallet/alert-sync";
 import { PreferenceSync } from "@/components/wallet/preference-sync";
 import { SessionGate } from "@/components/wallet/session-gate";
+import { StreakSync } from "@/components/wallet/streak-sync";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
@@ -57,6 +58,7 @@ async function GatedHome({ children }: { children: ReactNode }) {
     <SessionGate>
       <PreferenceSync userId={user.id} initial={preference} ready={preferenceReady} />
       <AlertSync />
+      <StreakSync />
       <LiveWallet>{children}</LiveWallet>
     </SessionGate>
   );

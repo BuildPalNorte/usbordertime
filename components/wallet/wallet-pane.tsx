@@ -4,6 +4,7 @@ import { useLocale } from "@/components/locale-provider";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import type { Mode } from "@/lib/ports";
 import { AccountButton } from "./account-button";
+import { StreakChip } from "./streak-chip";
 import { ArrowPathIcon } from "@heroicons-animated/react/arrow-path";
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -137,6 +138,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
               </motion.button>
             )}
           </AnimatePresence>
+          <StreakChip />
           <AccountButton />
         </div>
       </header>

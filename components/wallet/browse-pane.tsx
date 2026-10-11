@@ -30,6 +30,7 @@ import { HapticPad } from "./haptic-pad";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { haptic } from "@/lib/haptics";
 import { AccountButton } from "./account-button";
+import { StreakChip } from "./streak-chip";
 import {
   BookmarkIcon,
   type BookmarkIconHandle,
@@ -199,6 +200,7 @@ export function BrowsePane({
           </p>
         </div>
         <div className="flex items-center gap-2 lg:hidden">
+          <StreakChip />
           <AccountButton />
         </div>
       </header>

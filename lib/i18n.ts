@@ -80,6 +80,12 @@ export type Copy = {
   privacySections: readonly { heading: string; body: string }[];
   back: string;
   signOut: string;
+  streakDays: (days: number) => string;
+  /** One name per level, lowest first. */
+  streakLevels: readonly string[];
+  streakStart: string;
+  streakDetail: (best: number, total: number) => string;
+  streakNext: (days: number, goal: number) => string;
   signedInAs: (name: string) => string;
   signInFailed: string;
   profileError: string;
@@ -324,8 +330,12 @@ export const COPY: Record<Locale, Copy> = {
         body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make a schedule, we also save its time, days, time zone, lane, bridges, and any name you gave it with your account, and send one notification with the current waits at that time. If you named it, that name is the notification's title. Deleting a schedule deletes it. Signing out removes this device's push address.",
       },
       {
+        heading: "Visit streak",
+        body: "To count a streak, the first time you open the app each day we save that day's date in your time zone with your account, along with your current streak, your longest streak, and how many days you have opened the app. We do not record what you looked at.",
+      },
+      {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts, your schedules, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts, your schedules, your visit streak, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
@@ -342,6 +352,11 @@ export const COPY: Record<Locale, Copy> = {
     ],
     back: "Back",
     signOut: "Sign out",
+    streakDays: (days) => `${days}-day streak`,
+    streakLevels: ["Spark", "Flame", "Blaze", "Rocket", "Star", "Legend"],
+    streakStart: "Come back tomorrow to start a streak",
+    streakDetail: (best, total) => `Best ${best} · ${total} ${total === 1 ? "day" : "days"} here`,
+    streakNext: (days, goal) => `${days} ${days === 1 ? "day" : "days"} to ${goal}`,
     signedInAs: (name) => `Signed in as ${name}`,
     signInFailed: "Could not sign in with Google",
     profileError: "Your profile could not be saved. Try again.",
@@ -593,8 +608,12 @@ export const COPY: Record<Locale, Copy> = {
         body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas un horario, también guardamos con tu cuenta su hora, días, zona horaria, carril, puentes y el nombre que le hayas puesto, y enviamos una notificación con las esperas actuales a esa hora. Si le pusiste nombre, ese nombre es el título de la notificación. Al eliminar un horario, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
       },
       {
+        heading: "Racha de visitas",
+        body: "Para contar una racha, la primera vez que abres la app cada día guardamos con tu cuenta la fecha de ese día en tu zona horaria, junto con tu racha actual, tu racha más larga y cuántos días has abierto la app. No registramos qué viste.",
+      },
+      {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus horarios y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus horarios, tu racha de visitas y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",
@@ -611,6 +630,11 @@ export const COPY: Record<Locale, Copy> = {
     ],
     back: "Volver",
     signOut: "Cerrar sesión",
+    streakDays: (days) => `Racha de ${days} ${days === 1 ? "día" : "días"}`,
+    streakLevels: ["Chispa", "Llama", "Hoguera", "Cohete", "Estrella", "Leyenda"],
+    streakStart: "Vuelve mañana para empezar una racha",
+    streakDetail: (best, total) => `Mejor ${best} · ${total} ${total === 1 ? "día" : "días"} aquí`,
+    streakNext: (days, goal) => `${days} ${days === 1 ? "día" : "días"} para llegar a ${goal}`,
     signedInAs: (name) => `Sesión de ${name}`,
     signInFailed: "No se pudo iniciar sesión con Google",
     profileError: "No se pudo guardar tu perfil. Intenta de nuevo.",
