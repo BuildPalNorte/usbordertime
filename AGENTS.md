@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## How this app fits together
 
-Border Time shows live U.S. land-port wait times from the public CBP feed. There is no account. Saved crossings, city bookmarks, the language choice, and the appearance choice stay in the browser.
+Border Time shows live U.S. land-port wait times from the public CBP feed. Google sign-in is optional and goes through Neon Auth (`lib/auth`). Saved crossings, city bookmarks, the language choice, and the appearance choice stay in the browser. Signing in does not move them to the server.
 
 Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is the short version of how that code works.
 

@@ -27,6 +27,7 @@ import { CrossingCamera } from "./crossing-camera";
 import { HapticPad } from "./haptic-pad";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { haptic } from "@/lib/haptics";
+import { AccountButton } from "./account-button";
 import { LanguageSwitch } from "./language-switch";
 import { ThemeSwitch } from "./theme-switch";
 import {
@@ -200,6 +201,7 @@ export function BrowsePane({
         <div className="flex items-center gap-2 lg:hidden">
           <ThemeSwitch />
           <LanguageSwitch />
+          <AccountButton />
         </div>
       </header>
 

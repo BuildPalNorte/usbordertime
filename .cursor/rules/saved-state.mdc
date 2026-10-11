@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Saved state
 
-There is no account and no server write. Both stores are module singletons read with `useSyncExternalStore`. `getServerSnapshot` is empty, so the server render has no saved cards. Read them after hydration (`hydrated` in `WalletApp`).
+Google sign-in does not write these stores. Both stores are module singletons read with `useSyncExternalStore`. `getServerSnapshot` is empty, so the server render has no saved cards. Read them after hydration (`hydrated` in `WalletApp`).
 
 `walletStore` uses `usbordertime.wallet.v1`. Each entry is `{ portNumber, mode }`, one per port. `add` ignores a port that is already saved. The array order is the stack order. `orderAs` is how a long-press reorder writes it. `insertAt` is how undo puts a card back.
 

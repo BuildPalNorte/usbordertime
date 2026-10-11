@@ -3,6 +3,7 @@
 import { useLocale } from "@/components/locale-provider";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import type { Mode } from "@/lib/ports";
+import { AccountButton } from "./account-button";
 import { LanguageSwitch } from "./language-switch";
 import { ThemeSwitch } from "./theme-switch";
 import { ArrowPathIcon } from "@heroicons-animated/react/arrow-path";
@@ -72,6 +73,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
         <div className="relative flex h-11 items-center justify-end gap-2">
           <ThemeSwitch />
           <LanguageSwitch />
+          <AccountButton />
           <AnimatePresence mode="popLayout" initial={false}>
             {open ? (
               <motion.button

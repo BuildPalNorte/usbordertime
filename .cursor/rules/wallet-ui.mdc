@@ -38,4 +38,6 @@ Haptics are `haptic()` in `lib/haptics.ts`. A control ticks only when its value 
 
 A tap that switches tabs plays that tab's icon animation. Reduced motion skips it.
 
+`AccountButton` sits with the theme and language switches. On the crossings list it is hidden at `lg`, because the bridges header stays on screen. Signed out, it starts Google sign-in. Signed in, it opens the name and sign out. The bridges stay in the browser either way.
+
 The empty wallet suggests unsaved Mexican crossings whose city is Brownsville.
