@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth/client";
 import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/cn";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
@@ -146,6 +147,14 @@ export function AccountButton({ className }: { className?: string }) {
               <>
                 <p className="truncate px-3 pt-2 text-[14px] font-semibold">{user.name}</p>
                 <p className="truncate px-3 pb-2 text-[12px] text-muted">{user.email}</p>
+                <Link
+                  href="/privacy"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex h-10 w-full items-center rounded-xl px-3 text-left text-[14px] font-medium"
+                >
+                  {copy.privacyPolicy}
+                </Link>
                 <button
                   type="button"
                   role="menuitem"

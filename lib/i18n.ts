@@ -68,6 +68,14 @@ export type Copy = {
   signInTitle: string;
   signInBody: string;
   signInWithGoogle: string;
+  signInHeadline: string;
+  signInSample: string;
+  privacyPolicy: string;
+  privacyTitle: string;
+  privacyUpdated: string;
+  privacyLead: string;
+  privacySections: readonly { heading: string; body: string }[];
+  back: string;
   signOut: string;
   signedInAs: (name: string) => string;
   signInFailed: string;
@@ -166,6 +174,44 @@ export const COPY: Record<Locale, Copy> = {
     signInTitle: "Border Time",
     signInBody: "Sign in with Google to see the bridges you cross.",
     signInWithGoogle: "Sign in with Google",
+    signInHeadline: "Know before you cross.",
+    signInSample: "Sample",
+    privacyPolicy: "Privacy policy",
+    privacyTitle: "Privacy policy",
+    privacyUpdated: "Updated October 10, 2026",
+    privacyLead:
+      "Border Time shows live wait times at U.S. land ports. This page is what we keep, and what stays in your browser.",
+    privacySections: [
+      {
+        heading: "Your account",
+        body: "Signing in uses Google, through Neon Auth. Each visit saves a profile: the account id, your email, your name, and the address of your Google profile photo. A later visit refreshes those fields. We use them to keep you signed in and to show your name and photo. We do not sell them, and we do not use them for advertising.",
+      },
+      {
+        heading: "On this device",
+        body: "The bridges you save, the cities you bookmark, your language, and light or dark mode stay in this browser. They are not part of the profile. Language and appearance are also stored as cookies so the next visit can render that way. Signing out leaves all of that here. Clearing this site's data in the browser removes it.",
+      },
+      {
+        heading: "Wait times and cameras",
+        body: "Wait times come from the public CBP feed. Those requests ask for ports and hours, not for anything about you. Nuevo and Viejo play a live camera from IPCamLive in the browser. We do not record that video.",
+      },
+      {
+        heading: "Other services",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Neon stores the account and the profile. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+      },
+      {
+        heading: "How long it stays",
+        body: "Signing out ends the session in this browser. The profile stays in the database. The app has no button to delete it. Bridges, bookmarks, language, and appearance stay in this browser until you clear the site's data.",
+      },
+      {
+        heading: "Children",
+        body: "Border Time is not meant for children under 13, and we do not knowingly keep their information.",
+      },
+      {
+        heading: "Changes",
+        body: "When this policy changes, the date at the top of this page changes with it.",
+      },
+    ],
+    back: "Back",
     signOut: "Sign out",
     signedInAs: (name) => `Signed in as ${name}`,
     signInFailed: "Could not sign in with Google",
@@ -285,6 +331,44 @@ export const COPY: Record<Locale, Copy> = {
     signInTitle: "Border Time",
     signInBody: "Inicia sesión con Google para ver los puentes que cruzas.",
     signInWithGoogle: "Iniciar sesión con Google",
+    signInHeadline: "Sabe antes de cruzar.",
+    signInSample: "Ejemplo",
+    privacyPolicy: "Política de privacidad",
+    privacyTitle: "Política de privacidad",
+    privacyUpdated: "Actualizada el 10 de octubre de 2026",
+    privacyLead:
+      "Border Time muestra los tiempos de espera en vivo de los puertos terrestres de Estados Unidos. Esta página dice qué guardamos y qué se queda en tu navegador.",
+    privacySections: [
+      {
+        heading: "Tu cuenta",
+        body: "El inicio de sesión usa Google, a través de Neon Auth. Cada visita guarda un perfil: el id de la cuenta, tu correo, tu nombre y la dirección de tu foto de perfil de Google. Una visita posterior actualiza esos datos. Los usamos para mantener tu sesión y para mostrar tu nombre y tu foto. No los vendemos y no los usamos para publicidad.",
+      },
+      {
+        heading: "En este dispositivo",
+        body: "Los puentes que guardas, las ciudades que fijas, tu idioma y el modo claro u oscuro se quedan en este navegador. No forman parte del perfil. El idioma y la apariencia también se guardan como cookies para que la siguiente visita se vea igual. Cerrar sesión deja todo eso aquí. Borrar los datos de este sitio en el navegador lo quita.",
+      },
+      {
+        heading: "Tiempos y cámaras",
+        body: "Los tiempos de espera vienen del feed público de CBP. Esas consultas piden puertos y horarios, no datos sobre ti. Nuevo y Viejo reproducen una cámara en vivo de IPCamLive en el navegador. No grabamos ese video.",
+      },
+      {
+        heading: "Otros servicios",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Neon guarda la cuenta y el perfil. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+      },
+      {
+        heading: "Cuánto tiempo permanece",
+        body: "Cerrar sesión termina la sesión en este navegador. El perfil permanece en la base de datos. La app no tiene un botón para borrarlo. Los puentes, las ciudades fijadas, el idioma y la apariencia se quedan en este navegador hasta que borres los datos del sitio.",
+      },
+      {
+        heading: "Menores",
+        body: "Border Time no está pensado para menores de 13 años, y no guardamos su información a sabiendas.",
+      },
+      {
+        heading: "Cambios",
+        body: "Cuando esta política cambie, cambia también la fecha al inicio de esta página.",
+      },
+    ],
+    back: "Volver",
     signOut: "Cerrar sesión",
     signedInAs: (name) => `Sesión de ${name}`,
     signInFailed: "No se pudo iniciar sesión con Google",

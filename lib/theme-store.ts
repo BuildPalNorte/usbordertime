@@ -45,25 +45,14 @@ function paint(choice: ThemeChoice | null) {
   if (choice) root.dataset.theme = choice;
   else delete root.dataset.theme;
 
-  const metas = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')];
-  if (!choice) {
-    const light = metas[0] ?? document.head.appendChild(document.createElement("meta"));
-    light.setAttribute("name", "theme-color");
-    light.setAttribute("media", "(prefers-color-scheme: light)");
-    light.setAttribute("content", THEME_COLOR.light);
-    const dark = metas[1] ?? document.head.appendChild(document.createElement("meta"));
-    dark.setAttribute("name", "theme-color");
-    dark.setAttribute("media", "(prefers-color-scheme: dark)");
-    dark.setAttribute("content", THEME_COLOR.dark);
-    for (const extra of metas.slice(2)) extra.remove();
-    return;
-  }
-
-  const meta = metas[0] ?? document.head.appendChild(document.createElement("meta"));
-  meta.setAttribute("name", "theme-color");
-  meta.setAttribute("content", THEME_COLOR[choice]);
-  meta.removeAttribute("media");
-  for (const extra of metas.slice(1)) extra.remove();
+  // Next renders these two tags. Detaching one leaves React calling removeChild on a null parent.
+  const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
+  metas.forEach((meta, index) => {
+    const scheme: ThemeChoice = index === 0 ? "light" : "dark";
+    meta.setAttribute("name", "theme-color");
+    meta.setAttribute("media", `(prefers-color-scheme: ${scheme})`);
+    meta.setAttribute("content", choice ? THEME_COLOR[choice] : THEME_COLOR[scheme]);
+  });
 }
 
 export const themeStore = {

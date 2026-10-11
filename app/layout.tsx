@@ -40,7 +40,7 @@ export const viewport: Viewport = {
   ],
 };
 
-const bootScript = `try{var l=document.cookie.match(/(?:^|; )${LOCALE_COOKIE.replaceAll(".", "\\.")}=(en|es)/);if(l)document.documentElement.lang=l[1];var t=document.cookie.match(/(?:^|; )${THEME_COOKIE.replaceAll(".", "\\.")}=(light|dark)/);if(t){document.documentElement.dataset.theme=t[1];var c=t[1]==="dark"?"${THEME_COLOR.dark}":"${THEME_COLOR.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c);m.removeAttribute("media")})}}catch(e){}`;
+const bootScript = `try{var l=document.cookie.match(/(?:^|; )${LOCALE_COOKIE.replaceAll(".", "\\.")}=(en|es)/);if(l)document.documentElement.lang=l[1];var t=document.cookie.match(/(?:^|; )${THEME_COOKIE.replaceAll(".", "\\.")}=(light|dark)/);if(t){document.documentElement.dataset.theme=t[1];var c=t[1]==="dark"?"${THEME_COLOR.dark}":"${THEME_COLOR.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c)})}}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
