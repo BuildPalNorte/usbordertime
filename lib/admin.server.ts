@@ -3,6 +3,8 @@ import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { listedCameras, portName } from "@/lib/ports";
 import { ensureProfile, ensureProfileColumns } from "@/lib/profile";
 import { isReferral, REFERRAL_LABEL, REFERRALS, type Referral } from "@/lib/referral";
+import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
+import { readUsageTotals, type UsageTotals } from "@/lib/usage.server";
 import { neon } from "@neondatabase/serverless";
 import { headers } from "next/headers";
 
@@ -47,6 +49,14 @@ export type AdminAccount = {
   email: string;
   updatedAt: string;
   referral: string | null;
+  usage: AdminUsage;
+};
+
+/** One account's activity. `byKind` is zero for kinds it never used. */
+export type AdminUsage = {
+  total: number;
+  lastActive: string | null;
+  byKind: Record<UsageKind, number>;
 };
 
 export type AdminReferral = { source: Referral; label: string; count: number };
@@ -60,10 +70,13 @@ export type AdminCamera = {
   source: "saved" | "fallback";
 };
 
+export type AdminUsageTotals = { active: number; byKind: Record<UsageKind, number> };
+
 export type AdminData = {
   stats: AdminStat[];
   people: AdminAccount[];
   accountTotal: number;
+  usage: AdminUsageTotals;
   referrals: AdminReferral[];
   referralPending: number;
   alerts: AdminAlertGroup[];
@@ -142,7 +155,7 @@ async function readDashboard(): Promise<AdminData> {
 
   const accountsQuery = sql`select count(*)::int as count from profile`;
   const peopleQuery = sql`
-    select name, email, updated_at, referral
+    select id, name, email, updated_at, referral
     from profile
     order by updated_at desc
     limit ${PEOPLE_LIMIT}
@@ -184,7 +197,12 @@ async function readDashboard(): Promise<AdminData> {
     () => null,
   );
 
-  const [accounts, people, referralRows, referralPending, alertTotals, alertGroups, devices, schedules, cameras, feed] =
+  const usageQuery = readUsageTotals().catch((error: unknown) => {
+    mark(error, true);
+    return [];
+  });
+
+  const [accounts, people, referralRows, referralPending, alertTotals, alertGroups, devices, schedules, cameras, feed, usageRows] =
     await Promise.all([
     accountsQuery.then(
       (rows) => asCount((rows[0] as { count?: unknown } | undefined)?.count),
@@ -194,7 +212,8 @@ async function readDashboard(): Promise<AdminData> {
       },
     ),
     peopleQuery.then(
-      (rows) => rows as { name: string | null; email: string; updated_at: unknown; referral: unknown }[],
+      (rows) =>
+        rows as { id: string; name: string | null; email: string; updated_at: unknown; referral: unknown }[],
       (error: unknown) => {
         mark(error, false);
         return [];
@@ -255,8 +274,10 @@ async function readDashboard(): Promise<AdminData> {
       },
     ),
     feedQuery,
+    usageQuery,
   ]);
 
+  const usageByUser = new Map(usageRows.map((row) => [row.userId, row]));
   const byNumber = new Map((feed?.ports ?? []).map((port) => [port.portNumber, port]));
   const alertCount = asCount(alertTotals.alerts);
   const below = asCount(alertTotals.below);
@@ -287,9 +308,11 @@ async function readDashboard(): Promise<AdminData> {
           email: row.email,
           updatedAt,
           referral: isReferral(row.referral) ? REFERRAL_LABEL[row.referral] : null,
+          usage: usageFor(usageByUser.get(row.id)),
         },
       ];
     }),
+    usage: usageTotals(usageRows),
     accountTotal: accounts,
     referrals: referralCounts(referralRows),
     referralPending,
@@ -311,6 +334,23 @@ async function readDashboard(): Promise<AdminData> {
     feed: feed ? { fetchedAt: feed.fetchedAt, ports: feed.ports.length } : null,
     problem,
   };
+}
+
+function usageFor(entry: UsageTotals | undefined): AdminUsage {
+  const byKind = Object.fromEntries(USAGE_KINDS.map((kind) => [kind, entry?.byKind[kind] ?? 0])) as Record<
+    UsageKind,
+    number
+  >;
+  return { total: entry?.total ?? 0, lastActive: entry?.lastActive ?? null, byKind };
+}
+
+/** Across every account: how many people used each feature, and how many were active at all. */
+function usageTotals(rows: UsageTotals[]): AdminUsageTotals {
+  const byKind = Object.fromEntries(USAGE_KINDS.map((kind) => [kind, 0])) as Record<UsageKind, number>;
+  for (const row of rows) {
+    for (const kind of USAGE_KINDS) byKind[kind] += row.byKind[kind] ?? 0;
+  }
+  return { active: rows.length, byKind };
 }
 
 function referralCounts(rows: { referral: unknown; count: unknown }[]): AdminReferral[] {

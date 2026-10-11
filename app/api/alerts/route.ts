@@ -9,6 +9,7 @@ import {
   sessionUserId,
   unauthorized,
 } from "@/lib/session.server";
+import { recordUsage } from "@/lib/usage.server";
 
 export async function GET() {
   const userId = await sessionUserId();
@@ -55,6 +56,7 @@ export async function PUT(request: Request) {
         { status: 409, headers: NO_STORE },
       );
     }
+    await recordUsage(userId, "alert");
     return Response.json(alert, { headers: NO_STORE });
   } catch {
     return serverError("Could not save the alert.");

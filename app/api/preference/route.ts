@@ -1,6 +1,7 @@
 import { getAuth } from "@/lib/auth/server";
 import { parsePreference } from "@/lib/preference";
 import { getPreference, savePreference } from "@/lib/preference.server";
+import { recordUsage } from "@/lib/usage.server";
 import { headers } from "next/headers";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
@@ -40,6 +41,7 @@ export async function PUT(request: Request) {
 
   try {
     const savedAt = await savePreference(userId, preference);
+    await recordUsage(userId, "sync");
     return Response.json({ ...preference, savedAt }, { headers: NO_STORE });
   } catch {
     return Response.json({ error: "Could not save preferences." }, { status: 500, headers: NO_STORE });

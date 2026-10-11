@@ -7,6 +7,7 @@ import {
 } from "@/lib/session.server";
 import { isTimeZone } from "@/lib/schedule";
 import { getStreak, recordVisit } from "@/lib/streak.server";
+import { recordUsage } from "@/lib/usage.server";
 
 /** The streak as of today in `?timeZone=`. Does not count a visit. */
 export async function GET(request: Request) {
@@ -38,7 +39,10 @@ export async function POST(request: Request) {
   if (!isTimeZone(timeZone)) return badRequest("Expected a time zone.");
 
   try {
-    return Response.json(await recordVisit(userId, timeZone), { headers: NO_STORE });
+    const streak = await recordVisit(userId, timeZone);
+    // Only the first call of a day counts as a visit. Repeat opens the same day change nothing.
+    if (streak.advanced) await recordUsage(userId, "visit");
+    return Response.json(streak, { headers: NO_STORE });
   } catch {
     return serverError("Could not save the visit.");
   }

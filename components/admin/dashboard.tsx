@@ -1,6 +1,7 @@
 import { SignOutButton } from "@/components/admin/sign-out-button";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
-import type { AdminData, AdminViewer } from "@/lib/admin.server";
+import type { AdminData, AdminUsage, AdminViewer } from "@/lib/admin.server";
+import { USAGE_KINDS, USAGE_LABEL, type UsageKind } from "@/lib/usage";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
@@ -17,6 +18,22 @@ function formatWhen(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return WHEN.format(date);
+}
+
+/** The kinds an account actually used, in the order the dashboard lists them. */
+function usedKinds(usage: AdminUsage): UsageKind[] {
+  return USAGE_KINDS.filter((kind) => usage.byKind[kind] > 0);
+}
+
+function UsageSummary({ usage }: { usage: AdminUsage }) {
+  if (usage.total === 0) return <p className="text-[13px] text-muted">No activity yet.</p>;
+  return (
+    <p className="text-[13px] text-muted">
+      {usedKinds(usage)
+        .map((kind) => `${usage.byKind[kind].toLocaleString("en-US")} ${USAGE_LABEL[kind].toLowerCase()}`)
+        .join(" · ")}
+    </p>
+  );
 }
 
 export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: AdminData }) {
@@ -76,10 +93,19 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                       <p className="truncate text-[15px] font-medium">{person.name}</p>
                       <p className="truncate text-[13px] text-muted">{person.email}</p>
                       {person.referral && <p className="truncate text-[13px] text-muted">{person.referral}</p>}
+                      <UsageSummary usage={person.usage} />
                     </div>
-                    <time className="shrink-0 text-[13px] text-muted" dateTime={person.updatedAt}>
-                      {formatWhen(person.updatedAt)}
-                    </time>
+                    <div className="shrink-0 text-right">
+                      <time className="text-[13px] text-muted" dateTime={person.updatedAt}>
+                        {formatWhen(person.updatedAt)}
+                      </time>
+                      {person.usage.lastActive && (
+                        <p className="mt-1 text-[13px] text-muted">
+                          Active{" "}
+                          <time dateTime={person.usage.lastActive}>{formatWhen(person.usage.lastActive)}</time>
+                        </p>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -88,6 +114,30 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
               <p className="mt-3 text-[13px] text-muted">
                 Showing the latest {showing.toLocaleString("en-US")}.
               </p>
+            )}
+          </section>
+
+          <section>
+            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Usage</h2>
+            {data.usage.active === 0 ? (
+              <p className="mt-3 text-[15px] text-muted">No activity yet.</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
+                <li className="flex items-baseline justify-between gap-4 px-4 py-3">
+                  <p className="truncate text-[15px] font-medium">Active accounts</p>
+                  <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                    {data.usage.active.toLocaleString("en-US")}
+                  </p>
+                </li>
+                {USAGE_KINDS.map((kind) => (
+                  <li key={kind} className="flex items-baseline justify-between gap-4 px-4 py-3">
+                    <p className="truncate text-[15px] font-medium">{USAGE_LABEL[kind]}</p>
+                    <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                      {data.usage.byKind[kind].toLocaleString("en-US")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
 

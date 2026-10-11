@@ -7,6 +7,7 @@ import {
   sessionUserId,
   unauthorized,
 } from "@/lib/session.server";
+import { recordUsage } from "@/lib/usage.server";
 
 export async function GET() {
   const userId = await sessionUserId();
@@ -43,6 +44,7 @@ export async function PUT(request: Request) {
     if (result.status === "missing") {
       return Response.json({ error: "Schedule not found." }, { status: 404, headers: NO_STORE });
     }
+    await recordUsage(userId, "alarm");
     return Response.json(result.schedule, { headers: NO_STORE });
   } catch {
     return serverError("Could not save the schedule.");

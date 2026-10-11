@@ -7,6 +7,7 @@ import {
   sessionUserId,
   unauthorized,
 } from "@/lib/session.server";
+import { recordUsage } from "@/lib/usage.server";
 
 /** A signed-in rider asks a question. The reply uses the live CBP snapshot and the hourly averages. */
 export async function POST(request: Request) {
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
 
   try {
     const reply = await answer(messages, isLocale(locale) ? locale : "en");
+    await recordUsage(userId, "ask");
     return Response.json({ reply }, { headers: NO_STORE });
   } catch {
     return serverError("Could not answer right now.");
