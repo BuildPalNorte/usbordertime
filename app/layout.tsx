@@ -2,8 +2,7 @@ import { Providers } from "@/components/providers";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { COPY, LOCALE_COOKIE } from "@/lib/i18n";
 import { resolveLocale } from "@/lib/locale.server";
-import { THEME_COLOR, THEME_COOKIE } from "@/lib/theme";
-import { resolveTheme } from "@/lib/theme.server";
+import { THEME_COLOR } from "@/lib/theme";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
@@ -70,7 +69,7 @@ export const viewport: Viewport = {
   ],
 };
 
-const bootScript = `try{var l=document.cookie.match(/(?:^|; )${LOCALE_COOKIE.replaceAll(".", "\\.")}=(en|es)/);if(l)document.documentElement.lang=l[1];var t=document.cookie.match(/(?:^|; )${THEME_COOKIE.replaceAll(".", "\\.")}=(light|dark)/);if(t){document.documentElement.dataset.theme=t[1];var c=t[1]==="dark"?"${THEME_COLOR.dark}":"${THEME_COLOR.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c)})}}catch(e){}`;
+const bootScript = `try{var l=document.cookie.match(/(?:^|; )${LOCALE_COOKIE.replaceAll(".", "\\.")}=(en|es)/);if(l)document.documentElement.lang=l[1];var dark=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=dark?"dark":"light";var c=dark?"${THEME_COLOR.dark}":"${THEME_COLOR.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c)})}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -90,10 +89,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 }
 
 async function Localized({ children }: { children: ReactNode }) {
-  const [locale, theme] = await Promise.all([resolveLocale(), resolveTheme()]);
-  return (
-    <Providers locale={locale} theme={theme}>
-      {children}
-    </Providers>
-  );
+  const locale = await resolveLocale();
+  return <Providers locale={locale}>{children}</Providers>;
 }

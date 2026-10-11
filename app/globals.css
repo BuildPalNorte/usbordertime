@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 /*
-  One palette, two themes. No data-theme follows prefers-color-scheme.
-  data-theme="light" or "dark" is a saved choice and wins over the system.
+  One palette, two themes. data-theme is the scheme on screen.
+  It matches the device and updates when the device changes.
+  The appearance switch can set it until the device changes.
   Accent is a single cobalt. Card colors live in lib/ports.ts and are content, not chrome.
 */
 :root {
@@ -18,6 +19,8 @@
   --accent-ink: #ffffff;
   --danger: #c4283a;
   --glass-highlight: rgb(255 255 255 / 0.7);
+  /* Room under the Ask composer on a phone: the tab bar, plus a small gap. Sticky bottom: 0 sits on this padding. */
+  --tab-clearance: calc(4.5rem + max(1rem, env(safe-area-inset-bottom, 0px)));
   color-scheme: light dark;
 }
 
@@ -315,7 +318,7 @@ body {
 
 /*
   Theme switch offers the other appearance. The hidden one stays out of the
-  accessibility tree. A saved data-theme beats the system scheme.
+  accessibility tree. data-theme is the scheme on screen, set from the device.
 */
 .theme-for-dark {
   display: none;

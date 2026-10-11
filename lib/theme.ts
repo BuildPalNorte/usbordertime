@@ -1,4 +1,4 @@
-/** A saved appearance. Absent means follow the system. */
+/** Light or dark. Absent on the account means follow the device. */
 export type ThemeChoice = "light" | "dark";
 
 export const THEME_COOKIE = "usbordertime.theme";

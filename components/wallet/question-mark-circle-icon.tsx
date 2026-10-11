@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { motion, useAnimation } from "motion/react";
+import { motion, useAnimation, type Variants } from "motion/react";
 import {
   forwardRef,
   useCallback,
@@ -20,7 +20,7 @@ type Props = HTMLAttributes<HTMLDivElement> & {
   size?: number;
 };
 
-const QUESTION_MARK_VARIANTS = {
+const QUESTION_MARK_VARIANTS: Variants = {
   normal: { scale: 1, rotate: 0 },
   animate: {
     scale: [1, 1.08, 1],

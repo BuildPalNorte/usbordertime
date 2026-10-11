@@ -10,8 +10,8 @@ import { SPRING } from "./motion";
 
 /**
  * Shows the appearance you will switch to.
- * Which icon and name are visible is decided in CSS, so the first paint
- * matches the system scheme before this component hydrates.
+ * Which icon and name are visible is decided in CSS from the device scheme,
+ * before this component hydrates. A device change follows the device again.
  */
 export function ThemeSwitch({
   variant = "button",

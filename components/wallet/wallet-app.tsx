@@ -627,12 +627,16 @@ export function WalletApp({
 
       <div
         ref={scrollerRef}
-        className="relative mx-auto w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-32 sm:px-6 max-lg:h-full max-lg:overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain lg:max-w-6xl lg:pb-16"
+        className={cn(
+          "relative mx-auto w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6 max-lg:flex max-lg:h-full max-lg:flex-col max-lg:overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain lg:max-w-6xl lg:pb-16",
+          // Ask docks its composer on the tab bar. Other tabs keep room to scroll the last row clear of it.
+          tab === "ask" ? "pb-[var(--tab-clearance)]" : "pb-32",
+        )}
       >
         <MobilePaneHeader tab={tab} title={headerTitle} />
         <div
           className={cn(
-            "lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20",
+            "max-lg:flex max-lg:flex-1 max-lg:flex-col lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20",
             paneMotion && "panes-animate",
           )}
         >
@@ -721,7 +725,10 @@ export function WalletApp({
           </section>
 
           <section
-            className={cn("pane", tab !== "ask" && "lg:hidden")}
+            className={cn(
+              "pane max-lg:flex max-lg:flex-1 max-lg:flex-col",
+              tab !== "ask" && "lg:hidden",
+            )}
             data-active={tab === "ask"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
             aria-label={copy.ask}

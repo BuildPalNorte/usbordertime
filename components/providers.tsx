@@ -5,17 +5,14 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { InstallSheet } from "@/components/wallet/install-prompt";
 import { PortraitLock } from "@/components/wallet/portrait-lock";
 import type { Locale } from "@/lib/i18n";
-import type { ThemeChoice } from "@/lib/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
 export function Providers({
   locale,
-  theme,
   children,
 }: {
   locale: Locale;
-  theme: ThemeChoice | null;
   children: ReactNode;
 }) {
   const [client] = useState(
@@ -27,7 +24,7 @@ export function Providers({
 
   return (
     <QueryClientProvider client={client}>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider>
         <LocaleProvider locale={locale}>
           <PortraitLock />
           {children}

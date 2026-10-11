@@ -93,10 +93,20 @@ export function notePreferenceSynced(preference: Preference) {
   lastSent = JSON.stringify(preference);
 }
 
+/**
+ * Appearance follows the device for this visit, so `peek()` is null until the
+ * switch is used. Keep the account's stored theme on the next save.
+ */
+let accountTheme: Preference["theme"] | undefined;
+
+export function rememberAccountTheme(theme: Preference["theme"]) {
+  accountTheme = theme;
+}
+
 export function readLocalPreference(): Preference {
   return {
     locale: localeStore.peek(),
-    theme: themeStore.peek(),
+    theme: themeStore.peek() ?? accountTheme ?? null,
     wallet: walletStore.getSnapshot().map((entry) => ({ ...entry })),
     pins: [...pinStore.getSnapshot()],
   };

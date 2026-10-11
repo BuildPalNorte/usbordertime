@@ -341,8 +341,8 @@ export function AskPane({ ownsHeader }: Props) {
   const appear = reduce ? { opacity: 0 } : { opacity: 0, y: 8 };
 
   return (
-    <div>
-      <header className="hidden min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:flex">
+    <div className="max-lg:flex max-lg:flex-1 max-lg:flex-col">
+      <header className="hidden min-h-[4.5rem] shrink-0 items-end justify-between gap-4 pb-5 lg:flex">
         <div className="min-w-0">
           <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">
             {copy.ask}
@@ -353,7 +353,7 @@ export function AskPane({ ownsHeader }: Props) {
         </div>
       </header>
 
-      <div className="pane-body flex flex-col gap-3">
+      <div className="pane-body flex flex-col gap-3 max-lg:flex-1">
         {empty ? (
           <div className="rounded-3xl bg-surface p-6">
             <div className="grid size-12 place-items-center rounded-2xl bg-foreground/[0.07]">
@@ -438,113 +438,122 @@ export function AskPane({ ownsHeader }: Props) {
             </motion.p>
           )}
         </AnimatePresence>
+      </div>
 
+      {/* Outside the sliding body: that animation's transform would keep this from sticking.
+          The scroller's bottom padding is the tab bar, so bottom-0 rests just above it. */}
+      <div
+        className={cn(
+          "sticky bottom-0 z-10 shrink-0 bg-background pt-3",
+          "before:pointer-events-none before:absolute before:inset-x-0 before:-top-8 before:h-8 before:bg-gradient-to-b before:from-transparent before:to-background",
+        )}
+      >
         {error && (
           <p
             role="alert"
-            className="self-center px-2 text-center text-[14px] text-rose-400"
+            className="mb-2 px-2 text-center text-[14px] text-rose-400"
           >
             {error}
           </p>
         )}
 
-        <div ref={endRef} aria-hidden />
-
-        {/* The phone tab bar floats over the bottom of the scroller, so the composer rests above it. */}
-        <div className="sticky bottom-0 z-10">
-          <div className="relative rounded-[28px] p-1.5">
-            <div
-              aria-hidden
-              className="glass ask-composer pointer-events-none absolute inset-0 rounded-[28px]"
-            />
-            <div className="relative flex items-end gap-1.5">
-              {status === "listening" ? (
-                <div
-                  role="status"
-                  className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 px-3.5 py-2.5 text-[15px]"
-                >
-                  <span
-                    aria-hidden
-                    className="size-2.5 shrink-0 rounded-full bg-rose-400"
-                    style={
-                      reduce
-                        ? undefined
-                        : { animation: "ask-pulse 1s ease-in-out infinite" }
-                    }
-                  />
-                  <span
-                    className={cn(
-                      "min-w-0 flex-1 leading-snug",
-                      heard ? "text-foreground" : "text-muted",
-                    )}
-                  >
-                    {heard || copy.askRecording}
-                  </span>
-                  <span className="shrink-0 tabular-nums text-muted">
-                    0:{String(seconds).padStart(2, "0")}
-                  </span>
-                </div>
-              ) : (
-                <textarea
-                  value={draft}
-                  rows={1}
-                  maxLength={MAX_CHARS}
-                  disabled={busy}
-                  onChange={(event) => setDraft(event.target.value)}
-                  onKeyDown={onKeyDown}
-                  placeholder={copy.askPlaceholder}
-                  aria-label={copy.askPlaceholder}
-                  enterKeyHint="send"
-                  className="ask-field max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-3.5 py-[11px] text-[16px] leading-snug placeholder:text-muted disabled:opacity-60"
+        <p className="mt-2 px-3 text-center text-[12px] leading-snug text-muted">
+          {copy.askNote}
+        </p>
+        <div className="relative rounded-[28px] p-1.5">
+          <div
+            aria-hidden
+            className="glass ask-composer pointer-events-none absolute inset-0 rounded-[28px]"
+          />
+          <div className="relative flex items-end gap-1.5">
+            {status === "listening" ? (
+              <div
+                role="status"
+                className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 px-3.5 py-2.5 text-[15px]"
+              >
+                <span
+                  aria-hidden
+                  className="size-2.5 shrink-0 rounded-full bg-rose-400"
                   style={
-                    { fieldSizing: "content", outline: "none", boxShadow: "none" } as React.CSSProperties
+                    reduce
+                      ? undefined
+                      : { animation: "ask-pulse 1s ease-in-out infinite" }
                   }
                 />
-              )}
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 leading-snug",
+                    heard ? "text-foreground" : "text-muted",
+                  )}
+                >
+                  {heard || copy.askRecording}
+                </span>
+                <span className="shrink-0 tabular-nums text-muted">
+                  0:{String(seconds).padStart(2, "0")}
+                </span>
+              </div>
+            ) : (
+              <textarea
+                value={draft}
+                rows={1}
+                maxLength={MAX_CHARS}
+                disabled={busy}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder={copy.askPlaceholder}
+                aria-label={copy.askPlaceholder}
+                enterKeyHint="send"
+                className="ask-field max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-3.5 py-[11px] text-[16px] leading-snug placeholder:text-muted disabled:opacity-60"
+                style={
+                  {
+                    fieldSizing: "content",
+                    outline: "none",
+                    boxShadow: "none",
+                  } as React.CSSProperties
+                }
+              />
+            )}
 
+            <motion.button
+              type="button"
+              onClick={onMic}
+              disabled={status === "thinking"}
+              aria-label={status === "listening" ? copy.askStop : copy.askMic}
+              whileTap={reduce ? undefined : { scale: 0.92 }}
+              transition={SPRING.snap}
+              className={cn(
+                "relative grid size-11 shrink-0 cursor-pointer place-items-center rounded-full disabled:opacity-50",
+                status === "listening"
+                  ? "bg-rose-500 text-white"
+                  : "bg-foreground/[0.08] text-foreground",
+              )}
+            >
+              <HapticPad />
+              {status === "listening" ? (
+                <StopIcon size={20} aria-hidden />
+              ) : (
+                <MicrophoneIcon size={20} aria-hidden />
+              )}
+            </motion.button>
+
+            {status !== "listening" && (
               <motion.button
                 type="button"
-                onClick={onMic}
-                disabled={status === "thinking"}
-                aria-label={status === "listening" ? copy.askStop : copy.askMic}
+                onClick={onSubmit}
+                disabled={busy || draft.trim().length === 0}
+                aria-label={copy.askSend}
                 whileTap={reduce ? undefined : { scale: 0.92 }}
                 transition={SPRING.snap}
-                className={cn(
-                  "relative grid size-11 shrink-0 cursor-pointer place-items-center rounded-full disabled:opacity-50",
-                  status === "listening"
-                    ? "bg-rose-500 text-white"
-                    : "bg-foreground/[0.08] text-foreground",
-                )}
+                className="relative grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-accent text-accent-ink disabled:opacity-40"
               >
                 <HapticPad />
-                {status === "listening" ? (
-                  <StopIcon size={20} aria-hidden />
-                ) : (
-                  <MicrophoneIcon size={20} aria-hidden />
-                )}
+                <PaperAirplaneIcon size={20} aria-hidden />
               </motion.button>
-
-              {status !== "listening" && (
-                <motion.button
-                  type="button"
-                  onClick={onSubmit}
-                  disabled={busy || draft.trim().length === 0}
-                  aria-label={copy.askSend}
-                  whileTap={reduce ? undefined : { scale: 0.92 }}
-                  transition={SPRING.snap}
-                  className="relative grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-accent text-accent-ink disabled:opacity-40"
-                >
-                  <HapticPad />
-                  <PaperAirplaneIcon size={20} aria-hidden />
-                </motion.button>
-              )}
-            </div>
+            )}
           </div>
-          <p className="mt-2 px-3 text-center text-[12px] leading-snug text-muted">
-            {copy.askNote}
-          </p>
         </div>
       </div>
+      <div ref={endRef} aria-hidden />
     </div>
   );
 }

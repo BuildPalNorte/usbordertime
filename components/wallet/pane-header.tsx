@@ -111,7 +111,7 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
   const { chrome, run } = usePaneChrome();
 
   return (
-    <header className="flex min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:hidden">
+    <header className="flex min-h-[4.5rem] shrink-0 items-end justify-between gap-4 pb-5 lg:hidden">
       <div className="grid min-w-0">
         {reduce ? (
           <Heading title={title} subtitle={chrome.subtitle} />

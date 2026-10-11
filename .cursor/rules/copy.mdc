@@ -10,7 +10,7 @@ User-facing strings live in `COPY` in `lib/i18n.ts`. The `Copy` type is the cont
 
 Locale is `"en"` or `"es"`. `resolveLocale()` prefers the `usbordertime.lang` cookie, then the first `Accept-Language` tag. A tag starting with `es` selects Spanish. `localeStore` stays `null` until the user picks a language, so the server choice remains. After a pick, the cookie and `usbordertime.lang.v1` in localStorage both update. A signed-in account also saves that choice on `preference`.
 
-Appearance is `"light"` or `"dark"`. Until the user picks one, the page follows `prefers-color-scheme` and nothing is stored. `resolveTheme()` reads the `usbordertime.theme` cookie. `themeStore` stays null until a pick, then that cookie and `usbordertime.theme.v1` both update. A signed-in account also saves that choice on `preference`. A blocking script in the root layout sets `data-theme` from the cookie before paint. Do not rename either key without a migration.
+Appearance follows the device color scheme. A blocking script in the root layout sets `data-theme` from `prefers-color-scheme` before paint, and the page updates when that scheme changes. The appearance switch flips the current visit; a reload or a device change follows the device again. A `theme` value on `preference` is not applied. The `usbordertime.theme` cookie and `usbordertime.theme.v1` remain the switch's keys. Do not rename either key without a migration.
 
 CBP text stays as published. Construction notices, hours, and port status are not translated. `waitLabel`, `presentHours`, and `presentPortStatus` only wrap those values.
 

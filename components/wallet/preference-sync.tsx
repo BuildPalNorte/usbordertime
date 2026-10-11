@@ -15,6 +15,7 @@ import {
   notePreferenceSynced,
   queuePreferenceSave,
   readLocalPreference,
+  rememberAccountTheme,
   rememberPreferenceSavedAt,
   runPreferenceApply,
   setPreferenceOwner,
@@ -41,25 +42,28 @@ export function PreferenceSync({
     if (!ready || preferenceAlreadyApplied(userId)) return;
     markPreferenceApplied(userId);
 
+    if (initial) rememberAccountTheme(initial.theme);
+
     const owner = preferenceOwner();
     const foreign = owner !== null && owner !== userId;
     const dirty = isPreferenceDirty() && !foreign;
 
     const localSavedAt = preferenceSavedAt();
-    const snapshotIsOlder = Boolean(initial && localSavedAt && localSavedAt > initial.savedAt);
+    const snapshotIsOlder = Boolean(
+      initial && owner === userId && localSavedAt && localSavedAt > initial.savedAt,
+    );
+    const local = readLocalPreference();
+    const accountHasStack = Boolean(initial && (initial.wallet.length > 0 || initial.pins.length > 0));
+    const localIsBlank = local.wallet.length === 0 && local.pins.length === 0;
 
-    if (initial && !dirty && !snapshotIsOlder) {
-      const local = readLocalPreference();
+    if (initial && ((accountHasStack && localIsBlank) || (!dirty && !snapshotIsOlder))) {
       runPreferenceApply(() => {
         localeStore.replace(initial.locale ?? local.locale);
-        themeStore.replace(initial.theme ?? local.theme);
         walletStore.replace(initial.wallet);
         pinStore.replace(initial.pins);
       });
       rememberPreferenceSavedAt(initial.savedAt);
-      const filledGap =
-        (initial.locale === null && local.locale !== null) ||
-        (initial.theme === null && local.theme !== null);
+      const filledGap = initial.locale === null && local.locale !== null;
       if (filledGap) queuePreferenceSave();
       else {
         notePreferenceSynced(readLocalPreference());
