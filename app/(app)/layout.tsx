@@ -16,6 +16,7 @@ import type { PreferenceRecord } from "@/lib/preference";
 import { getPreference } from "@/lib/preference.server";
 import { ensureProfile } from "@/lib/profile";
 import { headers } from "next/headers";
+import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
 
 export const instant = false;
@@ -32,6 +33,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
 /** The bridges render only after Google sign-in. A new profile answers how they found the app first. */
 async function GatedHome({ children }: { children: ReactNode }) {
+  // The session depends on the request and the clock. Defer to request time so it is not prerendered.
+  await connection();
   const headerList = await headers();
   const session = await getAuth().api.getSession({ headers: headerList });
   const user = session?.user;
