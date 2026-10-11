@@ -11,6 +11,8 @@
   --muted: #5a606c;
   --surface: #ffffff;
   --surface-strong: #e6e8ed;
+  --search: #ffffff;
+  --search-muted: #5a606c;
   --line: rgb(15 17 21 / 0.09);
   --accent: #2b64f0;
   --accent-ink: #ffffff;
@@ -30,6 +32,8 @@
   --muted: #9ba2af;
   --surface: #14161c;
   --surface-strong: #1f222a;
+  --search: #515868;
+  --search-muted: #e6e8ee;
   --line: rgb(255 255 255 / 0.08);
   --accent: #7ba3ff;
   --accent-ink: #081330;
@@ -45,6 +49,8 @@
     --muted: #9ba2af;
     --surface: #14161c;
     --surface-strong: #1f222a;
+    --search: #515868;
+    --search-muted: #e6e8ee;
     --line: rgb(255 255 255 / 0.08);
     --accent: #7ba3ff;
     --accent-ink: #081330;
@@ -70,6 +76,18 @@
 html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+}
+
+.search-field {
+  background-color: var(--search);
+}
+
+.search-field::placeholder {
+  color: var(--search-muted);
+}
+
+.search-glyph {
+  color: var(--search-muted);
 }
 
 body {

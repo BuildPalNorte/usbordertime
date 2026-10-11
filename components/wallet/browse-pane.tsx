@@ -406,7 +406,7 @@ function SearchField({
       <label htmlFor="crossing-search" className="sr-only">
         {copy.searchLabel}
       </label>
-      <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-muted">
+      <span className="search-glyph pointer-events-none absolute top-1/2 left-4 -translate-y-1/2">
         <MagnifyingGlassIcon size={18} aria-hidden />
       </span>
       <input
@@ -419,7 +419,7 @@ function SearchField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={copy.searchPlaceholder}
-        className="h-12 w-full appearance-none rounded-2xl bg-surface pr-11 pl-11 text-[16px] text-foreground outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-accent [&::-webkit-search-cancel-button]:hidden"
+        className="search-field h-12 w-full appearance-none rounded-2xl pr-11 pl-11 text-[16px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-accent [&::-webkit-search-cancel-button]:hidden"
       />
       <AnimatePresence>
         {value && (
