@@ -27,7 +27,10 @@ import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { haptic } from "@/lib/haptics";
 import { LanguageSwitch } from "./language-switch";
 import { ThemeSwitch } from "./theme-switch";
-import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
+import {
+  BookmarkIcon,
+  type BookmarkIconHandle,
+} from "@heroicons-animated/react/bookmark";
 import { CheckIcon } from "@heroicons-animated/react/check";
 import { MagnifyingGlassIcon } from "@heroicons-animated/react/magnifying-glass";
 import { PlusIcon } from "@heroicons-animated/react/plus";
@@ -59,7 +62,13 @@ type Props = {
   onRetry: () => void;
 };
 
-type Row = { port: PortWaitTime; city: string; title: string; search: string; pinKey: string };
+type Row = {
+  port: PortWaitTime;
+  city: string;
+  title: string;
+  search: string;
+  pinKey: string;
+};
 
 type Block = {
   id: string;
@@ -69,7 +78,16 @@ type Block = {
   pinned: boolean;
 };
 
-export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin, onRetry }: Props) {
+export function BrowsePane({
+  ports,
+  loading,
+  error,
+  saved,
+  pins,
+  onToggle,
+  onPin,
+  onRetry,
+}: Props) {
   const { copy } = useLocale();
   const [border, setBorder] = useState<BorderFilter>("mexican");
   const [query, setQuery] = useState("");
@@ -84,17 +102,25 @@ export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin
             city: name.city,
             title: name.title,
             pinKey: cityPinKey(port.border, name.city),
-            search: `${name.city} ${name.crossing ?? ""} ${port.portNumber}`.toLowerCase(),
+            search:
+              `${name.city} ${name.crossing ?? ""} ${port.portNumber}`.toLowerCase(),
           };
         })
-        .sort((a, b) => COLLATOR.compare(a.city, b.city) || COLLATOR.compare(a.title, b.title)),
+        .sort(
+          (a, b) =>
+            COLLATOR.compare(a.city, b.city) ||
+            COLLATOR.compare(a.title, b.title),
+        ),
     [ports],
   );
 
   const counts = useMemo(
     () => ({
-      mexican: rows.filter((r) => r.port.border.toLowerCase().includes("mexic")).length,
-      canadian: rows.filter((r) => r.port.border.toLowerCase().includes("canad")).length,
+      mexican: rows.filter((r) => r.port.border.toLowerCase().includes("mexic"))
+        .length,
+      canadian: rows.filter((r) =>
+        r.port.border.toLowerCase().includes("canad"),
+      ).length,
       all: rows.length,
     }),
     [rows],
@@ -150,7 +176,9 @@ export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin
       }
     }
     flush();
-    pinned.sort((a, b) => (pinIndex.get(a.id) ?? 0) - (pinIndex.get(b.id) ?? 0));
+    pinned.sort(
+      (a, b) => (pinIndex.get(a.id) ?? 0) - (pinIndex.get(b.id) ?? 0),
+    );
     return [...pinned, ...rest];
   }, [rows, border, query, pins]);
 
@@ -160,7 +188,9 @@ export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin
     <div>
       <header className="flex min-h-[4.5rem] items-end justify-between gap-4 pb-5">
         <div>
-          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.crossings}</h2>
+          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">
+            {copy.crossings}
+          </h2>
           <p className="mt-2 text-[14px] leading-none text-muted">
             {loading ? copy.loading : copy.reportedCount(counts.all)}
           </p>
@@ -193,7 +223,9 @@ export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin
               }}
               className={cn(
                 "relative h-10 shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors duration-200",
-                active ? "text-accent-ink" : "text-foreground active:opacity-60",
+                active
+                  ? "text-accent-ink"
+                  : "text-foreground active:opacity-60",
               )}
             >
               {!active && <HapticPad />}
@@ -206,11 +238,19 @@ export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin
                 />
               )}
               {!active && (
-                <span aria-hidden className="absolute inset-0 rounded-full bg-surface" />
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full bg-surface"
+                />
               )}
               <span className="relative">
                 {copy[filter.label]}
-                <span className={cn("ml-1.5 tabular-nums", active ? "opacity-75" : "text-muted")}>
+                <span
+                  className={cn(
+                    "ml-1.5 tabular-nums",
+                    active ? "opacity-75" : "text-muted",
+                  )}
+                >
                   {counts[filter.id]}
                 </span>
               </span>
@@ -287,13 +327,19 @@ function CityBlock({
       )}
       <ul className="space-y-2">
         {block.rows.map((row, index) => (
-          <li key={row.port.portNumber} className="rise" style={{ "--i": start + index } as CSSProperties}>
+          <li
+            key={row.port.portNumber}
+            className="rise"
+            style={{ "--i": start + index } as CSSProperties}
+          >
             <CrossingRow
               row={row}
               added={saved.has(row.port.portNumber)}
               onToggle={() => onToggle(row.port)}
               onPin={
-                block.city === null ? () => onPin(row.port.border, row.city) : undefined
+                block.city === null
+                  ? () => onPin(row.port.border, row.city)
+                  : undefined
               }
             />
           </li>
@@ -328,7 +374,9 @@ function PinButton({
       transition={SPRING.snap}
       className={cn(
         "relative grid size-9 shrink-0 place-items-center rounded-full",
-        pinned ? "bg-accent/15 text-accent" : "text-muted active:bg-surface-strong",
+        pinned
+          ? "bg-accent/15 text-accent"
+          : "text-muted active:bg-surface-strong",
       )}
     >
       <HapticPad />
@@ -342,7 +390,13 @@ function PinButton({
   );
 }
 
-function SearchField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function SearchField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const { copy } = useLocale();
   const inputRef = useRef<HTMLInputElement>(null);
   const reduce = useReducedMotion();
@@ -422,7 +476,9 @@ function CrossingRow({
           type="button"
           aria-expanded={open}
           aria-controls={panelId}
-          aria-label={open ? copy.hideDetails(row.title) : copy.showDetails(row.title)}
+          aria-label={
+            open ? copy.hideDetails(row.title) : copy.showDetails(row.title)
+          }
           onClick={() => {
             haptic("light");
             setOpen((v) => !v);
@@ -448,7 +504,12 @@ function CrossingRow({
             </p>
             <p className="mt-1 flex items-center gap-1.5 truncate text-[13px] leading-none text-muted">
               {reading.minutes !== null && (
-                <span className={cn("size-1.5 shrink-0 rounded-full", TONE_DOT[reading.tone])} />
+                <span
+                  className={cn(
+                    "size-1.5 shrink-0 rounded-full",
+                    TONE_DOT[reading.tone],
+                  )}
+                />
               )}
               <span className="truncate">
                 {modeName(mode, port, copy)}, {waitLabel(reading, copy)}
@@ -489,13 +550,26 @@ function CrossingRow({
             <div className="grid grid-cols-2 gap-2">
               {lanes.map((id) => {
                 const lane = readLane(port, id);
-                const average = shownAverage(averages.data, id, port.time, lane.available);
+                const average = shownAverage(
+                  averages.data,
+                  id,
+                  port.time,
+                  lane.available,
+                );
                 return (
-                  <div key={id} className="rounded-xl bg-surface-strong px-3 py-2.5">
+                  <div
+                    key={id}
+                    className="rounded-xl bg-surface-strong px-3 py-2.5"
+                  >
                     <span className="flex items-center justify-between gap-2 text-[12px] font-medium text-muted">
                       {modeName(id, port, copy)}
                       {lane.minutes !== null && (
-                        <span className={cn("size-1.5 rounded-full", TONE_DOT[lane.tone])} />
+                        <span
+                          className={cn(
+                            "size-1.5 rounded-full",
+                            TONE_DOT[lane.tone],
+                          )}
+                        />
                       )}
                     </span>
                     <span className="mt-1 block text-[18px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
@@ -507,7 +581,9 @@ function CrossingRow({
                           </span>
                         </>
                       ) : (
-                        <span className="text-[14px]">{waitLabel(lane, copy)}</span>
+                        <span className="text-[14px]">
+                          {waitLabel(lane, copy)}
+                        </span>
                       )}
                     </span>
                     <AverageWait
@@ -529,8 +605,14 @@ function CrossingRow({
             )}
 
             <dl className="rounded-xl bg-surface-strong px-3 text-[13px]">
-              <DetailRow label={copy.status} value={presentPortStatus(port.portStatus, copy)} />
-              <DetailRow label={copy.hours} value={presentHours(port.hours, locale, copy)} />
+              <DetailRow
+                label={copy.status}
+                value={presentPortStatus(port.portStatus, copy)}
+              />
+              <DetailRow
+                label={copy.hours}
+                value={presentHours(port.hours, locale, copy)}
+              />
               <DetailRow
                 label={copy.reported}
                 value={
@@ -567,14 +649,22 @@ function AddButton({
 }) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
-  const plus = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
-  const check = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
+  const plus = useRef<{
+    startAnimation: () => void;
+    stopAnimation: () => void;
+  }>(null);
+  const check = useRef<{
+    startAnimation: () => void;
+    stopAnimation: () => void;
+  }>(null);
 
   return (
     <motion.button
       type="button"
       aria-pressed={added}
-      aria-label={added ? copy.removeFromWalletNamed(label) : copy.addToWallet(label)}
+      aria-label={
+        added ? copy.removeFromWalletNamed(label) : copy.addToWallet(label)
+      }
       onClick={onToggle}
       onPointerEnter={() => (added ? check : plus).current?.startAnimation()}
       onPointerLeave={() => (added ? check : plus).current?.stopAnimation()}
@@ -590,9 +680,17 @@ function AddButton({
         <motion.span
           key={added ? "added" : "add"}
           className="flex items-center gap-1"
-          initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7, filter: "blur(4px)" }}
+          initial={
+            reduce
+              ? { opacity: 0 }
+              : { opacity: 0, scale: 0.7, filter: "blur(4px)" }
+          }
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7, filter: "blur(4px)" }}
+          exit={
+            reduce
+              ? { opacity: 0 }
+              : { opacity: 0, scale: 0.7, filter: "blur(4px)" }
+          }
           transition={SPRING.pop}
         >
           {added ? (
@@ -616,7 +714,10 @@ function ListSkeleton() {
   return (
     <div aria-hidden className="space-y-2">
       {Array.from({ length: 7 }, (_, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-2xl bg-surface p-3">
+        <div
+          key={i}
+          className="flex items-center gap-3 rounded-2xl bg-surface p-3"
+        >
           <div className="shimmer h-9 w-14 rounded-lg" />
           <div className="flex-1 space-y-2">
             <div className="shimmer h-3.5 w-2/3 rounded-full" />
@@ -658,7 +759,9 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   const { copy } = useLocale();
   return (
     <div role="alert" className="rounded-2xl bg-surface px-6 py-10 text-center">
-      <p className="text-[17px] font-semibold tracking-[-0.02em]">{copy.loadErrorTitle}</p>
+      <p className="text-[17px] font-semibold tracking-[-0.02em]">
+        {copy.loadErrorTitle}
+      </p>
       <p className="mt-1.5 text-[14px] text-muted">{copy.loadErrorBody}</p>
       <button
         type="button"
