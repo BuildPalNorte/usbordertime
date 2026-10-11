@@ -1,9 +1,32 @@
+import { isLocale, type Locale } from "@/lib/i18n";
+import { isMode, type Mode } from "@/lib/ports";
+
 /** Paths the wallet shell owns. Card URLs are the CBP port number, so a share opens that crossing. */
 
 export const EXPLORE_PATH = "/explore";
 
 export function crossingPath(portNumber: string): string {
   return `/${portNumber}`;
+}
+
+/** Opens that crossing on the shared lane, in the language the preview was written in. */
+export function crossingSharePath(portNumber: string, mode: Mode, locale: Locale): string {
+  const params = new URLSearchParams({ lane: mode, lang: locale });
+  return `${crossingPath(portNumber)}?${params.toString()}`;
+}
+
+/** Preview image for a shared crossing. Same lane and language as the page. */
+export function crossingImagePath(portNumber: string, mode: Mode, locale: Locale): string {
+  const params = new URLSearchParams({ lane: mode, lang: locale });
+  return `/og/${encodeURIComponent(portNumber)}?${params.toString()}`;
+}
+
+export function laneQuery(value: string | null): Mode | null {
+  return isMode(value) ? value : null;
+}
+
+export function localeQuery(value: string | null): Locale | null {
+  return isLocale(value) ? value : null;
 }
 
 /** Same-origin path Google should return to after sign-in, including a shared card. */

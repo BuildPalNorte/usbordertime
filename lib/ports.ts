@@ -131,19 +131,47 @@ const LOCAL_CROSSING: Record<string, string> = {
   "brownsville|gateway": "Nuevo",
 };
 
-/** Live HLS cameras, keyed the same way as LOCAL_CROSSING. */
-const CROSSING_STREAM: Record<string, string> = {
-  "brownsville|gateway":
-    "https://s81.ipcamlive.com/streams/51bcyg8u6laxau7hi/stream.m3u8",
-  "brownsville|b&m":
-    "https://s90.ipcamlive.com/streams/5aormyelwpo5cdtxw/stream.m3u8",
+export type CrossingStream = {
+  /** Last playlist that played. IPCamLive may replace this. */
+  src: string;
+  /** Stable camera id. A 404 playlist is resolved through this. */
+  alias: string;
 };
 
-export function crossingStream(port: PortWaitTime): string | null {
+/** Live HLS cameras, keyed the same way as LOCAL_CROSSING. `src` is the fallback. */
+const CROSSING_STREAM: Record<string, CrossingStream> = {
+  "brownsville|gateway": {
+    src: "https://s81.ipcamlive.com/streams/51bcyg8u6laxau7hi/stream.m3u8",
+    alias: "61af904e45b24",
+  },
+  "brownsville|b&m": {
+    src: "https://s90.ipcamlive.com/streams/5aormyelwpo5cdtxw/stream.m3u8",
+    alias: "5df59f3827371",
+  },
+};
+
+/** Addresses in code, used until `camera_stream` has a row for that alias. */
+export function fallbackCameraStreams(): Record<string, string> {
+  return Object.fromEntries(
+    Object.values(CROSSING_STREAM).map((entry) => [entry.alias, entry.src]),
+  );
+}
+
+export function isCameraAlias(alias: string): boolean {
+  return Object.values(CROSSING_STREAM).some((entry) => entry.alias === alias);
+}
+
+export function crossingStream(
+  port: PortWaitTime,
+  streams?: Record<string, string> | null,
+): CrossingStream | null {
   const city = tidy(port.portName);
   const crossing = tidy(port.crossingName);
   if (!crossing) return null;
-  return CROSSING_STREAM[`${city.toLowerCase()}|${crossing.toLowerCase()}`] ?? null;
+  const entry = CROSSING_STREAM[`${city.toLowerCase()}|${crossing.toLowerCase()}`];
+  if (!entry) return null;
+  const saved = streams?.[entry.alias];
+  return { alias: entry.alias, src: saved || entry.src };
 }
 
 function localCrossing(city: string, crossing: string): string {

@@ -29,6 +29,7 @@ type Props = {
   onMode: (portNumber: string, mode: Mode) => void;
   cityPinned: boolean;
   onPinCity: () => void;
+  onShare: (port: PortWaitTime, mode: Mode) => void;
   onRemove: (portNumber: string) => void;
   onReorder: (portNumber: string, toIndex: number) => void;
   onRefresh: () => void;
@@ -135,6 +136,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
           onCollapse={props.onCollapse}
           onMode={props.onMode}
           onPinCity={props.onPinCity}
+          onShare={props.onShare}
           onRemove={props.onRemove}
           onReorder={props.onReorder}
           checking={checking}

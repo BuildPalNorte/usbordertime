@@ -5,10 +5,11 @@ import { NotFoundScreen } from "@/components/not-found-screen";
 import type { BorderWaitTimes, PortWaitTime } from "@/lib/border-wait-times";
 import { haptic } from "@/lib/haptics";
 import { cityPinKey, pinStore } from "@/lib/pin-store";
-import { defaultMode, paletteFor, portName, type Mode } from "@/lib/ports";
-import { crossingPath, EXPLORE_PATH, parseAppPath } from "@/lib/routes";
+import { shareMessage } from "@/lib/i18n";
+import { defaultMode, isMode, paletteFor, portName, readLane, type Mode } from "@/lib/ports";
+import { crossingPath, crossingSharePath, EXPLORE_PATH, parseAppPath } from "@/lib/routes";
 import { walletStore } from "@/lib/wallet-store";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReducedMotion } from "motion/react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -21,6 +22,7 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from "react";
+import { CameraStreamProvider } from "./camera-streams";
 import { BrowsePane } from "./browse-pane";
 import type { StackItem } from "./card-stack";
 import { Glow } from "./glow";
@@ -29,6 +31,15 @@ import { Toast, type ToastState } from "./toast";
 import { WalletPane } from "./wallet-pane";
 
 const NAV = { scroll: false } as const;
+
+function laneFromLocation(): Mode | null {
+  const lane = new URLSearchParams(window.location.search).get("lane");
+  return isMode(lane) ? lane : null;
+}
+
+function shareCancelled(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
 
 const EMPTY_PORTS: PortWaitTime[] = [];
 const noopSubscribe = () => () => {};
@@ -39,8 +50,27 @@ async function fetchWaitTimes(): Promise<BorderWaitTimes> {
   return response.json();
 }
 
-export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
-  const { copy } = useLocale();
+async function fetchCameraStreams(): Promise<Record<string, string>> {
+  const response = await fetch("/api/camera-streams", { cache: "no-store" });
+  if (!response.ok) throw new Error(`Camera streams request failed (${response.status})`);
+  const body: unknown = await response.json();
+  if (!body || typeof body !== "object") throw new Error("Camera streams were empty.");
+  const streams: Record<string, string> = {};
+  for (const [alias, src] of Object.entries(body)) {
+    if (typeof src === "string") streams[alias] = src;
+  }
+  return streams;
+}
+
+export function WalletApp({
+  initial,
+  streams,
+}: {
+  initial: BorderWaitTimes | null;
+  streams: Record<string, string>;
+}) {
+  const { locale, copy } = useLocale();
+  const queryClient = useQueryClient();
   const reduce = useReducedMotion();
   const pathname = usePathname();
   const router = useRouter();
@@ -68,6 +98,21 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
+
+  const { data: cameraStreams } = useQuery({
+    queryKey: ["camera-streams"],
+    queryFn: fetchCameraStreams,
+    initialData: streams,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
+  const replaceStream = useCallback((alias: string, src: string) => {
+    queryClient.setQueryData<Record<string, string>>(["camera-streams"], (current) => ({
+      ...(current ?? streams),
+      [alias]: src,
+    }));
+  }, [queryClient, streams]);
 
   const ports = data?.ports ?? EMPTY_PORTS;
   const byNumber = useMemo(() => new Map(ports.map((p) => [p.portNumber, p])), [ports]);
@@ -108,6 +153,8 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
   const headerRef = useRef<HTMLElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const autoSaved = useRef(new Set<string>());
+  const appliedShare = useRef<string | null>(null);
+  const sharing = useRef(false);
 
   // The open card is the route. If that port leaves the feed, nothing is open.
   const expandedId =
@@ -144,7 +191,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
 
   useEffect(() => {
     document.title = openItem
-      ? copy.pageTitle(portName(openItem.port).title)
+      ? copy.pageTitle(shareMessage(openItem.port, openItem.mode, copy).title)
       : tab === "browse"
         ? copy.pageTitle(copy.browse)
         : copy.metaTitle;
@@ -159,8 +206,23 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     if (!hydrated || !routePort || saved.has(routePort.portNumber)) return;
     if (autoSaved.current.has(routePort.portNumber)) return;
     autoSaved.current.add(routePort.portNumber);
-    walletStore.add({ portNumber: routePort.portNumber, mode: defaultMode(routePort) });
+    const lane = laneFromLocation();
+    const mode = lane && readLane(routePort, lane).available ? lane : defaultMode(routePort);
+    walletStore.add({ portNumber: routePort.portNumber, mode });
   }, [hydrated, routePort, saved]);
+
+  // A shared link names the lane. Apply it once, so changing lanes afterward sticks.
+  useEffect(() => {
+    if (!hydrated || !routePort) return;
+    const lane = laneFromLocation();
+    if (!lane || !readLane(routePort, lane).available) return;
+    const key = `${routePort.portNumber}:${lane}`;
+    if (appliedShare.current === key) return;
+    const entry = entries.find((item) => item.portNumber === routePort.portNumber);
+    if (!entry) return;
+    appliedShare.current = key;
+    if (entry.mode !== lane) walletStore.setMode(routePort.portNumber, lane);
+  }, [hydrated, routePort, entries, pathname]);
 
   useEffect(() => {
     if (!expandedId) return;
@@ -253,6 +315,46 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     },
     [saved, entries, showToast, go, copy, route.port],
   );
+
+  const shareCrossing = useCallback(async (port: PortWaitTime, mode: Mode) => {
+    if (sharing.current) return;
+    sharing.current = true;
+    const message = shareMessage(port, mode, copy);
+    const url = new URL(
+      crossingSharePath(port.portNumber, mode, locale),
+      window.location.origin,
+    ).href;
+    const body = `${message.text}\n${url}`;
+    try {
+      if (typeof navigator.share === "function") {
+        const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        if (ios) {
+          await navigator.share({ title: message.title, text: body });
+        } else {
+          const data = { title: message.title, text: message.text, url };
+          if (!navigator.canShare || navigator.canShare(data)) await navigator.share(data);
+          else await navigator.share({ title: message.title, text: body });
+        }
+        haptic("success");
+        return;
+      }
+      await navigator.clipboard.writeText(body);
+      haptic("success");
+      showToast({ message: copy.shareCopied });
+    } catch (error) {
+      if (shareCancelled(error)) return;
+      try {
+        await navigator.clipboard.writeText(body);
+        haptic("success");
+        showToast({ message: copy.shareCopied });
+      } catch {
+        haptic("error");
+        showToast({ message: copy.shareFailed });
+      }
+    } finally {
+      sharing.current = false;
+    }
+  }, [copy, locale, showToast]);
 
   const removeOpen = useCallback(
     (portNumber: string) => {
@@ -368,6 +470,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
   }
 
   return (
+    <CameraStreamProvider streams={cameraStreams} replace={replaceStream}>
     <div className="relative min-h-[100dvh] max-lg:fixed max-lg:inset-0 max-lg:min-h-0 max-lg:overflow-hidden">
       <Glow palette={openItem && tab === "wallet" ? paletteFor(openItem.port.portNumber) : null} />
 
@@ -398,6 +501,9 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
               cityPinned={openCityPinned}
               onPinCity={() => {
                 if (openItem) togglePin(openItem.port.border, portName(openItem.port).city);
+              }}
+              onShare={(port, mode) => {
+                void shareCrossing(port, mode);
               }}
               onRemove={removeOpen}
               onReorder={reorder}
@@ -437,5 +543,6 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
       <TabBar tab={tab} onChange={changeTab} />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
+    </CameraStreamProvider>
   );
 }

@@ -4,6 +4,8 @@ import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
 import { auth } from "@/lib/auth/server";
 import { getBorderWaitTimes, type BorderWaitTimes } from "@/lib/border-wait-times";
+import { getCameraStreams } from "@/lib/camera-streams";
+import { fallbackCameraStreams } from "@/lib/ports";
 import { ensureProfile } from "@/lib/profile";
 import { headers } from "next/headers";
 import { Suspense, type ReactNode } from "react";
@@ -52,10 +54,16 @@ async function LiveWallet({ children }: { children: ReactNode }) {
   } catch {
     initial = null;
   }
+  let streams = fallbackCameraStreams();
+  try {
+    streams = await getCameraStreams();
+  } catch {
+    streams = fallbackCameraStreams();
+  }
   return (
     <>
       <Suspense fallback={<ShellSkeleton wordless />}>
-        <WalletApp initial={initial} />
+        <WalletApp initial={initial} streams={streams} />
       </Suspense>
       {children}
     </>

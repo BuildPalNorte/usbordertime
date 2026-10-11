@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## How this app fits together
 
-Border Time shows live U.S. land-port wait times from the public CBP feed. The home page stays on the sign-in screen until Google sign-in succeeds through Better Auth in this app (`lib/auth`). That visit upserts `profile` (id, email, name, image), keyed to the auth user. Saved crossings, city bookmarks, the language choice, and the appearance choice stay in the browser.
+Border Time shows live U.S. land-port wait times from the public CBP feed. The home page stays on the sign-in screen until Google sign-in succeeds through Better Auth in this app (`lib/auth`). That visit upserts `profile` (id, email, name, image), keyed to the auth user. Saved crossings, city bookmarks, the language choice, and the appearance choice stay in the browser. The current Nuevo and Viejo playlist addresses live in `camera_stream`, shared across accounts. `getCameraStreams()` caches them until a 404 lookup replaces the row.
 
 Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is the short version of how that code works.
 
@@ -20,7 +20,7 @@ Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is 
 | Lane modes, wait colors, or crossing names | `lanes.mdc` |
 | The wallet or city bookmarks | `saved-state.mdc` |
 | English or Spanish copy, the locale, or appearance | `copy.mdc` |
-| The wallet screen, cards, or motion | `wallet-ui.mdc` |
+| The wallet screen, cards, motion, or live cameras | `wallet-ui.mdc` |
 
 Data moves one way. `getBorderWaitTimes()` normalizes `https://bwt.cbp.gov/api/waittimes`. The home page passes that snapshot into `WalletApp`. The client refetches `GET /api/wait-times` about once a minute. Search and the Mexico/Canada filter run on that snapshot in the browser. They do not call the API again.
 

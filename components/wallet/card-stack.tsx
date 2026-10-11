@@ -31,6 +31,7 @@ type Props = {
   onCollapse: () => void;
   onMode: (portNumber: string, mode: Mode) => void;
   onPinCity: () => void;
+  onShare: (port: PortWaitTime, mode: Mode) => void;
   onRemove: (portNumber: string) => void;
   onReorder: (portNumber: string, toIndex: number) => void;
   checking?: boolean;
@@ -57,6 +58,7 @@ export function CardStack({
   onCollapse,
   onMode,
   onPinCity,
+  onShare,
   onRemove,
   onReorder,
   checking = false,
@@ -161,6 +163,7 @@ export function CardStack({
               }
               onCommit={(to) => commit(id, to)}
               onSendBack={() => commit(id, 0, "back")}
+              onShare={onShare}
               checking={checking}
             />
           );
@@ -218,6 +221,7 @@ function StackCard({
   onOver,
   onCommit,
   onSendBack,
+  onShare,
   checking,
 }: {
   item: StackItem;
@@ -242,6 +246,7 @@ function StackCard({
   onOver: (over: number) => void;
   onCommit: (to: number) => void;
   onSendBack: () => void;
+  onShare: (port: PortWaitTime, mode: Mode) => void;
   checking: boolean;
 }) {
   const present = useIsPresent();
@@ -456,6 +461,7 @@ function StackCard({
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return;
+    if (event.target instanceof Element && event.target.closest("[data-card-share]")) return;
     stopListening.current?.();
     const offset = swipeX.get();
     const front = canReorder && index === count - 1;
@@ -796,7 +802,12 @@ function StackCard({
         onDrag={rememberRelease}
         onDragEnd={onOpenDragEnd}
       >
-        <CardFace port={item.port} mode={item.mode} checking={checking} />
+        <CardFace
+          port={item.port}
+          mode={item.mode}
+          checking={checking}
+          onShare={() => onShare(item.port, item.mode)}
+        />
       </motion.div>
     </motion.div>
   );

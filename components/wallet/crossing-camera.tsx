@@ -1,28 +1,51 @@
 "use client";
 
 import { useLocale } from "@/components/locale-provider";
+import { cameraPlaylistMissing, requestCameraStream } from "@/lib/camera-stream";
 import { reportCameraExpanded, videoIsExpanded } from "@/lib/screen-orientation";
 import { useEffect, useRef, useState } from "react";
+import { useCameraStreams } from "./camera-streams";
 
 /**
  * Plays one live HLS camera. Safari uses the video element. Other browsers
  * load hls.js only after this view mounts, and the effect tears it down on close.
+ * A 404 playlist is saved through the alias, then played. Other visits read that address.
  */
-export function CrossingCamera({ src, name }: { src: string; name: string }) {
+export function CrossingCamera({
+  src,
+  alias,
+  name,
+}: {
+  src: string;
+  alias: string;
+  name: string;
+}) {
   const { copy } = useLocale();
+  const { replace } = useCameraStreams();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const tried = useRef(new Set<string>());
+  const [playing, setPlaying] = useState(src);
   const [failed, setFailed] = useState(false);
-  const poster = src.endsWith("stream.m3u8")
-    ? src.replace(/stream\.m3u8$/, "snapshot.jpg")
+  const [resolving, setResolving] = useState(false);
+  const poster = playing.endsWith("stream.m3u8")
+    ? playing.replace(/stream\.m3u8$/, "snapshot.jpg")
     : undefined;
+
+  useEffect(() => {
+    setPlaying(src);
+    tried.current = new Set();
+  }, [src, alias]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    const media: HTMLVideoElement = video;
 
     let gone = false;
+    let looking = false;
     let player: { destroy: () => void } | null = null;
     setFailed(false);
+    setResolving(false);
     video.muted = true;
 
     function stop() {
@@ -37,15 +60,55 @@ export function CrossingCamera({ src, name }: { src: string; name: string }) {
       if (gone) return;
       player?.destroy();
       player = null;
+      setResolving(false);
       setFailed(true);
     }
 
+    async function recover(knownNotFound: boolean) {
+      if (gone || looking) return;
+      if (tried.current.size >= 1) {
+        fail();
+        return;
+      }
+      looking = true;
+      setResolving(true);
+      player?.destroy();
+      player = null;
+      media.removeEventListener("error", onError);
+      media.removeAttribute("src");
+      media.load();
+
+      const missing = knownNotFound || (await cameraPlaylistMissing(playing));
+      if (gone) return;
+      if (!missing) {
+        looking = false;
+        fail();
+        return;
+      }
+
+      tried.current.add(playing);
+      const next = await requestCameraStream(alias);
+      if (gone) return;
+      looking = false;
+      if (!next || next === playing || tried.current.has(next)) {
+        fail();
+        return;
+      }
+      replace(alias, next);
+      setResolving(false);
+      setPlaying(next);
+    }
+
+    function onError() {
+      void recover(false);
+    }
+
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = src;
+      video.src = playing;
       void video.play().catch(() => {});
-      video.addEventListener("error", fail);
+      video.addEventListener("error", onError);
       return () => {
-        video.removeEventListener("error", fail);
+        video.removeEventListener("error", onError);
         stop();
       };
     }
@@ -65,18 +128,27 @@ export function CrossingCamera({ src, name }: { src: string; name: string }) {
         });
         player = next;
         next.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal) fail();
+          if (!data.fatal || gone) return;
+          const status = data.response?.code;
+          const playlist =
+            data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
+            data.url === playing;
+          if (playlist && (status === 404 || status === undefined)) {
+            void recover(status === 404);
+            return;
+          }
+          fail();
         });
         next.on(Hls.Events.MANIFEST_PARSED, () => {
           void video.play().catch(() => {});
         });
-        next.loadSource(src);
+        next.loadSource(playing);
         next.attachMedia(video);
       })
       .catch(() => fail());
 
     return stop;
-  }, [src]);
+  }, [playing, alias, replace]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -99,7 +171,9 @@ export function CrossingCamera({ src, name }: { src: string; name: string }) {
       document.removeEventListener("fullscreenchange", sync);
       reportCameraExpanded(video, false);
     };
-  }, [src]);
+  }, [playing]);
+
+  const quiet = failed || resolving;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-[#10131a]">
@@ -112,14 +186,14 @@ export function CrossingCamera({ src, name }: { src: string; name: string }) {
         controls
         aria-label={copy.cameraLabel(name)}
         className={
-          failed
+          quiet
             ? "hidden"
             : "aspect-video w-full bg-[#10131a] object-contain"
         }
       />
-      {failed ? (
+      {quiet ? (
         <div className="flex aspect-video items-center justify-center px-6 text-center text-[13px] font-medium text-white/70">
-          {copy.cameraUnavailable}
+          {failed ? copy.cameraUnavailable : null}
         </div>
       ) : (
         <span

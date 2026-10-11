@@ -1,4 +1,4 @@
-import type { Mode, PortName, Reading, StatusKey, Tone } from "@/lib/ports";
+import { portName, readLane, type Mode, type PortName, type Reading, type StatusKey, type Tone } from "@/lib/ports";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 
 export type Locale = "en" | "es";
@@ -96,6 +96,13 @@ export type Copy = {
   backToWallet: string;
   closed: string;
   pageTitle: (title: string) => string;
+  share: string;
+  shareNamed: (name: string) => string;
+  shareCopied: string;
+  shareFailed: string;
+  shareTitle: (name: string, wait: string) => string;
+  shareWait: (name: string, minutes: number, lane: string, place: string) => string;
+  shareStatus: (name: string, status: string, lane: string, place: string) => string;
   savedSummary: (count: number, updatedAt: string | null) => string;
   reportedCount: (count: number) => string;
   minutes: (count: number) => string;
@@ -194,11 +201,11 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Wait times and cameras",
-        body: "Wait times come from the public CBP feed. Those requests ask for ports and hours, not for anything about you. Nuevo and Viejo play a live camera from IPCamLive in the browser. We do not record that video.",
+        body: "Wait times come from the public CBP feed. Those requests ask for ports and hours, not for anything about you. Nuevo and Viejo play a live camera from IPCamLive in the browser. We do not record that video. When a camera address stops working, we look up the new one and save it for the next visit. That address is not part of your account.",
       },
       {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account and the profile. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
@@ -233,6 +240,14 @@ export const COPY: Record<Locale, Copy> = {
     backToWallet: "Back to bridges",
     closed: "Closed",
     pageTitle: (title) => `${title} | Border Time`,
+    share: "Share",
+    shareNamed: (name) => `Share ${name}`,
+    shareCopied: "Link copied",
+    shareFailed: "Could not share",
+    shareTitle: (name, wait) => `${name} · ${wait}`,
+    shareWait: (name, minutes, lane, place) =>
+      `${name} is ${minutes} min to cross right now. ${lane}, ${place}.`,
+    shareStatus: (name, status, lane, place) => `${name} — ${status}. ${lane}, ${place}.`,
     savedSummary: (count, updatedAt) => {
       const noun = count === 1 ? "crossing" : "crossings";
       return updatedAt ? `${count} ${noun}, updated ${updatedAt}` : `${count} ${noun}`;
@@ -352,11 +367,11 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Tiempos y cámaras",
-        body: "Los tiempos de espera vienen del feed público de CBP. Esas consultas piden puertos y horarios, no datos sobre ti. Nuevo y Viejo reproducen una cámara en vivo de IPCamLive en el navegador. No grabamos ese video.",
+        body: "Los tiempos de espera vienen del feed público de CBP. Esas consultas piden puertos y horarios, no datos sobre ti. Nuevo y Viejo reproducen una cámara en vivo de IPCamLive en el navegador. No grabamos ese video. Cuando una dirección de cámara deja de funcionar, buscamos la nueva y la guardamos para la siguiente visita. Esa dirección no forma parte de tu cuenta.",
       },
       {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta y el perfil. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",
@@ -391,6 +406,14 @@ export const COPY: Record<Locale, Copy> = {
     backToWallet: "Volver a puentes",
     closed: "Cerrado",
     pageTitle: (title) => `${title} | Border Time`,
+    share: "Compartir",
+    shareNamed: (name) => `Compartir ${name}`,
+    shareCopied: "Enlace copiado",
+    shareFailed: "No se pudo compartir",
+    shareTitle: (name, wait) => `${name} · ${wait}`,
+    shareWait: (name, minutes, lane, place) =>
+      `${name} está a ${minutes} min para cruzar. ${lane}, ${place}.`,
+    shareStatus: (name, status, lane, place) => `${name} — ${status}. ${lane}, ${place}.`,
     savedSummary: (count, updatedAt) => {
       const noun = count === 1 ? "cruce" : "cruces";
       return updatedAt ? `${count} ${noun}, actualizado ${updatedAt}` : `${count} ${noun}`;
@@ -474,6 +497,32 @@ export function presentClock(value: string, locale: Locale): string {
 export function presentHours(hours: string, locale: Locale, copy: Copy): string {
   if (!hours) return copy.hoursUnavailable;
   return presentClock(hours, locale);
+}
+
+export type ShareMessage = {
+  title: string;
+  text: string;
+};
+
+/** The sentence a share sheet sends, and the title and description on that link. */
+export function shareMessage(port: PortWaitTime, mode: Mode, copy: Copy): ShareMessage {
+  const name = portName(port);
+  const reading = readLane(port, mode);
+  const lane = modeName(mode, port, copy);
+  const place = placeSubtitle(name, copy);
+
+  if (reading.minutes !== null) {
+    return {
+      title: copy.shareTitle(name.title, copy.minutes(reading.minutes)),
+      text: copy.shareWait(name.title, reading.minutes, lane, place),
+    };
+  }
+
+  const status = waitLabel(reading, copy);
+  return {
+    title: copy.shareTitle(name.title, status),
+    text: copy.shareStatus(name.title, status, lane, place),
+  };
 }
 
 export function presentPortStatus(status: string, copy: Copy): string {

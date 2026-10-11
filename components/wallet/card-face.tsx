@@ -5,9 +5,11 @@ import type { PortWaitTime } from "@/lib/border-wait-times";
 import { cn } from "@/lib/cn";
 import { lanesLabel, modeName, placeSubtitle, presentHours, waitLabel } from "@/lib/i18n";
 import { cardBackground, paletteFor, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
+import { ShareIcon, type ShareIconHandle } from "@heroicons-animated/react/share";
 import { motion, useMotionTemplate, useMotionValue } from "motion/react";
-import type { PointerEvent } from "react";
+import { useEffect, useRef, type PointerEvent } from "react";
 import { AverageWait } from "./average-wait";
+import { HapticPad } from "./haptic-pad";
 import { CARD_H } from "./motion";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { WaitNumber } from "./wait-number";
@@ -20,12 +22,16 @@ export function CardFace({
   port,
   mode,
   checking = false,
+  onShare,
 }: {
   port: PortWaitTime;
   mode: Mode;
   checking?: boolean;
+  onShare: () => void;
 }) {
   const { locale, copy } = useLocale();
+  const share = useRef<ShareIconHandle>(null);
+  const shareButton = useRef<HTMLButtonElement>(null);
   const palette = paletteFor(port.portNumber);
   const name = portName(port);
   const reading = readLane(port, mode);
@@ -39,6 +45,15 @@ export function CardFace({
   const sheen = useMotionTemplate`radial-gradient(360px circle at ${sheenX}% ${sheenY}%, ${
     light ? "rgb(255 255 255 / 0.17)" : "rgb(255 255 255 / 0.5)"
   }, transparent 62%)`;
+
+  useEffect(() => {
+    const node = shareButton.current;
+    if (!node) return;
+    // Stop the card underneath from seeing this press, including its drag listener.
+    const stop = (event: globalThis.PointerEvent) => event.stopPropagation();
+    node.addEventListener("pointerdown", stop);
+    return () => node.removeEventListener("pointerdown", stop);
+  }, []);
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType !== "mouse") return;
@@ -122,7 +137,7 @@ export function CardFace({
         </div>
       </div>
 
-      <div className="absolute inset-x-[18px] bottom-[18px] flex items-end justify-between gap-4">
+      <div className="absolute inset-x-[18px] bottom-[18px] flex items-end justify-between gap-4 pr-12">
         <div className="min-w-0">
           <p className="text-[12px] leading-none font-medium tracking-[0.01em] opacity-[0.72]">
             {modeName(mode, port, copy)}
@@ -135,6 +150,27 @@ export function CardFace({
           {presentHours(port.hours, locale, copy)}
         </p>
       </div>
+
+      <button
+        ref={shareButton}
+        type="button"
+        data-card-share=""
+        aria-label={copy.shareNamed(name.title)}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
+          onShare();
+        }}
+        onPointerEnter={() => share.current?.startAnimation()}
+        onPointerLeave={() => share.current?.stopAnimation()}
+        className={cn(
+          "absolute right-3.5 bottom-3.5 z-10 grid size-10 place-items-center rounded-full transition-transform active:scale-95",
+          light ? "bg-white/20 text-white" : "bg-black/10 text-[#10131a]",
+        )}
+      >
+        <HapticPad />
+        <ShareIcon ref={share} size={18} aria-hidden />
+      </button>
     </div>
   );
 }

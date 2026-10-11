@@ -6,6 +6,7 @@ import { THEME_COLOR, THEME_COOKIE } from "@/lib/theme";
 import { resolveTheme } from "@/lib/theme.server";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import { Suspense, type ReactNode } from "react";
 import "./globals.css";
 
@@ -19,16 +20,45 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Border Time",
-  description: COPY.en.metaDescription,
-  applicationName: "Border Time",
-  appleWebApp: {
-    capable: true,
+function metadataBaseFrom(headerList: Headers): URL {
+  const raw = headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "";
+  const host = raw.split(",")[0]?.trim();
+  if (host) {
+    const forwarded = headerList.get("x-forwarded-proto")?.split(",")[0]?.trim();
+    const proto =
+      forwarded ||
+      (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+    return new URL(`${proto}://${host}`);
+  }
+  if (process.env.VERCEL_URL) return new URL(`https://${process.env.VERCEL_URL}`);
+  return new URL("http://localhost:3000");
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const description = COPY.en.metaDescription;
+  return {
+    metadataBase: metadataBaseFrom(await headers()),
     title: "Border Time",
-    statusBarStyle: "default",
-  },
-};
+    description,
+    applicationName: "Border Time",
+    appleWebApp: {
+      capable: true,
+      title: "Border Time",
+      statusBarStyle: "default",
+    },
+    openGraph: {
+      title: "Border Time",
+      description,
+      siteName: "Border Time",
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: "Border Time",
+      description,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
