@@ -136,7 +136,7 @@ const CROSSING_STREAM: Record<string, string> = {
   "brownsville|gateway":
     "https://s81.ipcamlive.com/streams/51bcyg8u6laxau7hi/stream.m3u8",
   "brownsville|b&m":
-    "https://s90.ipcamlive.com/streams/5a1anhwoz634hpevi/stream.m3u8",
+    "https://s90.ipcamlive.com/streams/5aormyelwpo5cdtxw/stream.m3u8",
 };
 
 export function crossingStream(port: PortWaitTime): string | null {
