@@ -2,17 +2,32 @@
 
 import { useLocale } from "@/components/locale-provider";
 import { authClient } from "@/lib/auth/client";
-import { haptic } from "@/lib/haptics";
-import { motion, useReducedMotion } from "motion/react";
+import { haptic, type Haptic } from "@/lib/haptics";
+import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { HapticPad } from "./haptic-pad";
 import { LanguageSwitch } from "./language-switch";
 import { cn } from "@/lib/cn";
-import { cardBackground, PALETTES, TONE_DOT } from "@/lib/ports";
+import { cardBackground, PALETTES, project, TONE_DOT } from "@/lib/ports";
 import type { CSSProperties } from "react";
 import { CARD_H, PEEK, REDUCED, SPRING, stackHeight } from "./motion";
 import { ThemeSwitch } from "./theme-switch";
+
+/** Upward travel that arms sign-in. A flick can still project past it. */
+const COMMIT = 108;
+/** Drag back through this gap before the detent can tick again. */
+const RELEASE_GAP = 28;
+/** How far the card follows before it resists. */
+const LIMIT = 164;
+/** Movement before a touch becomes a swipe, so a tap still lands. */
+const SLOP = 10;
 
 export function SignInScreen({ problem }: { problem?: "profile" }) {
   const { copy } = useLocale();
@@ -28,9 +43,11 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }, []);
 
-  const signIn = async () => {
-    if (busy) return;
-    haptic("selection");
+  const busyRef = useRef(false);
+  const signIn = async (tick: Haptic | null = "selection") => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    if (tick) haptic(tick);
     setBusy(true);
     setFailed(false);
     const { error } = await authClient.signIn.social({
@@ -39,11 +56,21 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
       errorCallbackURL: "/?sign-in=failed",
     });
     if (error) {
+      busyRef.current = false;
       setFailed(true);
       setBusy(false);
       haptic("error");
     }
   };
+
+  const error =
+    failed || problem === "profile"
+      ? problem === "profile" && !failed
+        ? copy.profileError
+        : copy.signInFailed
+      : null;
+
+  const swipe = usePageSwipe({ busy, failed, reduce: !!reduce, onSignIn: signIn });
 
   const pal = (id: string) => PALETTES.find((p) => p.id === id) ?? PALETTES[0];
   // Same anatomy as the wallet: earlier cards peek above, the last one is the front card.
@@ -60,8 +87,12 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
         <LanguageSwitch />
       </header>
 
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6">
-        <div aria-hidden className="relative select-none" style={{ height: stackHeight(cards.length) }}>
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] max-lg:pb-[calc(var(--sign-card-h)+0.5rem)] sm:px-6">
+        <div
+          aria-hidden
+          className="relative select-none max-lg:origin-top max-lg:scale-[0.7] max-lg:mb-[calc(var(--stack-h)*-0.3)]"
+          style={{ height: stackHeight(cards.length), "--stack-h": `${stackHeight(cards.length)}px` } as CSSProperties}
+        >
           {cards.map((c, i) => {
             const front = i === cards.length - 1;
             return (
@@ -114,7 +145,7 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
           })}
         </div>
 
-        <div className="rise mt-10 text-center" style={{ "--i": 4 } as CSSProperties}>
+        <div className="rise mt-10 flex flex-col items-center text-center max-lg:mt-7" style={{ "--i": 4 } as CSSProperties}>
           <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.04em] text-balance">
             {copy.signInHeadline}
           </h1>
@@ -127,7 +158,7 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
             aria-busy={busy}
             whileTap={reduce || busy ? undefined : { scale: 0.97 }}
             transition={SPRING.snap}
-            className="relative mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-full bg-surface px-6 text-[16px] font-semibold text-foreground disabled:opacity-70"
+            className="relative mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-full bg-surface px-6 text-[16px] font-semibold text-foreground disabled:opacity-70 max-lg:hidden"
           >
             <HapticPad />
             <GoogleMark />
@@ -138,15 +169,236 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
             {copy.privacyPolicy}
           </Link>
 
-          {(failed || problem === "profile") && (
+          {error && (
             <p className="mx-auto mt-4 max-w-[18rem] text-[13px] leading-snug text-danger" role="status">
-              {problem === "profile" && !failed ? copy.profileError : copy.signInFailed}
+              {error}
             </p>
           )}
         </div>
       </main>
+
+      <SignInCard swipe={swipe} busy={busy} onTap={() => void signIn()} />
     </div>
   );
+}
+
+function usePageSwipe({
+  busy,
+  failed,
+  reduce,
+  onSignIn,
+}: {
+  busy: boolean;
+  failed: boolean;
+  reduce: boolean;
+  onSignIn: (tick: Haptic | null) => void;
+}) {
+  const y = useMotionValue(0);
+  const veil = useMotionValue(1);
+  const armedRef = useRef(false);
+  const armedAt = useRef(0);
+  const locked = useRef(false);
+  const tracking = useRef(false);
+  const suppressClick = useRef(false);
+  const flight = useRef<ReturnType<typeof animate> | null>(null);
+  const stopListen = useRef<(() => void) | null>(null);
+  const releaseTick = useRef(0);
+  const [held, setHeld] = useState(false);
+
+  useMotionValueEvent(y, "change", (value) => {
+    const next = value < -0.5;
+    setHeld((current) => (current === next ? current : next));
+  });
+
+  useEffect(
+    () => () => {
+      stopListen.current?.();
+      window.clearTimeout(releaseTick.current);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!failed) return;
+    locked.current = false;
+    armedRef.current = false;
+    flight.current?.stop();
+    flight.current = animate(y, 0, reduce ? REDUCED : SPRING.move);
+    animate(veil, 1, reduce ? REDUCED : SPRING.move);
+  }, [failed, reduce, veil, y]);
+
+  function tickAfterDetent(kind: Haptic) {
+    const wait = Math.max(0, 56 - (performance.now() - armedAt.current));
+    window.clearTimeout(releaseTick.current);
+    if (wait === 0) {
+      haptic(kind);
+      return;
+    }
+    releaseTick.current = window.setTimeout(() => haptic(kind), wait);
+  }
+
+  function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0 || busy || locked.current || tracking.current) return;
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
+    tracking.current = true;
+    suppressClick.current = false;
+    flight.current?.stop();
+    const start = y.get();
+    const pointerX = event.clientX;
+    const pointerY = event.clientY;
+    const pointerId = event.pointerId;
+    let decided: "y" | "x" | null = null;
+    const samples: { v: number; t: number }[] = [{ v: start, t: performance.now() }];
+
+    const finishListen = () => {
+      tracking.current = false;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      if (stopListen.current === finishListen) stopListen.current = null;
+    };
+
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerId !== pointerId) return;
+      const dx = e.clientX - pointerX;
+      const dy = e.clientY - pointerY;
+      if (!decided) {
+        if (Math.hypot(dx, dy) < SLOP) return;
+        decided = Math.abs(dy) > Math.abs(dx) && dy < 0 ? "y" : "x";
+        suppressClick.current = true;
+      }
+      if (decided !== "y") return;
+      e.preventDefault();
+      const next = follow(start + dy);
+      const up = -next;
+      if (up >= COMMIT && !armedRef.current) {
+        armedRef.current = true;
+        armedAt.current = performance.now();
+        haptic("medium");
+      } else if (up < COMMIT - RELEASE_GAP && armedRef.current) {
+        armedRef.current = false;
+      }
+      y.set(next);
+      const now = performance.now();
+      samples.push({ v: next, t: now });
+      const cutoff = now - 100;
+      while (samples.length > 2 && (samples[0]?.t ?? 0) < cutoff) samples.shift();
+    };
+
+    const onUp = (e: PointerEvent) => {
+      if (e.pointerId !== pointerId) return;
+      finishListen();
+      if (decided !== "y") return;
+
+      const velocity = readVelocity(samples);
+      const projected = y.get() + project(velocity);
+      if (projected <= -COMMIT) {
+        locked.current = true;
+        tickAfterDetent("success");
+        if (reduce) {
+          animate(veil, 0, REDUCED);
+        } else {
+          flight.current = animate(y, -LIMIT, { ...SPRING.release, velocity });
+          animate(veil, 0, { duration: 0.32, ease: [0.23, 1, 0.32, 1] });
+        }
+        onSignIn(null);
+        return;
+      }
+      const pulledUp = y.get() < -24;
+      armedRef.current = false;
+      if (pulledUp) tickAfterDetent("soft");
+      flight.current = animate(y, 0, reduce ? REDUCED : { ...SPRING.release, velocity });
+    };
+
+    stopListen.current = finishListen;
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  }
+
+  function onClickCapture(event: ReactMouseEvent) {
+    if (!suppressClick.current) return;
+    suppressClick.current = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  return { y, veil, held, onPointerDown, onClickCapture };
+}
+
+/**
+ * A translucent card over the bottom half of the page. It is the swipe area:
+ * it follows the finger, and the chevrons above the label show which way to go.
+ */
+function SignInCard({
+  swipe,
+  busy,
+  onTap,
+}: {
+  swipe: ReturnType<typeof usePageSwipe>;
+  busy: boolean;
+  onTap: () => void;
+}) {
+  const { copy } = useLocale();
+  return (
+    <motion.div
+      style={{ y: swipe.y, opacity: swipe.veil }}
+      onPointerDown={swipe.onPointerDown}
+      onClickCapture={swipe.onClickCapture}
+      onContextMenu={(event) => event.preventDefault()}
+      className={cn("sign-in-card", swipe.held && "is-held")}
+    >
+      <span aria-hidden className="sign-in-card-light" />
+      <span aria-hidden className="sign-in-chevrons">
+        <ChevronUp />
+        <ChevronUp />
+      </span>
+      <button
+        type="button"
+        onClick={onTap}
+        disabled={busy}
+        aria-busy={busy}
+        className="sign-in-card-action"
+      >
+        <HapticPad />
+        <GoogleMark />
+        <span className="text-[19px] leading-none font-semibold tracking-[-0.02em]">
+          {copy.signInWithGoogle}
+        </span>
+      </button>
+      <p aria-hidden className="mt-3 text-[14px] leading-none font-medium text-muted">
+        {copy.signInSwipe}
+      </p>
+    </motion.div>
+  );
+}
+
+function ChevronUp() {
+  return (
+    <svg viewBox="0 0 24 12" aria-hidden className="h-3 w-6" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10l9-8 9 8" />
+    </svg>
+  );
+}
+
+/** Resist past the card's rest and its upper limit. 1:1 in between. */
+function follow(next: number) {
+  if (next > 0) return rubberband(next);
+  if (next < -LIMIT) return -LIMIT - rubberband(-LIMIT - next);
+  return next;
+}
+
+function rubberband(overshoot: number, dimension = 120, constant = 0.55) {
+  return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
+}
+
+function readVelocity(samples: { v: number; t: number }[]) {
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  if (!first || !last || samples.length < 2) return 0;
+  const dt = last.t - first.t;
+  if (dt <= 0) return 0;
+  return ((last.v - first.v) / dt) * 1000;
 }
 
 export function GoogleMark() {

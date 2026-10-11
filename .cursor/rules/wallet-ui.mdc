@@ -40,4 +40,6 @@ A tap that switches tabs plays that tab's icon animation. Reduced motion skips i
 
 `AccountButton` sits with the theme and language switches. On the crossings list it is hidden at `lg`, because the bridges header stays on screen. It opens the name and sign out. Sign-out returns to the sign-in screen. The bridges stay in the browser either way.
 
+Below `lg`, sign-in is a translucent card over the bottom of the sign-in screen: "Sign in with Google" and "Swipe up", with light spilling from its top edge and two chevrons pointing up. The card is the swipe area and tracks the finger. Passing the commit line ticks `medium`. Letting go ticks `success` and starts Google sign-in when the release projects past that line, or ticks `soft` and the card springs home when it does not. The page behind stays put. A tap on the card's button still signs in. At `lg` and up the card is hidden and the Google button on the page remains. Reduced motion keeps the light and chevrons still.
+
 The empty wallet suggests unsaved Mexican crossings whose city is Brownsville.
