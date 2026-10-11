@@ -1,6 +1,6 @@
 # Border Time
 
-Open source live wait times for U.S. land ports of entry. Save the bridges you cross, then see passenger, Ready, SENTRI or NEXUS, pedestrian, truck, and FAST lanes in one wallet.
+Open source live wait times for U.S. land ports of entry. Save the bridges you cross, then see passenger, Ready, SENTRI or NEXUS, pedestrian, truck, and FAST lanes together.
 
 Border Time reads the public [U.S. Customs and Border Protection border wait times feed](https://bwt.cbp.gov/) and presents it for the Mexican and Canadian borders. The interface is in English and Spanish. Saved crossings and city bookmarks stay in the browser. There is no account.
 
@@ -10,8 +10,8 @@ Repository: [github.com/BuildPalNorte/usbordertime](https://github.com/BuildPalN
 
 - Browse every crossing CBP reports, and filter by Mexico, Canada, or both.
 - Search by city, bridge, or port number.
-- Keep a wallet of the crossings you use. The wallet is stored in `localStorage` on this device.
-- Bookmark a city so its crossings stay at the top of the wallet.
+- Keep the bridges you use. They are stored in `localStorage` on this device.
+- Bookmark a city so its crossings stay at the top of your bridges.
 - Switch lane type on a crossing and see the wait, how many lanes are open, hours, port status, and any construction notice CBP published.
 - Refresh automatically about once a minute. You can also refresh by hand.
 
@@ -103,7 +103,7 @@ lib/wallet-store.ts       saved crossings in localStorage
 lib/pin-store.ts          bookmarked cities in localStorage
 ```
 
-On a phone, Wallet and Browse are separate tabs. On a wide screen both panes stay on the page.
+On a phone, Bridges and Browse are separate tabs. On a wide screen both panes stay on the page.
 
 ## License
 
