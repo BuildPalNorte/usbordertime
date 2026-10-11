@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { useLayoutEffect, useRef, type MouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { CardFace } from "./card-face";
 import type { StackItem } from "./card-stack";
-import { REDUCED, SPRING } from "./motion";
+import { REDUCED, ROW_GAP, SPRING } from "./motion";
 
 const SLOP = 10;
 
@@ -48,7 +48,7 @@ export function RouteRow({
   const reduce = useReducedMotion();
 
   return (
-    <ul aria-label={label} className="flex flex-col gap-3">
+    <ul aria-label={label} className="flex flex-col" style={{ gap: ROW_GAP }}>
       {items.map((item, index) => {
         const id = item.port.portNumber;
         return (

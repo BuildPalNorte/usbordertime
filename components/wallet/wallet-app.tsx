@@ -215,6 +215,20 @@ export function WalletApp({
   }, [entries, byNumber, pins, orderReady, routePort]);
   const saved = useMemo(() => new Set(entries.map((e) => e.portNumber)), [entries]);
 
+  // The notification's cards in the stack's order, so each one drops straight into its slot
+  // when dismissed instead of crossing the other on the way. Bridges outside the wallet go last.
+  const orderedFocusItems = useMemo(() => {
+    const place = new Map(items.map((item, index) => [item.port.portNumber, index]));
+    const rank = (portNumber: string) => place.get(portNumber) ?? Number.POSITIVE_INFINITY;
+    return focusItems
+      .map((item, index) => ({ item, index }))
+      .sort(
+        (a, b) =>
+          rank(a.item.port.portNumber) - rank(b.item.port.portNumber) || a.index - b.index,
+      )
+      .map(({ item }) => item);
+  }, [focusItems, items]);
+
   const [paneFrom, setPaneFrom] = useState(28);
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastId = useRef(0);
@@ -232,13 +246,15 @@ export function WalletApp({
   // While a notification card is open, the stack behind it is that notification's bridges.
   const viewItems =
     focus && expandedId && focusItems.some((item) => item.port.portNumber === expandedId)
-      ? focusItems
+      ? orderedFocusItems
       : items;
   const openItem = viewItems.find((i) => i.port.portNumber === expandedId) ?? null;
   const feedReady = Boolean(data) && !isPending;
   const focusPending = Boolean(focus) && !feedReady && expandedId === null;
   const routesRow =
-    focus && !focusPending && expandedId === null && focusItems.length > 0 ? focusItems : null;
+    focus && !focusPending && expandedId === null && focusItems.length > 0
+      ? orderedFocusItems
+      : null;
   const routesMissing = Boolean(
     focus && !focusPending && expandedId === null && focusItems.length === 0,
   );

@@ -69,6 +69,10 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
   // Once the notification row has been on screen, the stack should return in place.
   const [seenRoutes, setSeenRoutes] = useState(false);
   if (holding && !seenRoutes) setSeenRoutes(true);
+  // Remember the order on screen, so the stack can take each card from where it sat.
+  const [rowIds, setRowIds] = useState<string[] | null>(null);
+  const shownIds = routes ? routes.map((item) => item.port.portNumber) : null;
+  if (shownIds && (!rowIds || rowIds.join() !== shownIds.join())) setRowIds(shownIds);
 
   const subtitle = routesLabel
     ? routesLabel
@@ -169,6 +173,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
           onReorder={props.onReorder}
           checking={checking}
           quiet={seenRoutes}
+          returnFrom={seenRoutes ? rowIds : null}
         />
       )}
     </div>

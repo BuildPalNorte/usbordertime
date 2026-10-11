@@ -19,7 +19,7 @@ import {
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { CardDetail } from "./card-detail";
 import { CardFace } from "./card-face";
-import { CARD_H, PEEK, REDUCED, SPRING, stackHeight } from "./motion";
+import { CARD_H, PEEK, REDUCED, ROW_GAP, SPRING, stackHeight } from "./motion";
 
 export type StackItem = { port: PortWaitTime; mode: Mode };
 
@@ -37,6 +37,8 @@ type Props = {
   checking?: boolean;
   /** Skip the fan-in. Used when the stack returns after the notification row. */
   quiet?: boolean;
+  /** Cards that were on screen one above the other, top first. They slide from there into the stack. */
+  returnFrom?: string[] | null;
 };
 
 type ReorderDrag = { id: string; from: number; over: number };
@@ -65,6 +67,7 @@ export function CardStack({
   onReorder,
   checking = false,
   quiet = false,
+  returnFrom = null,
 }: Props) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
@@ -148,6 +151,7 @@ export function CardStack({
               canReorder={canReorder}
               intro={intro}
               quiet={quiet}
+              rowSlot={returnFrom ? returnFrom.indexOf(id) : -1}
               appearFrom={height + 120}
               reduce={Boolean(reduce)}
               spring={spring}
@@ -214,6 +218,7 @@ function StackCard({
   canReorder,
   intro,
   quiet,
+  rowSlot,
   appearFrom,
   reduce,
   spring,
@@ -240,6 +245,7 @@ function StackCard({
   canReorder: boolean;
   intro: boolean;
   quiet: boolean;
+  rowSlot: number;
   appearFrom: number;
   reduce: boolean;
   spring: typeof SPRING.move | typeof REDUCED;
@@ -256,7 +262,16 @@ function StackCard({
   checking: boolean;
 }) {
   const present = useIsPresent();
-  const y = useMotionValue(reduce || quiet ? targetY : appearFrom);
+  // A card that was on screen in full starts exactly where it was and settles into its slot.
+  const y = useMotionValue(
+    reduce
+      ? targetY
+      : rowSlot >= 0
+        ? rowSlot * (CARD_H + ROW_GAP)
+        : quiet
+          ? targetY
+          : appearFrom,
+  );
   const enterDelay = useRef(!quiet && intro && !reduce ? index * 0.06 : 0);
   const pendingGesture = useRef<{ velocity?: number; from?: number } | null>(null);
   const flight = useRef<{ stop: () => void } | null>(null);
@@ -764,7 +779,9 @@ function StackCard({
     <motion.div
       className="absolute inset-x-0 top-0"
       style={{ y, zIndex, pointerEvents: dimmed ? "none" : "auto" }}
-      initial={quiet ? false : reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
+      initial={
+        quiet && rowSlot >= 0 ? false : reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }
+      }
       animate={{ opacity: dimmed ? 0 : dragging ? 0.82 : 1, scale: dimmed ? 0.95 : 1 }}
       exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92, transition: SPRING.move }}
       transition={{ ...spring, delay: reduce ? 0 : intro ? index * 0.06 : 0 }}

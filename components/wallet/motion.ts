@@ -20,6 +20,8 @@ export const REDUCED: Transition = { duration: 0.16, ease: "easeOut" };
 /** Layout constants shared by the stack and its detail panel. */
 export const CARD_H = 212;
 export const PEEK = 76;
+/** Space between the full cards a notification shows, one above the other. */
+export const ROW_GAP = 12;
 
 export function stackHeight(count: number): number {
   return count === 0 ? 0 : CARD_H + (count - 1) * PEEK;
