@@ -1,4 +1,5 @@
 import { portName, readLane, type Mode, type PortName, type Reading, type StatusKey, type Tone } from "@/lib/ports";
+import { REFERRAL_LABEL, type Referral } from "@/lib/referral";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 
 export type Locale = "en" | "es";
@@ -88,6 +89,12 @@ export type Copy = {
   signInRedirecting: string;
   signInHeadline: string;
   signInSample: string;
+  referralTitle: string;
+  referralBody: string;
+  referralContinue: string;
+  referralSaving: string;
+  referralFailed: string;
+  referralOption: Record<Referral, string>;
   privacyPolicy: string;
   admin: string;
   privacyTitle: string;
@@ -340,6 +347,12 @@ export const COPY: Record<Locale, Copy> = {
     signInRedirecting: "Signing in…",
     signInHeadline: "Know before you cross.",
     signInSample: "Sample",
+    referralTitle: "How did you find us?",
+    referralBody: "Pick one. It stays with your account.",
+    referralContinue: "Continue",
+    referralSaving: "Saving…",
+    referralFailed: "Could not save that. Try again.",
+    referralOption: REFERRAL_LABEL,
     privacyPolicy: "Privacy policy",
     admin: "Admin",
     privacyTitle: "Privacy policy",
@@ -349,7 +362,7 @@ export const COPY: Record<Locale, Copy> = {
     privacySections: [
       {
         heading: "Your account",
-        body: "Signing in uses Google. Each visit saves a profile: the account id, your email, your name, and the address of your Google profile photo. A later visit refreshes those fields. We use them to keep you signed in and to show your name and photo. We do not sell them, and we do not use them for advertising.",
+        body: "Signing in uses Google. Each visit saves a profile: the account id, your email, your name, and the address of your Google profile photo. A later visit refreshes those fields. The first time you sign in, we also ask how you found Border Time and save the option you pick. We use the profile to keep you signed in and to show your name and photo, and the option to see what brings people here. We do not sell them, and we do not use them for advertising.",
       },
       {
         heading: "Saved with your account",
@@ -636,6 +649,20 @@ export const COPY: Record<Locale, Copy> = {
     signInRedirecting: "Iniciando sesión…",
     signInHeadline: "Sabe antes de cruzar.",
     signInSample: "Ejemplo",
+    referralTitle: "¿Cómo nos encontraste?",
+    referralBody: "Elige una. Se queda en tu cuenta.",
+    referralContinue: "Continuar",
+    referralSaving: "Guardando…",
+    referralFailed: "No se pudo guardar. Intenta de nuevo.",
+    referralOption: {
+      friend: "Un amigo o familiar",
+      whatsapp: "WhatsApp",
+      instagram: "Instagram",
+      tiktok: "TikTok",
+      facebook: "Facebook",
+      google: "Google",
+      other: "En otro lugar",
+    },
     privacyPolicy: "Política de privacidad",
     admin: "Admin",
     privacyTitle: "Política de privacidad",
@@ -645,7 +672,7 @@ export const COPY: Record<Locale, Copy> = {
     privacySections: [
       {
         heading: "Tu cuenta",
-        body: "El inicio de sesión usa Google. Cada visita guarda un perfil: el id de la cuenta, tu correo, tu nombre y la dirección de tu foto de perfil de Google. Una visita posterior actualiza esos datos. Los usamos para mantener tu sesión y para mostrar tu nombre y tu foto. No los vendemos y no los usamos para publicidad.",
+        body: "El inicio de sesión usa Google. Cada visita guarda un perfil: el id de la cuenta, tu correo, tu nombre y la dirección de tu foto de perfil de Google. Una visita posterior actualiza esos datos. La primera vez que inicias sesión, también preguntamos cómo encontraste Border Time y guardamos la opción que eliges. Usamos el perfil para mantener tu sesión y para mostrar tu nombre y tu foto, y la opción para ver qué trae a la gente aquí. No los vendemos y no los usamos para publicidad.",
       },
       {
         heading: "Guardado en tu cuenta",

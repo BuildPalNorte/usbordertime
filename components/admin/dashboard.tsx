@@ -75,6 +75,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-medium">{person.name}</p>
                       <p className="truncate text-[13px] text-muted">{person.email}</p>
+                      {person.referral && <p className="truncate text-[13px] text-muted">{person.referral}</p>}
                     </div>
                     <time className="shrink-0 text-[13px] text-muted" dateTime={person.updatedAt}>
                       {formatWhen(person.updatedAt)}
@@ -116,6 +117,31 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         </div>
 
         <div className="flex flex-col gap-10">
+          <section>
+            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">How they found us</h2>
+            {data.referrals.length === 0 ? (
+              <p className="mt-3 text-[15px] text-muted">No answers yet.</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
+                {data.referrals.map((source) => (
+                  <li key={source.source} className="flex items-baseline justify-between gap-4 px-4 py-3">
+                    <p className="truncate text-[15px] font-medium">{source.label}</p>
+                    <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                      {source.count.toLocaleString("en-US")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {data.referralPending > 0 && (
+              <p className="mt-3 text-[13px] text-muted">
+                {data.referralPending === 1
+                  ? "1 still choosing."
+                  : `${data.referralPending.toLocaleString("en-US")} still choosing.`}
+              </p>
+            )}
+          </section>
+
           <section>
             <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Cameras</h2>
             <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">

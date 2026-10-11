@@ -1,7 +1,8 @@
 import { getAuth } from "@/lib/auth/server";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { listedCameras, portName } from "@/lib/ports";
-import { ensureProfile } from "@/lib/profile";
+import { ensureProfile, ensureProfileColumns } from "@/lib/profile";
+import { isReferral, REFERRAL_LABEL, REFERRALS, type Referral } from "@/lib/referral";
 import { neon } from "@neondatabase/serverless";
 import { headers } from "next/headers";
 
@@ -41,7 +42,14 @@ export type AdminViewer = { name: string; email: string };
 
 export type AdminStat = { label: string; value: number; detail: string };
 
-export type AdminAccount = { name: string; email: string; updatedAt: string };
+export type AdminAccount = {
+  name: string;
+  email: string;
+  updatedAt: string;
+  referral: string | null;
+};
+
+export type AdminReferral = { source: Referral; label: string; count: number };
 
 export type AdminAlertGroup = { portNumber: string; label: string; lane: string; count: number };
 
@@ -56,6 +64,8 @@ export type AdminData = {
   stats: AdminStat[];
   people: AdminAccount[];
   accountTotal: number;
+  referrals: AdminReferral[];
+  referralPending: number;
   alerts: AdminAlertGroup[];
   cameras: AdminCamera[];
   feed: { fetchedAt: string; ports: number } | null;
@@ -126,12 +136,27 @@ async function readDashboard(): Promise<AdminData> {
     problem = true;
   };
 
+  await ensureProfileColumns().catch((error: unknown) => {
+    mark(error, false);
+  });
+
   const accountsQuery = sql`select count(*)::int as count from profile`;
   const peopleQuery = sql`
-    select name, email, updated_at
+    select name, email, updated_at, referral
     from profile
     order by updated_at desc
     limit ${PEOPLE_LIMIT}
+  `;
+  const referralsQuery = sql`
+    select referral, count(*)::int as count
+    from profile
+    where referral is not null
+    group by referral
+  `;
+  const referralPendingQuery = sql`
+    select count(*)::int as count
+    from profile
+    where referral_pending
   `;
   const alertTotalsQuery = sql`
     select
@@ -159,7 +184,8 @@ async function readDashboard(): Promise<AdminData> {
     () => null,
   );
 
-  const [accounts, people, alertTotals, alertGroups, devices, schedules, cameras, feed] = await Promise.all([
+  const [accounts, people, referralRows, referralPending, alertTotals, alertGroups, devices, schedules, cameras, feed] =
+    await Promise.all([
     accountsQuery.then(
       (rows) => asCount((rows[0] as { count?: unknown } | undefined)?.count),
       (error: unknown) => {
@@ -168,10 +194,24 @@ async function readDashboard(): Promise<AdminData> {
       },
     ),
     peopleQuery.then(
-      (rows) => rows as { name: string | null; email: string; updated_at: unknown }[],
+      (rows) => rows as { name: string | null; email: string; updated_at: unknown; referral: unknown }[],
       (error: unknown) => {
         mark(error, false);
         return [];
+      },
+    ),
+    referralsQuery.then(
+      (rows) => rows as { referral: unknown; count: unknown }[],
+      (error: unknown) => {
+        mark(error, false);
+        return [];
+      },
+    ),
+    referralPendingQuery.then(
+      (rows) => asCount((rows[0] as { count?: unknown } | undefined)?.count),
+      (error: unknown) => {
+        mark(error, false);
+        return 0;
       },
     ),
     alertTotalsQuery.then(
@@ -241,9 +281,18 @@ async function readDashboard(): Promise<AdminData> {
     people: people.flatMap((row) => {
       const updatedAt = iso(row.updated_at);
       if (!row.email || !updatedAt) return [];
-      return [{ name: row.name?.trim() || row.email, email: row.email, updatedAt }];
+      return [
+        {
+          name: row.name?.trim() || row.email,
+          email: row.email,
+          updatedAt,
+          referral: isReferral(row.referral) ? REFERRAL_LABEL[row.referral] : null,
+        },
+      ];
     }),
     accountTotal: accounts,
+    referrals: referralCounts(referralRows),
+    referralPending,
     alerts: alertGroups.map((row) => {
       const port = byNumber.get(row.port_number);
       const name = port ? portName(port) : null;
@@ -262,6 +311,19 @@ async function readDashboard(): Promise<AdminData> {
     feed: feed ? { fetchedAt: feed.fetchedAt, ports: feed.ports.length } : null,
     problem,
   };
+}
+
+function referralCounts(rows: { referral: unknown; count: unknown }[]): AdminReferral[] {
+  const counts = new Map<Referral, number>();
+  for (const row of rows) {
+    if (!isReferral(row.referral)) continue;
+    counts.set(row.referral, asCount(row.count));
+  }
+  return REFERRALS.flatMap((source) => {
+    const count = counts.get(source) ?? 0;
+    if (count === 0) return [];
+    return [{ source, label: REFERRAL_LABEL[source], count }];
+  }).sort((a, b) => b.count - a.count || REFERRALS.indexOf(a.source) - REFERRALS.indexOf(b.source));
 }
 
 function camerasFrom(rows: { alias: string; src: string }[]): AdminCamera[] {
