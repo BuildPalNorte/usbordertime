@@ -22,6 +22,9 @@ type Auth = ReturnType<typeof createAuth>;
 
 const globalForAuth = globalThis as unknown as { authPool?: Pool; auth?: Auth };
 
+/** A dev reload must build auth again. The previous client would keep localhost as the only origin. */
+if (process.env.NODE_ENV !== "production") globalForAuth.auth = undefined;
+
 function createAuth() {
   const pool =
     globalForAuth.authPool ??
@@ -34,7 +37,16 @@ function createAuth() {
 
   return betterAuth({
     secret: required("BETTER_AUTH_SECRET"),
-    baseURL: process.env.BETTER_AUTH_URL,
+    // The request host is the origin. A fixed BETTER_AUTH_URL of localhost
+    // made production reject www.usbordertime.com.
+    baseURL: {
+      allowedHosts: ["www.usbordertime.com", "usbordertime.com", "localhost:3000", "127.0.0.1:3000"],
+      fallback: process.env.NODE_ENV === "production" ? "https://www.usbordertime.com" : "http://localhost:3000",
+      protocol: "auto",
+    },
+    advanced: {
+      trustedProxyHeaders: true,
+    },
     database: pool,
     socialProviders: {
       google: {
