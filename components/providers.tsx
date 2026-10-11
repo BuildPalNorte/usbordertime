@@ -1,11 +1,21 @@
 "use client";
 
 import { LocaleProvider } from "@/components/locale-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import type { Locale } from "@/lib/i18n";
+import type { ThemeChoice } from "@/lib/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
-export function Providers({ locale, children }: { locale: Locale; children: ReactNode }) {
+export function Providers({
+  locale,
+  theme,
+  children,
+}: {
+  locale: Locale;
+  theme: ThemeChoice | null;
+  children: ReactNode;
+}) {
   const [client] = useState(
     () =>
       new QueryClient({
@@ -15,7 +25,9 @@ export function Providers({ locale, children }: { locale: Locale; children: Reac
 
   return (
     <QueryClientProvider client={client}>
-      <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      <ThemeProvider theme={theme}>
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

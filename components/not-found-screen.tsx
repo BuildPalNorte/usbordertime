@@ -2,6 +2,7 @@
 
 import { useLocale } from "@/components/locale-provider";
 import { LanguageSwitch } from "@/components/wallet/language-switch";
+import { ThemeSwitch } from "@/components/wallet/theme-switch";
 import { CARD_H } from "@/components/wallet/motion";
 import { cardBackground, PALETTES } from "@/lib/ports";
 import Link from "next/link";
@@ -18,7 +19,8 @@ export function NotFoundScreen() {
 
   return (
     <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center px-4 py-12 sm:px-6">
-      <div className="mb-8 flex justify-end">
+      <div className="mb-8 flex justify-end gap-2">
+        <ThemeSwitch />
         <LanguageSwitch />
       </div>
 

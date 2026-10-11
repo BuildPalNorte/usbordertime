@@ -60,6 +60,8 @@ export type Copy = {
   sections: string;
   languageToSpanish: string;
   languageToEnglish: string;
+  themeToLight: string;
+  themeToDark: string;
   canadianBorder: string;
   mexicanBorder: string;
   cbpNotice: string;
@@ -144,6 +146,8 @@ export const COPY: Record<Locale, Copy> = {
     sections: "Sections",
     languageToSpanish: "Cambiar a español",
     languageToEnglish: "Switch to English",
+    themeToLight: "Switch to light mode",
+    themeToDark: "Switch to dark mode",
     canadianBorder: "Canadian border",
     mexicanBorder: "Mexican border",
     cbpNotice: "CBP notice, in English",
@@ -249,6 +253,8 @@ export const COPY: Record<Locale, Copy> = {
     sections: "Secciones",
     languageToSpanish: "Cambiar a español",
     languageToEnglish: "Switch to English",
+    themeToLight: "Cambiar a modo claro",
+    themeToDark: "Cambiar a modo oscuro",
     canadianBorder: "Frontera con Canadá",
     mexicanBorder: "Frontera con México",
     cbpNotice: "Aviso de CBP, en inglés",

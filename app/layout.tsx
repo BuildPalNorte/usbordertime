@@ -2,6 +2,8 @@ import { Providers } from "@/components/providers";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { COPY, LOCALE_COOKIE } from "@/lib/i18n";
 import { resolveLocale } from "@/lib/locale.server";
+import { THEME_COLOR, THEME_COOKIE } from "@/lib/theme";
+import { resolveTheme } from "@/lib/theme.server";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense, type ReactNode } from "react";
@@ -33,12 +35,12 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f1f2f5" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0b0f" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLOR.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLOR.dark },
   ],
 };
 
-const localeScript = `try{var m=document.cookie.match(/(?:^|; )${LOCALE_COOKIE}=(en|es)/);if(m)document.documentElement.lang=m[1]}catch(e){}`;
+const bootScript = `try{var l=document.cookie.match(/(?:^|; )${LOCALE_COOKIE.replaceAll(".", "\\.")}=(en|es)/);if(l)document.documentElement.lang=l[1];var t=document.cookie.match(/(?:^|; )${THEME_COOKIE.replaceAll(".", "\\.")}=(light|dark)/);if(t){document.documentElement.dataset.theme=t[1];var c=t[1]==="dark"?"${THEME_COLOR.dark}":"${THEME_COLOR.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c);m.removeAttribute("media")})}}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -48,7 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="min-h-full">
-        <script dangerouslySetInnerHTML={{ __html: localeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
         <Suspense fallback={<ShellSkeleton wordless />}>
           <Localized>{children}</Localized>
         </Suspense>
@@ -58,6 +60,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 }
 
 async function Localized({ children }: { children: ReactNode }) {
-  const locale = await resolveLocale();
-  return <Providers locale={locale}>{children}</Providers>;
+  const [locale, theme] = await Promise.all([resolveLocale(), resolveTheme()]);
+  return (
+    <Providers locale={locale} theme={theme}>
+      {children}
+    </Providers>
+  );
 }

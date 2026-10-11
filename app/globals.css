@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /*
-  One palette, two themes (auto via prefers-color-scheme).
+  One palette, two themes. No data-theme follows prefers-color-scheme.
+  data-theme="light" or "dark" is a saved choice and wins over the system.
   Accent is a single cobalt. Card colors live in lib/ports.ts and are content, not chrome.
 */
 :root {
@@ -18,8 +19,27 @@
   color-scheme: light dark;
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0a0b0f;
+  --foreground: #f1f2f4;
+  --muted: #9ba2af;
+  --surface: #14161c;
+  --surface-strong: #1f222a;
+  --line: rgb(255 255 255 / 0.08);
+  --accent: #7ba3ff;
+  --accent-ink: #081330;
+  --danger: #ff8493;
+  --glass-highlight: rgb(255 255 255 / 0.12);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --background: #0a0b0f;
     --foreground: #f1f2f4;
     --muted: #9ba2af;
@@ -152,6 +172,31 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+/*
+  Theme switch offers the other appearance. The hidden one stays out of the
+  accessibility tree. A saved data-theme beats the system scheme.
+*/
+.theme-for-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-for-dark {
+    display: block;
+  }
+  :root:not([data-theme="light"]) .theme-for-light {
+    display: none;
+  }
+}
+
+:root[data-theme="dark"] .theme-for-dark {
+  display: block;
+}
+
+:root[data-theme="dark"] .theme-for-light {
+  display: none;
 }
 
 /*

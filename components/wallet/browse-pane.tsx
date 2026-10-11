@@ -24,6 +24,7 @@ import {
 import { HapticPad } from "./haptic-pad";
 import { haptic } from "@/lib/haptics";
 import { LanguageSwitch } from "./language-switch";
+import { ThemeSwitch } from "./theme-switch";
 import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
 import { CheckIcon } from "@heroicons-animated/react/check";
 import { MagnifyingGlassIcon } from "@heroicons-animated/react/magnifying-glass";
@@ -162,7 +163,10 @@ export function BrowsePane({ ports, loading, error, saved, pins, onToggle, onPin
             {loading ? copy.loading : copy.reportedCount(counts.all)}
           </p>
         </div>
-        <LanguageSwitch className="lg:hidden" />
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeSwitch />
+          <LanguageSwitch />
+        </div>
       </header>
 
       <SearchField value={query} onChange={setQuery} />

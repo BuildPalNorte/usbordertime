@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## How this app fits together
 
-Border Time shows live U.S. land-port wait times from the public CBP feed. There is no account. Saved crossings, city bookmarks, and the language choice stay in the browser.
+Border Time shows live U.S. land-port wait times from the public CBP feed. There is no account. Saved crossings, city bookmarks, the language choice, and the appearance choice stay in the browser.
 
 Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is the short version of how that code works.
 
@@ -19,7 +19,7 @@ Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is 
 | The CBP fetch, cache, or `/api/wait-times` | `cbp-feed.mdc` |
 | Lane modes, wait colors, or crossing names | `lanes.mdc` |
 | The wallet or city bookmarks | `saved-state.mdc` |
-| English or Spanish copy, or the locale | `copy.mdc` |
+| English or Spanish copy, the locale, or appearance | `copy.mdc` |
 | The wallet screen, cards, or motion | `wallet-ui.mdc` |
 
 Data moves one way. `getBorderWaitTimes()` normalizes `https://bwt.cbp.gov/api/waittimes`. The home page passes that snapshot into `WalletApp`. The client refetches `GET /api/wait-times` about once a minute. Search and the Mexico/Canada filter run on that snapshot in the browser. They do not call the API again.

@@ -1,4 +1,5 @@
 import { COPY } from "@/lib/i18n";
+import { THEME_COLOR } from "@/lib/theme";
 import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -10,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#f1f2f5",
+    theme_color: THEME_COLOR.light,
     icons: [
       {
         src: "/icon-192.png",
