@@ -138,7 +138,7 @@ export const GUIDES: readonly Guide[] = [
           heading: "Shift the hour",
           paragraphs: [
             "Some trips can leave earlier or later. A wait that is long compared with the usual wait for this hour is the signal. Border Time shows both numbers on a crossing, so a spike stands apart from a bridge that is always busy at that time.",
-            "An alert sends a note when a lane drops under a number you picked. A schedule checks the bridges you use at the hour you already travel. Either way, trips that did not need the peak sit somewhere else in the day, and the peak line is shorter.",
+            "An alert sends a note when a lane drops under a number you picked. An alarm checks the bridges you use at the hour you already travel. Either way, trips that did not need the peak sit somewhere else in the day, and the peak line is shorter.",
           ],
         },
         {
@@ -181,7 +181,7 @@ export const GUIDES: readonly Guide[] = [
           heading: "Mover la hora",
           paragraphs: [
             "Hay viajes que pueden salir antes o después. Una espera larga comparada con la usual para esta hora es la señal. Border Time muestra los dos números en cada cruce, así que un pico se distingue de un puente que a esa hora siempre está lleno.",
-            "Una alerta avisa cuando un carril baja del número que elegiste. Un horario revisa los puentes que usas a la hora en que ya viajas. En los dos casos, los viajes que no necesitaban la hora pico quedan en otro momento del día, y la fila del pico es más corta.",
+            "Una alerta avisa cuando un carril baja del número que elegiste. Una alarma revisa los puentes que usas a la hora en que ya viajas. En los dos casos, los viajes que no necesitaban la hora pico quedan en otro momento del día, y la fila del pico es más corta.",
           ],
         },
         {

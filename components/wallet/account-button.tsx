@@ -7,7 +7,14 @@ import { haptic } from "@/lib/haptics";
 import { installStore } from "@/lib/install-store";
 import { nextMilestone, streakLevel } from "@/lib/streak";
 import { disablePush } from "@/lib/push-client";
-import { ADMIN_PATH, currentCallbackURL, EXPLORE_PATH, SCHEDULES_PATH } from "@/lib/routes";
+import {
+  ADMIN_PATH,
+  ASK_PATH,
+  currentCallbackURL,
+  EXPLORE_PATH,
+  SCHEDULES_PATH,
+} from "@/lib/routes";
+import { QuestionMarkCircleIcon } from "@heroicons-animated/react/question-mark-circle";
 import { ClockIcon } from "@heroicons-animated/react/clock";
 import { MapIcon } from "@heroicons-animated/react/map";
 import { cn } from "@/lib/cn";
@@ -45,7 +52,9 @@ export function AccountButton({ className }: { className?: string }) {
   const level = streakLevel(streak?.current ?? 0);
   const levelColor = LEVEL_COLOR[level] ?? LEVEL_COLOR[0];
   const levelHandle = useIconLoop(level, open);
-  const onSchedules = usePathname() === SCHEDULES_PATH;
+  const pathname = usePathname();
+  const onSchedules = pathname === SCHEDULES_PATH;
+  const onAsk = pathname === ASK_PATH;
   const admin = useAdminAccess();
 
   useEffect(() => {
@@ -224,6 +233,22 @@ export function AccountButton({ className }: { className?: string }) {
                     <ClockIcon size={20} aria-hidden className="shrink-0" />
                   )}
                   {onSchedules ? copy.browse : copy.schedules}
+                </Link>
+                <Link
+                  href={onAsk ? EXPLORE_PATH : ASK_PATH}
+                  role="menuitem"
+                  onClick={() => {
+                    haptic("selection");
+                    setOpen(false);
+                  }}
+                  className="hidden h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium lg:flex"
+                >
+                  {onAsk ? (
+                    <MapIcon size={20} aria-hidden className="shrink-0 [perspective:48px]" />
+                  ) : (
+                    <QuestionMarkCircleIcon size={20} aria-hidden className="shrink-0" />
+                  )}
+                  {onAsk ? copy.browse : copy.ask}
                 </Link>
                 {install.offerable && (
                   <button

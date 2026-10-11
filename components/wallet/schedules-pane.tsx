@@ -79,7 +79,9 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: 
   };
 
   const subtitle = !hydrated || loading ? "\u00A0" : copy.schedulesSummary(count);
-  const action: PaneAction = !noBridges && !full && count > 0 ? "add" : "none";
+  // Same gate as the list. A warm client cache must not paint the plus before hydration.
+  const showAdd = hydrated && !loading && !noBridges && !full && count > 0;
+  const action: PaneAction = showAdd ? "add" : "none";
 
   usePublishPaneChrome(
     ownsHeader,

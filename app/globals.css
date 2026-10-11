@@ -285,6 +285,12 @@ body {
   }
 }
 
+@keyframes ask-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

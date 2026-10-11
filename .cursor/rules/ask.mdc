@@ -1,0 +1,17 @@
+---
+description: The Ask tab, its chat and voice input, and what the AI is given
+globs: components/wallet/ask-pane.tsx,lib/ask.server.ts,lib/ask-knowledge.ts,app/api/ask/**,app/api/transcribe/**
+alwaysApply: false
+---
+
+# Ask
+
+`/ask` is the fourth tab. `AskPane` keeps the chat in memory only; nothing is stored, and Clear starts over. The last 12 turns, each cut to 1000 characters, go with every question.
+
+Text goes to `POST /api/ask` with the locale. `lib/ask.server.ts` builds a system prompt from `ASK_RULES`, a compact line per port from `getBorderWaitTimes()` (lanes through `readLane`, so waits and statuses match the cards), and `BORDER_KNOWLEDGE` (customs and Aduana reference, in `lib/ask-knowledge.ts`). The model is `gpt-4o-mini` over the chat completions API. It has one tool, `usual_waits`, which reads `getLaneAverages` so it can answer ETA questions for a later departure and "best time to cross". Up to three tool rounds, then it must answer.
+
+Voice is transcription, not a voice model. The browser records with `MediaRecorder`, posts the clip to `POST /api/transcribe` (`gpt-4o-mini-transcribe`, 4 MB cap, 45 s cap on the client), and sends the returned text as a normal question. The mic button is the only voice control; no audio is kept.
+
+Both routes need a signed-in session and are rate limited per account (12 a minute, best effort per server instance). `OPENAI_API_KEY` is server-only. Do not import `lib/ask.server.ts` from client code.
+
+CBP waits are northbound and do not include the drive to the bridge. The prompt says so; keep it that way. When the customs reference changes, keep it hedged and point to CBP or Aduana. Do not state a rule as settled when it changes often.

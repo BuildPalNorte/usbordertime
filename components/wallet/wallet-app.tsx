@@ -9,6 +9,7 @@ import { cityPinKey, pinStore } from "@/lib/pin-store";
 import { shareMessage } from "@/lib/i18n";
 import { defaultMode, isMode, paletteFor, portName, readLane, type Mode } from "@/lib/ports";
 import {
+  ASK_PATH,
   crossingPath,
   crossingSharePath,
   EXPLORE_PATH,
@@ -33,6 +34,7 @@ import {
   type CSSProperties,
 } from "react";
 import { CameraStreamProvider } from "./camera-streams";
+import { AskPane } from "./ask-pane";
 import { BrowsePane } from "./browse-pane";
 import type { StackItem } from "./card-stack";
 import { Glow } from "./glow";
@@ -46,11 +48,12 @@ import { WalletPane } from "./wallet-pane";
 const NAV = { scroll: false } as const;
 
 /** Left to right in the tab bar, so a pane slides in from the side you moved toward. */
-const TAB_ORDER: readonly Tab[] = ["wallet", "browse", "schedules"];
+const TAB_ORDER: readonly Tab[] = ["wallet", "browse", "schedules", "ask"];
 const TAB_PATH: Record<Tab, string> = {
   wallet: "/",
   browse: EXPLORE_PATH,
   schedules: SCHEDULES_PATH,
+  ask: ASK_PATH,
 };
 
 function laneFromLocation(): Mode | null {
@@ -292,6 +295,7 @@ export function WalletApp({
     router.prefetch("/");
     router.prefetch(EXPLORE_PATH);
     router.prefetch(SCHEDULES_PATH);
+    router.prefetch(ASK_PATH);
   }, [router]);
 
   useEffect(() => {
@@ -303,7 +307,9 @@ export function WalletApp({
           ? copy.pageTitle(copy.browse)
           : tab === "schedules"
             ? copy.pageTitle(copy.schedules)
-            : copy.metaTitle;
+            : tab === "ask"
+              ? copy.pageTitle(copy.ask)
+              : copy.metaTitle;
   }, [openItem, tab, copy, routesLabel]);
 
   useEffect(() => {
@@ -382,7 +388,14 @@ export function WalletApp({
 
   const dismissRoutes = useCallback(() => {
     setNavKey(null);
-    const path = tab === "browse" ? EXPLORE_PATH : tab === "schedules" ? SCHEDULES_PATH : "/";
+    const path =
+      tab === "browse"
+        ? EXPLORE_PATH
+        : tab === "schedules"
+          ? SCHEDULES_PATH
+          : tab === "ask"
+            ? ASK_PATH
+            : "/";
     go(path);
   }, [go, tab]);
 
@@ -586,7 +599,13 @@ export function WalletApp({
   }
 
   const headerTitle =
-    tab === "browse" ? copy.crossings : tab === "schedules" ? copy.schedules : copy.wallet;
+    tab === "browse"
+      ? copy.crossings
+      : tab === "schedules"
+        ? copy.schedules
+        : tab === "ask"
+          ? copy.ask
+          : copy.wallet;
   const headerAction: PaneAction =
     tab === "wallet" && (expandedId !== null || routesRow !== null || routesMissing) ? "done" : tab === "wallet" ? "refresh" : "none";
 
@@ -660,8 +679,8 @@ export function WalletApp({
           </section>
 
           <section
-            // On a desktop the right column holds Browse, or Schedules while that tab is open.
-            className={cn("pane", tab === "schedules" && "lg:hidden")}
+            // On a desktop the right column holds Browse, or Schedules or Ask while that tab is open.
+            className={cn("pane", (tab === "schedules" || tab === "ask") && "lg:hidden")}
             data-active={tab === "browse"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
             aria-label={copy.browseCrossings}
@@ -699,6 +718,15 @@ export function WalletApp({
               onBrowse={() => changeTab("browse")}
               ownsHeader={tab === "schedules"}
             />
+          </section>
+
+          <section
+            className={cn("pane", tab !== "ask" && "lg:hidden")}
+            data-active={tab === "ask"}
+            style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
+            aria-label={copy.ask}
+          >
+            <AskPane ownsHeader={tab === "ask"} />
           </section>
         </div>
       </div>

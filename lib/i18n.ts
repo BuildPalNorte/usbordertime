@@ -165,6 +165,26 @@ export type Copy = {
   alertSchedule: string;
   schedules: string;
   schedulesSummary: (count: number) => string;
+  ask: string;
+  askSubtitle: string;
+  askEmptyTitle: string;
+  askEmptyBody: string;
+  askSuggestions: readonly string[];
+  askPlaceholder: string;
+  askSend: string;
+  askMic: string;
+  askStop: string;
+  askRecording: string;
+  askTranscribing: string;
+  askThinking: string;
+  askClear: string;
+  askNote: string;
+  askError: string;
+  askBusy: string;
+  askVoiceFailed: string;
+  askNoSpeech: string;
+  askMicDenied: string;
+  askMicUnsupported: string;
   scheduleEmptyTitle: string;
   scheduleEmptyBody: string;
   scheduleNeedBridge: string;
@@ -374,7 +394,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Wait alerts",
-        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make a schedule, we also save its time, days, time zone, lane, bridges, and any name you gave it with your account, and send one notification with the current waits at that time. If you named it, that name is the notification's title. Deleting a schedule deletes it. Signing out removes this device's push address.",
+        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make an alarm, we also save its time, days, time zone, lane, bridges, and any name you gave it with your account, and send one notification with the current waits at that time. If you named it, that name is the notification's title. Deleting an alarm deletes it. Signing out removes this device's push address.",
       },
       {
         heading: "Visit streak",
@@ -382,7 +402,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts, your schedules, your visit streak, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts, your alarms, your visit streak, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. OpenAI receives the questions you type or say in Ask, and the recording when you use your voice, to answer them; we do not store the chat or the audio. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
@@ -473,16 +493,42 @@ export const COPY: Record<Locale, Copy> = {
     alertNeedsInstall: "On iPhone, alerts need Border Time on your Home Screen. Add it, then open it from there.",
     alertFailed: "Could not save the alert. Try again.",
     alertSchedule: "Set a wait alert",
-    schedules: "Schedules",
+    schedules: "Alarms",
     schedulesSummary: (count) =>
-      count === 0 ? "Nothing scheduled" : count === 1 ? "1 schedule" : `${count} schedules`,
+      count === 0 ? "No alarms" : count === 1 ? "1 alarm" : `${count} alarms`,
+    ask: "Ask",
+    askSubtitle: "Crossings, customs, and ETAs",
+    askEmptyTitle: "Ask about the border",
+    askEmptyBody:
+      "Live waits, which bridge is fastest, when to go, and what you can bring across. Type it or say it.",
+    askSuggestions: [
+      "Which Brownsville bridge is fastest right now?",
+      "When is the best time to cross tomorrow morning?",
+      "What can I bring back from Mexico duty-free?",
+      "Do I need an FMM to go to Matamoros?",
+    ],
+    askPlaceholder: "Ask about a crossing or customs",
+    askSend: "Send",
+    askMic: "Ask with your voice",
+    askStop: "Stop recording",
+    askRecording: "Listening…",
+    askTranscribing: "Turning your voice into text…",
+    askThinking: "Checking the bridges…",
+    askClear: "New chat",
+    askNote: "AI can be wrong. For rules, confirm with CBP or Mexican customs.",
+    askError: "Could not get an answer. Try again.",
+    askBusy: "Too many questions. Wait a minute and try again.",
+    askVoiceFailed: "Could not hear that. Try again or type it.",
+    askNoSpeech: "No voice came through. Try again.",
+    askMicDenied: "Microphone is blocked. Allow it for this site in your browser settings.",
+    askMicUnsupported: "This browser can't record audio. Type your question.",
     scheduleEmptyTitle: "A wait report, on time",
     scheduleEmptyBody:
       "Choose a bridge you saved, a time, and the days. We send the current wait to your phone, right then.",
-    scheduleNeedBridge: "Save a bridge first. Schedules report on the bridges in your wallet.",
-    scheduleNew: "New schedule",
-    scheduleNewTitle: "New schedule",
-    scheduleEditTitle: "Edit schedule",
+    scheduleNeedBridge: "Save a bridge first. Alarms report on the bridges in your wallet.",
+    scheduleNew: "New alarm",
+    scheduleNewTitle: "New alarm",
+    scheduleEditTitle: "Edit alarm",
     scheduleStepBridge: "Which bridge?",
     scheduleStepTime: "What time?",
     scheduleStepDays: "Which days?",
@@ -506,18 +552,18 @@ export const COPY: Record<Locale, Copy> = {
     scheduleName: "Name",
     scheduleNamePlaceholder: "Morning",
     scheduleNameHint: "Optional. This becomes the notification title.",
-    scheduleSave: "Save schedule",
+    scheduleSave: "Save alarm",
     scheduleSaving: "Saving…",
     scheduleDelete: "Delete",
     scheduleClose: "Close",
-    schedulePause: (time) => `Pause the ${time} schedule`,
-    scheduleResume: (time) => `Resume the ${time} schedule`,
+    schedulePause: (time) => `Pause the ${time} alarm`,
+    scheduleResume: (time) => `Resume the ${time} alarm`,
     schedulePauseName: (name) => `Pause ${name}`,
     scheduleResumeName: (name) => `Resume ${name}`,
     schedulePaused: "Paused",
-    scheduleLimit: "You can keep up to 8 schedules. Delete one to add another.",
-    scheduleFailed: "Could not save the schedule. Try again.",
-    scheduleMissing: "That schedule no longer exists.",
+    scheduleLimit: "You can keep up to 8 alarms. Delete one to add another.",
+    scheduleFailed: "Could not save the alarm. Try again.",
+    scheduleMissing: "That alarm no longer exists.",
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
     scheduleWait: (name, minutes) => `${name}: ${formatDuration(minutes, "hr", "min")}`,
     scheduleStatus: (name, status) => `${name}: ${status}`,
@@ -684,7 +730,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Alertas de espera",
-        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas un horario, también guardamos con tu cuenta su hora, días, zona horaria, carril, puentes y el nombre que le hayas puesto, y enviamos una notificación con las esperas actuales a esa hora. Si le pusiste nombre, ese nombre es el título de la notificación. Al eliminar un horario, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
+        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas una alarma, también guardamos con tu cuenta su hora, días, zona horaria, carril, puentes y el nombre que le hayas puesto, y enviamos una notificación con las esperas actuales a esa hora. Si le pusiste nombre, ese nombre es el título de la notificación. Al eliminar una alarma, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
       },
       {
         heading: "Racha de visitas",
@@ -692,7 +738,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus horarios, tu racha de visitas y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus alarmas, tu racha de visitas y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. OpenAI recibe las preguntas que escribes o dices en Preguntar, y la grabación si usas tu voz, para responderlas; no guardamos el chat ni el audio. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",
@@ -780,16 +826,42 @@ export const COPY: Record<Locale, Copy> = {
     alertNeedsInstall: "En iPhone, las alertas necesitan Border Time en tu pantalla de inicio. Agrégala y ábrela desde ahí.",
     alertFailed: "No se pudo guardar la alerta. Intenta de nuevo.",
     alertSchedule: "Poner una alerta de espera",
-    schedules: "Horarios",
+    schedules: "Alarmas",
     schedulesSummary: (count) =>
-      count === 0 ? "Nada programado" : count === 1 ? "1 horario" : `${count} horarios`,
+      count === 0 ? "Ninguna alarma" : count === 1 ? "1 alarma" : `${count} alarmas`,
+    ask: "Preguntar",
+    askSubtitle: "Puentes, aduana y tu tiempo estimado",
+    askEmptyTitle: "Pregunta sobre la frontera",
+    askEmptyBody:
+      "Esperas en vivo, qué puente es más rápido, cuándo ir y qué puedes pasar. Escríbelo o dilo con tu voz.",
+    askSuggestions: [
+      "¿Qué puente de Brownsville está más rápido ahora?",
+      "¿A qué hora conviene cruzar mañana en la mañana?",
+      "¿Qué puedo traer de México sin pagar impuestos?",
+      "¿Necesito FMM para ir a Matamoros?",
+    ],
+    askPlaceholder: "Pregunta sobre un puente o la aduana",
+    askSend: "Enviar",
+    askMic: "Preguntar con tu voz",
+    askStop: "Detener grabación",
+    askRecording: "Escuchando…",
+    askTranscribing: "Convirtiendo tu voz en texto…",
+    askThinking: "Revisando los puentes…",
+    askClear: "Nuevo chat",
+    askNote: "La IA puede equivocarse. Confirma las reglas con CBP o la aduana de México.",
+    askError: "No se pudo obtener una respuesta. Intenta de nuevo.",
+    askBusy: "Demasiadas preguntas. Espera un minuto e intenta de nuevo.",
+    askVoiceFailed: "No se pudo escuchar. Intenta de nuevo o escríbelo.",
+    askNoSpeech: "No se oyó tu voz. Intenta de nuevo.",
+    askMicDenied: "El micrófono está bloqueado. Permítelo para este sitio en los ajustes del navegador.",
+    askMicUnsupported: "Este navegador no puede grabar audio. Escribe tu pregunta.",
     scheduleEmptyTitle: "Tu reporte de espera, a tiempo",
     scheduleEmptyBody:
       "Elige un puente que guardaste, una hora y los días. Te mandamos la espera actual al teléfono, justo entonces.",
-    scheduleNeedBridge: "Guarda un puente primero. Los horarios reportan los puentes de tu cartera.",
-    scheduleNew: "Nuevo horario",
-    scheduleNewTitle: "Nuevo horario",
-    scheduleEditTitle: "Editar horario",
+    scheduleNeedBridge: "Guarda un puente primero. Las alarmas reportan los puentes de tu cartera.",
+    scheduleNew: "Nueva alarma",
+    scheduleNewTitle: "Nueva alarma",
+    scheduleEditTitle: "Editar alarma",
     scheduleStepBridge: "¿Qué puente?",
     scheduleStepTime: "¿A qué hora?",
     scheduleStepDays: "¿Qué días?",
@@ -813,18 +885,18 @@ export const COPY: Record<Locale, Copy> = {
     scheduleName: "Nombre",
     scheduleNamePlaceholder: "Mañana",
     scheduleNameHint: "Opcional. Pasa a ser el título de la notificación.",
-    scheduleSave: "Guardar horario",
+    scheduleSave: "Guardar alarma",
     scheduleSaving: "Guardando…",
     scheduleDelete: "Eliminar",
     scheduleClose: "Cerrar",
-    schedulePause: (time) => `Pausar el horario de las ${time}`,
-    scheduleResume: (time) => `Reanudar el horario de las ${time}`,
+    schedulePause: (time) => `Pausar la alarma de las ${time}`,
+    scheduleResume: (time) => `Reanudar la alarma de las ${time}`,
     schedulePauseName: (name) => `Pausar ${name}`,
     scheduleResumeName: (name) => `Reanudar ${name}`,
     schedulePaused: "En pausa",
-    scheduleLimit: "Puedes tener hasta 8 horarios. Elimina uno para agregar otro.",
-    scheduleFailed: "No se pudo guardar el horario. Intenta de nuevo.",
-    scheduleMissing: "Ese horario ya no existe.",
+    scheduleLimit: "Puedes tener hasta 8 alarmas. Elimina una para agregar otra.",
+    scheduleFailed: "No se pudo guardar la alarma. Intenta de nuevo.",
+    scheduleMissing: "Esa alarma ya no existe.",
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
     scheduleWait: (name, minutes) => `${name}: ${formatDuration(minutes, "h", "min")}`,
     scheduleStatus: (name, status) => `${name}: ${status}`,

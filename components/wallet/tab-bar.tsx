@@ -3,6 +3,10 @@
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
 import { notePadTick } from "@/lib/haptics";
+import {
+  QuestionMarkCircleIcon,
+  type QuestionMarkCircleIconHandle,
+} from "@heroicons-animated/react/question-mark-circle";
 import { ClockIcon, type ClockIconHandle } from "@heroicons-animated/react/clock";
 import { MapIcon, type MapIconHandle } from "@heroicons-animated/react/map";
 import { WalletIcon, type WalletIconHandle } from "@heroicons-animated/react/wallet";
@@ -11,7 +15,7 @@ import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 
-export type Tab = "wallet" | "browse" | "schedules";
+export type Tab = "wallet" | "browse" | "schedules" | "ask";
 
 type Props = {
   tab: Tab;
@@ -20,7 +24,7 @@ type Props = {
 
 /**
  * Floating translucent tab bar. Mobile only; desktop shows both panes.
- * Three labels would not fit a phone, so only the tab you are on shows its name.
+ * Four labels would not fit a phone, so only the tab you are on shows its name.
  */
 export function TabBar({ tab, onChange }: Props) {
   const { copy } = useLocale();
@@ -28,10 +32,18 @@ export function TabBar({ tab, onChange }: Props) {
   const wallet = useRef<WalletIconHandle>(null);
   const map = useRef<MapIconHandle>(null);
   const clock = useRef<ClockIconHandle>(null);
+  const question = useRef<QuestionMarkCircleIconHandle>(null);
 
   function select(next: Tab) {
     if (!reduce && next !== tab) {
-      (next === "wallet" ? wallet : next === "browse" ? map : clock).current?.startAnimation();
+      (next === "wallet"
+        ? wallet
+        : next === "browse"
+          ? map
+          : next === "schedules"
+            ? clock
+            : question
+      ).current?.startAnimation();
     }
     onChange(next);
   }
@@ -56,6 +68,9 @@ export function TabBar({ tab, onChange }: Props) {
           onClick={() => select("schedules")}
         >
           <ClockIcon ref={clock} size={22} aria-hidden />
+        </TabButton>
+        <TabButton active={tab === "ask"} label={copy.ask} onClick={() => select("ask")}>
+          <QuestionMarkCircleIcon ref={question} size={22} aria-hidden />
         </TabButton>
       </div>
     </nav>

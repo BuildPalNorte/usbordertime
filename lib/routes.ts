@@ -6,6 +6,7 @@ import { MAX_SCHEDULE_PORTS } from "@/lib/schedule";
 
 export const EXPLORE_PATH = "/explore";
 export const SCHEDULES_PATH = "/schedules";
+export const ASK_PATH = "/ask";
 export const ADMIN_PATH = "/admin";
 
 export function crossingPath(portNumber: string): string {
@@ -88,6 +89,7 @@ export type AppRoute =
   | { tab: "wallet"; port: string | null; known: true }
   | { tab: "browse"; port: null; known: true }
   | { tab: "schedules"; port: null; known: true }
+  | { tab: "ask"; port: null; known: true }
   | { tab: "wallet"; port: null; known: false };
 
 export function parseAppPath(pathname: string): AppRoute {
@@ -95,6 +97,7 @@ export function parseAppPath(pathname: string): AppRoute {
   if (pathname === EXPLORE_PATH) return { tab: "browse", port: null, known: true };
   // Checked before the port rule below: "schedules" is shaped like a port number.
   if (pathname === SCHEDULES_PATH) return { tab: "schedules", port: null, known: true };
+  if (pathname === ASK_PATH) return { tab: "ask", port: null, known: true };
   if (pathname.startsWith("/") && !pathname.slice(1).includes("/")) {
     const port = decodeURIComponent(pathname.slice(1));
     if (isPortParam(port)) return { tab: "wallet", port, known: true };

@@ -273,7 +273,7 @@ async function readDashboard(): Promise<AdminData> {
       },
       { label: "Devices", value: devices, detail: "Push addresses" },
       {
-        label: "Schedules",
+        label: "Alarms",
         value: scheduleTotal,
         detail: scheduleOn === 1 ? "1 turned on" : `${scheduleOn} turned on`,
       },
