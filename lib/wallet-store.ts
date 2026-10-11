@@ -81,6 +81,16 @@ function sameOrder(next: readonly WalletEntry[]) {
   );
 }
 
+function sameEntries(next: readonly WalletEntry[]) {
+  return (
+    next.length === entries.length &&
+    next.every(
+      (entry, index) =>
+        entry.portNumber === entries[index]?.portNumber && entry.mode === entries[index]?.mode,
+    )
+  );
+}
+
 function onStorage(event: StorageEvent) {
   if (event.key === STORAGE_KEY || event.key === SEEDED_KEY) {
     load();
@@ -160,5 +170,21 @@ export const walletStore = {
   },
   setMode(portNumber: string, mode: Mode) {
     commit(entries.map((e) => (e.portNumber === portNumber ? { ...e, mode } : e)));
+  },
+  /** Copies the account wallet. The array order is the stack order. */
+  replace(next: readonly WalletEntry[]) {
+    if (!loaded) load();
+    const seen = new Set<string>();
+    const clean: WalletEntry[] = [];
+    for (const entry of next) {
+      if (!isEntry(entry) || seen.has(entry.portNumber)) continue;
+      seen.add(entry.portNumber);
+      clean.push(entry);
+    }
+    if (!orderReadyLoaded) loadOrderReady();
+    const wasReady = orderReady;
+    markOrderReady();
+    if (!sameEntries(clean)) commit(clean);
+    else if (!wasReady) emit();
   },
 };

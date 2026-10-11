@@ -1,6 +1,6 @@
 ---
 description: Browser stores for the wallet and city bookmarks
-globs: lib/wallet-store.ts,lib/pin-store.ts,components/wallet/wallet-app.tsx
+globs: lib/wallet-store.ts,lib/pin-store.ts,lib/preference.ts,lib/preference.server.ts,lib/preference-sync.ts,components/wallet/wallet-app.tsx,components/wallet/preference-sync.tsx,app/api/preference/route.ts
 alwaysApply: false
 ---
 
@@ -17,3 +17,5 @@ The first visit after reorder shipped, `adoptOrder` copies the old pin-sorted st
 Bad JSON is dropped. If `localStorage` cannot be written, the in-memory list still works for the session. Other tabs update through the `storage` event.
 
 Do not rename a storage key without a migration. Existing wallets would come back empty.
+
+Once signed in, `preference` (`user_id`, `locale`, `theme`, `wallet`, `pins`) is the account copy. `PreferenceSync` applies that row when this browser has no unsynced edits. The first save for an account uploads this browser's copy. A different account on the same browser does not inherit the previous wallet or pins. Edits go to `PUT /api/preference`. A failed read leaves the browser copy alone.

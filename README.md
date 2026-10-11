@@ -2,7 +2,7 @@
 
 Open source live wait times for U.S. land ports of entry. Save the bridges you cross, then see passenger, Ready, SENTRI or NEXUS, pedestrian, truck, and FAST lanes together.
 
-Border Time reads the public [U.S. Customs and Border Protection border wait times feed](https://bwt.cbp.gov/) and presents it for the Mexican and Canadian borders. The interface is in English and Spanish. Saved crossings and city bookmarks stay in the browser. There is no account.
+Border Time reads the public [U.S. Customs and Border Protection border wait times feed](https://bwt.cbp.gov/) and presents it for the Mexican and Canadian borders. The interface is in English and Spanish. Saved crossings, city bookmarks, language, and appearance are saved with the signed-in account and kept in the browser too.
 
 Repository: [github.com/BuildPalNorte/usbordertime](https://github.com/BuildPalNorte/usbordertime)
 
@@ -10,7 +10,7 @@ Repository: [github.com/BuildPalNorte/usbordertime](https://github.com/BuildPalN
 
 - Browse every crossing CBP reports, and filter by Mexico, Canada, or both.
 - Search by city, bridge, or port number.
-- Keep the bridges you use. They are stored in `localStorage` on this device.
+- Keep the bridges you use. Signed in, they are saved with your account and kept in this browser too.
 - Bookmark a city so its crossings stay at the top of your bridges.
 - Switch lane type on a crossing and see the wait, how many lanes are open, hours, port status, and any construction notice CBP published.
 - Refresh automatically about once a minute. You can also refresh by hand.
@@ -99,8 +99,8 @@ components/wallet/        wallet, browse list, cards, and tab bar
 lib/border-wait-times.ts  fetch and normalize the CBP payload
 lib/ports.ts              lane selection, names, and wait color
 lib/i18n.ts               English and Spanish copy
-lib/wallet-store.ts       saved crossings in localStorage
-lib/pin-store.ts          bookmarked cities in localStorage
+lib/wallet-store.ts       saved crossings in the browser, synced to preference
+lib/pin-store.ts          bookmarked cities in the browser, synced to preference
 ```
 
 On a phone, Bridges and Browse are separate tabs. On a wide screen both panes stay on the page.

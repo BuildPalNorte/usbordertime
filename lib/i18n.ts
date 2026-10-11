@@ -191,15 +191,15 @@ export const COPY: Record<Locale, Copy> = {
     privacyTitle: "Privacy policy",
     privacyUpdated: "Updated October 10, 2026",
     privacyLead:
-      "Border Time shows live wait times at U.S. land ports. This page is what we keep, and what stays in your browser.",
+      "Border Time shows live wait times at U.S. land ports. This page is what we keep.",
     privacySections: [
       {
         heading: "Your account",
         body: "Signing in uses Google. Each visit saves a profile: the account id, your email, your name, and the address of your Google profile photo. A later visit refreshes those fields. We use them to keep you signed in and to show your name and photo. We do not sell them, and we do not use them for advertising.",
       },
       {
-        heading: "On this device",
-        body: "The bridges you save, the cities you bookmark, your language, and light or dark mode stay in this browser. They are not part of the profile. Language and appearance are also stored as cookies so the next visit can render that way. Signing out leaves all of that here. Clearing this site's data in the browser removes it.",
+        heading: "Saved with your account",
+        body: "The bridges you save, the cities you bookmark, your language, and light or dark mode are saved with your account. This browser keeps a copy so the page can show them right away. Language and appearance are also stored as cookies so the next visit can render that way. Signing out leaves the copy in this browser. The next sign-in on this browser brings the account copy back.",
       },
       {
         heading: "Wait times and cameras",
@@ -207,11 +207,11 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, and the current camera addresses. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
-        body: "Signing out ends the session in this browser. The profile stays in the database. The app has no button to delete it. Bridges, bookmarks, language, and appearance stay in this browser until you clear the site's data.",
+        body: "Signing out ends the session in this browser. The profile, saved bridges, bookmarks, language, and appearance stay in the database. The app has no button to delete them. This browser keeps its copy until you clear the site's data.",
       },
       {
         heading: "Children",
@@ -358,15 +358,15 @@ export const COPY: Record<Locale, Copy> = {
     privacyTitle: "Política de privacidad",
     privacyUpdated: "Actualizada el 10 de octubre de 2026",
     privacyLead:
-      "Border Time muestra los tiempos de espera en vivo de los puertos terrestres de Estados Unidos. Esta página dice qué guardamos y qué se queda en tu navegador.",
+      "Border Time muestra los tiempos de espera en vivo de los puertos terrestres de Estados Unidos. Esta página dice qué guardamos.",
     privacySections: [
       {
         heading: "Tu cuenta",
         body: "El inicio de sesión usa Google. Cada visita guarda un perfil: el id de la cuenta, tu correo, tu nombre y la dirección de tu foto de perfil de Google. Una visita posterior actualiza esos datos. Los usamos para mantener tu sesión y para mostrar tu nombre y tu foto. No los vendemos y no los usamos para publicidad.",
       },
       {
-        heading: "En este dispositivo",
-        body: "Los puentes que guardas, las ciudades que fijas, tu idioma y el modo claro u oscuro se quedan en este navegador. No forman parte del perfil. El idioma y la apariencia también se guardan como cookies para que la siguiente visita se vea igual. Cerrar sesión deja todo eso aquí. Borrar los datos de este sitio en el navegador lo quita.",
+        heading: "Guardado en tu cuenta",
+        body: "Los puentes que guardas, las ciudades que fijas, tu idioma y el modo claro u oscuro se guardan con tu cuenta. Este navegador guarda una copia para mostrarlos de inmediato. El idioma y la apariencia también se guardan como cookies para que la siguiente visita se vea igual. Cerrar sesión deja la copia en este navegador. El siguiente inicio de sesión en este navegador trae de nuevo la copia de la cuenta.",
       },
       {
         heading: "Tiempos y cámaras",
@@ -374,11 +374,11 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",
-        body: "Cerrar sesión termina la sesión en este navegador. El perfil permanece en la base de datos. La app no tiene un botón para borrarlo. Los puentes, las ciudades fijadas, el idioma y la apariencia se quedan en este navegador hasta que borres los datos del sitio.",
+        body: "Cerrar sesión termina la sesión en este navegador. El perfil, los puentes guardados, las ciudades fijadas, el idioma y la apariencia permanecen en la base de datos. La app no tiene un botón para borrarlos. Este navegador guarda su copia hasta que borres los datos del sitio.",
       },
       {
         heading: "Menores",

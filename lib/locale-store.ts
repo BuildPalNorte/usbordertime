@@ -25,6 +25,24 @@ function emit() {
   listeners.forEach((listener) => listener());
 }
 
+function write(next: Locale | null) {
+  chosen = next;
+  loaded = true;
+  try {
+    if (next) window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
+    else window.localStorage.removeItem(LOCALE_STORAGE_KEY);
+  } catch {
+    // The choice still applies for this session.
+  }
+  if (next) {
+    document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;
+    document.documentElement.lang = next;
+  } else {
+    document.cookie = `${LOCALE_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+  }
+  emit();
+}
+
 export const localeStore = {
   subscribe(listener: () => void) {
     listeners.add(listener);
@@ -35,16 +53,15 @@ export const localeStore = {
   getSnapshot(fallback: Locale): Locale {
     return readChosen() ?? fallback;
   },
+  /** The explicit choice, or null when this browser is still following the server. */
+  peek(): Locale | null {
+    return readChosen();
+  },
   set(next: Locale) {
-    chosen = next;
-    loaded = true;
-    try {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
-    } catch {
-      // The choice still applies for this session.
-    }
-    document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;
-    document.documentElement.lang = next;
-    emit();
+    write(next);
+  },
+  /** Copies an account choice, including "no choice yet". */
+  replace(next: Locale | null) {
+    write(next);
   },
 };

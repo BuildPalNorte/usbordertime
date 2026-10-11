@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## How this app fits together
 
-Border Time shows live U.S. land-port wait times from the public CBP feed. The home page stays on the sign-in screen until Google sign-in succeeds through Better Auth in this app (`lib/auth`). That visit upserts `profile` (id, email, name, image), keyed to the auth user. Saved crossings, city bookmarks, the language choice, and the appearance choice stay in the browser. The current Nuevo and Viejo playlist addresses live in `camera_stream`, shared across accounts. `getCameraStreams()` caches them until a 404 lookup replaces the row.
+Border Time shows live U.S. land-port wait times from the public CBP feed. The home page stays on the sign-in screen until Google sign-in succeeds through Better Auth in this app (`lib/auth`). That visit upserts `profile` (id, email, name, image), keyed to the auth user. Saved crossings, city bookmarks, the language choice, and the appearance choice are saved on that account's `preference` row and mirrored in the browser. The browser copy, plus the language and appearance cookies, lets the next visit render before the account is read. The current Nuevo and Viejo playlist addresses live in `camera_stream`, shared across accounts. `getCameraStreams()` caches them until a 404 lookup replaces the row.
 
 Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is the short version of how that code works.
 

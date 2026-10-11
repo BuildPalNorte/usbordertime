@@ -6,6 +6,8 @@ import { isThemeChoice, THEME_COLOR, THEME_COOKIE, THEME_STORAGE_KEY, type Theme
  */
 let chosen: ThemeChoice | null = null;
 let loaded = false;
+/** True after an account copy, so a saved "follow the system" beats the cookie fallback. */
+let explicit = false;
 const listeners = new Set<() => void>();
 
 function readChosen(): ThemeChoice | null {
@@ -28,6 +30,7 @@ function emit() {
 function onStorage(event: StorageEvent) {
   if (event.key !== THEME_STORAGE_KEY) return;
   loaded = false;
+  explicit = false;
   const next = readChosen();
   paint(next);
   emit();
@@ -65,7 +68,13 @@ export const themeStore = {
     };
   },
   getSnapshot(fallback: ThemeChoice | null): ThemeChoice | null {
-    return readChosen() ?? fallback;
+    const value = readChosen();
+    if (explicit) return chosen;
+    return value ?? fallback;
+  },
+  /** The explicit choice, or null when this browser is still following the system. */
+  peek(): ThemeChoice | null {
+    return readChosen();
   },
   /** Point the document at a saved choice, or back at the system scheme. */
   apply(choice: ThemeChoice | null) {
@@ -74,14 +83,23 @@ export const themeStore = {
     document.cookie = `${THEME_COOKIE}=${choice}; Path=/; Max-Age=31536000; SameSite=Lax`;
   },
   set(next: ThemeChoice) {
+    this.replace(next);
+  },
+  /** Copies an account choice. Null follows the system again. */
+  replace(next: ThemeChoice | null) {
     chosen = next;
     loaded = true;
+    explicit = true;
     try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, next);
+      if (next) window.localStorage.setItem(THEME_STORAGE_KEY, next);
+      else window.localStorage.removeItem(THEME_STORAGE_KEY);
     } catch {
       // The choice still applies for this session.
     }
     this.apply(next);
+    if (!next) {
+      document.cookie = `${THEME_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+    }
     emit();
   },
   toggle() {

@@ -76,4 +76,17 @@ export const pinStore = {
     commit([key, ...pins]);
     return true;
   },
+  /** Copies the account's city bookmarks. Newest pin first. */
+  replace(next: readonly string[]) {
+    if (!loaded) load();
+    const seen = new Set<string>();
+    const clean: string[] = [];
+    for (const key of next) {
+      if (typeof key !== "string" || !KEY.test(key) || seen.has(key)) continue;
+      seen.add(key);
+      clean.push(key);
+    }
+    if (clean.length === pins.length && clean.every((key, index) => key === pins[index])) return;
+    commit(clean);
+  },
 };

@@ -1,3 +1,4 @@
+import { PreferenceSync } from "@/components/wallet/preference-sync";
 import { SessionGate } from "@/components/wallet/session-gate";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
@@ -6,6 +7,8 @@ import { getAuth } from "@/lib/auth/server";
 import { getBorderWaitTimes, type BorderWaitTimes } from "@/lib/border-wait-times";
 import { getCameraStreams } from "@/lib/camera-streams";
 import { fallbackCameraStreams } from "@/lib/ports";
+import type { PreferenceRecord } from "@/lib/preference";
+import { getPreference } from "@/lib/preference.server";
 import { ensureProfile } from "@/lib/profile";
 import { headers } from "next/headers";
 import { Suspense, type ReactNode } from "react";
@@ -40,8 +43,18 @@ async function GatedHome({ children }: { children: ReactNode }) {
     return <SignInScreen problem="profile" />;
   }
 
+  let preference: PreferenceRecord | null = null;
+  let preferenceReady = false;
+  try {
+    preference = await getPreference(user.id);
+    preferenceReady = true;
+  } catch {
+    preferenceReady = false;
+  }
+
   return (
     <SessionGate>
+      <PreferenceSync userId={user.id} initial={preference} ready={preferenceReady} />
       <LiveWallet>{children}</LiveWallet>
     </SessionGate>
   );
