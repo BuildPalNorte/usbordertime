@@ -12,6 +12,7 @@ import {
   ALL_DAYS,
   dayLabel,
   fromTimeValue,
+  MAX_SCHEDULE_NAME,
   MAX_SCHEDULE_PORTS,
   sameDays,
   toTimeValue,
@@ -65,6 +66,7 @@ export function ScheduleSheet({
   const { copy, locale } = useLocale();
   const reduce = useReducedMotion();
   const titleId = useId();
+  const nameId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -72,6 +74,7 @@ export function ScheduleSheet({
   const [reached, setReached] = useState(schedule ? STEPS.length - 1 : 0);
   const [direction, setDirection] = useState(1);
   const [minute, setMinute] = useState(schedule?.minute ?? 7 * 60);
+  const [name, setName] = useState(schedule?.name ?? "");
   const [days, setDays] = useState<number[]>(schedule ? schedule.days : [...WEEKDAYS]);
   const [mode, setMode] = useState<Mode>(schedule?.mode ?? initialMode);
   const [ports, setPorts] = useState<string[]>(schedule?.ports ?? []);
@@ -190,6 +193,7 @@ export function ScheduleSheet({
       timeZone: zone,
       mode,
       ports,
+      name: name.trim() ? name : null,
       enabled: schedule?.enabled ?? true,
     });
     setBusy(null);
@@ -292,6 +296,24 @@ export function ScheduleSheet({
         <p className="mt-1 text-center text-[13px] text-muted">
           {schedule ? copy.scheduleEditTitle : copy.scheduleNewTitle}
         </p>
+        <div className="px-5 pt-4">
+          <Label htmlFor={nameId}>{copy.scheduleName}</Label>
+          <input
+            id={nameId}
+            type="text"
+            enterKeyHint="done"
+            autoComplete="off"
+            autoCapitalize="words"
+            maxLength={MAX_SCHEDULE_NAME}
+            value={name}
+            placeholder={copy.scheduleNamePlaceholder}
+            onChange={(event) => {
+              setName([...event.target.value].slice(0, MAX_SCHEDULE_NAME).join(""));
+            }}
+            className="mt-2 block h-12 w-full appearance-none rounded-2xl bg-surface px-4 text-[16px] text-foreground outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-accent"
+          />
+          <p className="mt-2 text-[12px] leading-snug text-muted">{copy.scheduleNameHint}</p>
+        </div>
         <div className="mt-4 flex gap-3 px-5">
           {stepLabels.map((label, index) => {
             const open = index <= reached && (index === 0 || ports.length > 0);
@@ -569,10 +591,16 @@ function ChevronLeft() {
   );
 }
 
-function Label({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-[12px] font-semibold tracking-[0.06em] text-muted uppercase">{children}</p>
-  );
+function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+  const className = "text-[12px] font-semibold tracking-[0.06em] text-muted uppercase";
+  if (htmlFor) {
+    return (
+      <label htmlFor={htmlFor} className={className}>
+        {children}
+      </label>
+    );
+  }
+  return <p className={className}>{children}</p>;
 }
 
 function Preset({

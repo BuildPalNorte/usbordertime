@@ -159,12 +159,17 @@ export type Copy = {
   scheduleBridgesHint: (selected: number, max: number) => string;
   scheduleNoBridges: string;
   scheduleZone: (zone: string) => string;
+  scheduleName: string;
+  scheduleNamePlaceholder: string;
+  scheduleNameHint: string;
   scheduleSave: string;
   scheduleSaving: string;
   scheduleDelete: string;
   scheduleClose: string;
   schedulePause: (time: string) => string;
   scheduleResume: (time: string) => string;
+  schedulePauseName: (name: string) => string;
+  scheduleResumeName: (name: string) => string;
   schedulePaused: string;
   scheduleLimit: string;
   scheduleFailed: string;
@@ -306,7 +311,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Wait alerts",
-        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make a schedule, we also save its time, days, time zone, lane, and bridges with your account, and send one notification with the current waits at that time. Deleting a schedule deletes it. Signing out removes this device's push address.",
+        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make a schedule, we also save its time, days, time zone, lane, bridges, and any name you gave it with your account, and send one notification with the current waits at that time. If you named it, that name is the notification's title. Deleting a schedule deletes it. Signing out removes this device's push address.",
       },
       {
         heading: "Other services",
@@ -423,12 +428,17 @@ export const COPY: Record<Locale, Copy> = {
     scheduleBridgesHint: (selected, max) => `${selected} of ${max} chosen`,
     scheduleNoBridges: "Choose at least one bridge.",
     scheduleZone: (zone) => `Times follow ${zone.replaceAll("_", " ")}`,
+    scheduleName: "Name",
+    scheduleNamePlaceholder: "Morning",
+    scheduleNameHint: "Optional. This becomes the notification title.",
     scheduleSave: "Save schedule",
     scheduleSaving: "Saving…",
     scheduleDelete: "Delete",
     scheduleClose: "Close",
     schedulePause: (time) => `Pause the ${time} schedule`,
     scheduleResume: (time) => `Resume the ${time} schedule`,
+    schedulePauseName: (name) => `Pause ${name}`,
+    scheduleResumeName: (name) => `Resume ${name}`,
     schedulePaused: "Paused",
     scheduleLimit: "You can keep up to 8 schedules. Delete one to add another.",
     scheduleFailed: "Could not save the schedule. Try again.",
@@ -559,7 +569,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Alertas de espera",
-        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas un horario, también guardamos con tu cuenta su hora, días, zona horaria, carril y puentes, y enviamos una notificación con las esperas actuales a esa hora. Al eliminar un horario, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
+        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas un horario, también guardamos con tu cuenta su hora, días, zona horaria, carril, puentes y el nombre que le hayas puesto, y enviamos una notificación con las esperas actuales a esa hora. Si le pusiste nombre, ese nombre es el título de la notificación. Al eliminar un horario, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
       },
       {
         heading: "Otros servicios",
@@ -673,12 +683,17 @@ export const COPY: Record<Locale, Copy> = {
     scheduleBridgesHint: (selected, max) => `${selected} de ${max} elegidos`,
     scheduleNoBridges: "Elige al menos un puente.",
     scheduleZone: (zone) => `Las horas siguen ${zone.replaceAll("_", " ")}`,
+    scheduleName: "Nombre",
+    scheduleNamePlaceholder: "Mañana",
+    scheduleNameHint: "Opcional. Pasa a ser el título de la notificación.",
     scheduleSave: "Guardar horario",
     scheduleSaving: "Guardando…",
     scheduleDelete: "Eliminar",
     scheduleClose: "Cerrar",
     schedulePause: (time) => `Pausar el horario de las ${time}`,
     scheduleResume: (time) => `Reanudar el horario de las ${time}`,
+    schedulePauseName: (name) => `Pausar ${name}`,
+    scheduleResumeName: (name) => `Reanudar ${name}`,
     schedulePaused: "En pausa",
     scheduleLimit: "Puedes tener hasta 8 horarios. Elimina uno para agregar otro.",
     scheduleFailed: "No se pudo guardar el horario. Intenta de nuevo.",

@@ -36,6 +36,7 @@ function ensureTable(): Promise<void> {
           time_zone text not null,
           mode text not null,
           ports jsonb not null,
+          name text,
           enabled boolean not null default true,
           last_sent_on text,
           created_at timestamptz not null default now(),
@@ -44,6 +45,7 @@ function ensureTable(): Promise<void> {
           constraint schedule_days_check check (days between 1 and 127)
         )
       `;
+      await sql`alter table schedule add column if not exists name text`;
       await sql`create index if not exists schedule_user_idx on schedule (user_id)`;
     })().catch((error: unknown) => {
       ensuring = null;
@@ -60,6 +62,7 @@ type Row = {
   time_zone: string;
   mode: string;
   ports: unknown;
+  name: string | null;
   enabled: boolean;
 };
 
@@ -72,6 +75,7 @@ function fromRow(row: Row): Schedule | null {
     timeZone: row.time_zone,
     mode: row.mode,
     ports: row.ports.filter((port): port is string => typeof port === "string"),
+    name: typeof row.name === "string" && row.name.length > 0 ? row.name : null,
     enabled: row.enabled,
   };
 }
@@ -80,7 +84,7 @@ export async function listSchedules(userId: string): Promise<Schedule[]> {
   await ensureTable();
   const sql = database();
   const rows = (await sql`
-    select id, minute, days, time_zone, mode, ports, enabled
+    select id, minute, days, time_zone, mode, ports, name, enabled
     from schedule
     where user_id = ${userId}
     order by minute, created_at
@@ -117,6 +121,7 @@ export async function saveSchedule(userId: string, input: ScheduleInput): Promis
           time_zone = ${input.timeZone},
           mode = ${input.mode},
           ports = ${ports}::jsonb,
+          name = ${input.name},
           enabled = ${input.enabled},
           last_sent_on = ${sentToday},
           updated_at = now()
@@ -135,9 +140,9 @@ export async function saveSchedule(userId: string, input: ScheduleInput): Promis
 
   const id = randomUUID();
   await sql`
-    insert into schedule (id, user_id, minute, days, time_zone, mode, ports, enabled, last_sent_on)
+    insert into schedule (id, user_id, minute, days, time_zone, mode, ports, name, enabled, last_sent_on)
     values (${id}, ${userId}, ${input.minute}, ${mask}, ${input.timeZone}, ${input.mode},
-            ${ports}::jsonb, ${input.enabled}, ${sentToday})
+            ${ports}::jsonb, ${input.name}, ${input.enabled}, ${sentToday})
   `;
   return { status: "ok", schedule: { ...input, id } };
 }
@@ -160,7 +165,7 @@ export async function listRunningSchedules(): Promise<DueCandidate[]> {
   await ensurePreferenceTable();
   const sql = database();
   const rows = (await sql`
-    select s.id, s.user_id, s.minute, s.days, s.time_zone, s.mode, s.ports, s.enabled,
+    select s.id, s.user_id, s.minute, s.days, s.time_zone, s.mode, s.ports, s.name, s.enabled,
            s.last_sent_on, p.locale
     from schedule s
     left join preference p on p.user_id = s.user_id

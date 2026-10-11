@@ -60,12 +60,14 @@ async function deliver(
       : copy.scheduleStatus(name, waitLabel(reading, copy));
   });
 
+  const when = copy.scheduleTitle(
+    clockLabel(schedule.minute, schedule.locale),
+    modeName(schedule.mode, ports[0], copy),
+  );
   const payload = {
-    title: copy.scheduleTitle(
-      clockLabel(schedule.minute, schedule.locale),
-      modeName(schedule.mode, ports[0], copy),
-    ),
-    body: lines.join("\n"),
+    // A name replaces the title. The time and lane move to the first line of the body.
+    title: schedule.name ?? when,
+    body: (schedule.name ? [when, ...lines] : lines).join("\n"),
     url: "/",
     // A retry replaces the same notification. Tomorrow's is a new one.
     tag: `schedule:${schedule.id}:${today}`,

@@ -6,6 +6,7 @@ import { isMode, type Mode } from "@/lib/ports";
 /**
  * "At this time, on these days, tell me the current wait at these bridges."
  * `minute` is minutes after local midnight in `timeZone`. `days` are 0 (Sunday) to 6 (Saturday).
+ * `name` is what the person called it. Null when they left it blank. A name is the notification title.
  */
 export type Schedule = {
   id: string;
@@ -14,6 +15,8 @@ export type Schedule = {
   timeZone: string;
   mode: Mode;
   ports: string[];
+  /** Blank stays null. At most `MAX_SCHEDULE_NAME` characters. */
+  name: string | null;
   enabled: boolean;
 };
 
@@ -22,6 +25,8 @@ export type ScheduleInput = Omit<Schedule, "id"> & { id: string | null };
 
 export const MAX_SCHEDULES = 8;
 export const MAX_SCHEDULE_PORTS = 6;
+/** A name has to fit on one line of a notification. */
+export const MAX_SCHEDULE_NAME = 40;
 /** The time picker moves in steps this size. */
 export const SCHEDULE_STEP = 5;
 /**
@@ -35,6 +40,18 @@ export const WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5];
 
 const PORT = /^[A-Za-z0-9]{1,12}$/;
 const ID = /^[A-Za-z0-9-]{8,40}$/;
+
+/**
+ * The stored name. Blank, or only spaces, becomes null. Control characters are dropped, extra
+ * spaces collapse, and anything past the limit is cut.
+ */
+export function cleanScheduleName(value: string): string | null {
+  const cleaned = [...value.replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim()]
+    .slice(0, MAX_SCHEDULE_NAME)
+    .join("")
+    .trim();
+  return cleaned.length > 0 ? cleaned : null;
+}
 
 export function isScheduleMinute(value: unknown): value is number {
   return (
@@ -80,6 +97,10 @@ export function parseSchedule(value: unknown): ScheduleInput | null {
   if (ports.length > MAX_SCHEDULE_PORTS) return null;
   if (!ports.every((port) => typeof port === "string" && PORT.test(port))) return null;
 
+  // Missing or null means unnamed. Anything else has to be text.
+  if (record.name !== undefined && record.name !== null && typeof record.name !== "string") return null;
+  const name = typeof record.name === "string" ? cleanScheduleName(record.name) : null;
+
   return {
     id: typeof record.id === "string" ? record.id : null,
     minute: record.minute,
@@ -87,6 +108,7 @@ export function parseSchedule(value: unknown): ScheduleInput | null {
     timeZone: record.timeZone,
     mode: record.mode,
     ports: ports as string[],
+    name,
     enabled: record.enabled,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { isMode } from "@/lib/ports";
-import { isTimeZone, type Schedule, type ScheduleInput } from "@/lib/schedule";
+import { cleanScheduleName, isTimeZone, type Schedule, type ScheduleInput } from "@/lib/schedule";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
@@ -28,6 +28,7 @@ function parse(item: unknown): Schedule[] {
       timeZone: entry.timeZone,
       mode: entry.mode,
       ports: entry.ports.filter((port): port is string => typeof port === "string"),
+      name: typeof entry.name === "string" ? cleanScheduleName(entry.name) : null,
       enabled: entry.enabled !== false,
     },
   ];

@@ -188,10 +188,15 @@ function ScheduleCard({
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`${time}, ${lane}`}
+        aria-label={schedule.name ? `${schedule.name}, ${time}, ${lane}` : `${time}, ${lane}`}
         className="relative block w-full rounded-3xl p-5 pr-20 text-left transition-transform duration-150 ease-out active:scale-[0.985]"
       >
         <HapticPad />
+        {schedule.name && (
+          <span className="mb-2 block truncate text-[17px] font-semibold tracking-[-0.02em]">
+            {schedule.name}
+          </span>
+        )}
         <span className="flex items-baseline gap-1.5">
           <span className="text-[48px] leading-none font-semibold tracking-[-0.045em] tabular-nums">
             {clock.digits}
@@ -250,7 +255,15 @@ function ScheduleCard({
 
       <Switch
         on={schedule.enabled}
-        label={schedule.enabled ? copy.schedulePause(time) : copy.scheduleResume(time)}
+        label={
+          schedule.name
+            ? schedule.enabled
+              ? copy.schedulePauseName(schedule.name)
+              : copy.scheduleResumeName(schedule.name)
+            : schedule.enabled
+              ? copy.schedulePause(time)
+              : copy.scheduleResume(time)
+        }
         onToggle={onToggle}
       />
     </div>
