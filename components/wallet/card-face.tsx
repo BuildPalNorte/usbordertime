@@ -13,7 +13,7 @@ import { AverageWait } from "./average-wait";
 import { HapticPad } from "./haptic-pad";
 import { CARD_H } from "./motion";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
-import { WaitNumber } from "./wait-number";
+import { WaitDuration } from "./wait-duration";
 
 /**
  * The physical card. The top ~76px is the "peek" that stays visible when cards stack,
@@ -106,14 +106,15 @@ export function CardFace({
         <div className="shrink-0 text-right">
           {reading.minutes !== null ? (
             <>
-              <p className="flex items-baseline justify-end gap-1">
-                <WaitNumber
+              <p className="flex items-baseline justify-end">
+                <WaitDuration
                   key={mode}
-                  value={reading.minutes}
+                  minutes={reading.minutes}
                   checking={checking}
-                  className="text-[36px] leading-none font-semibold tracking-[-0.045em]"
+                  animate
+                  numberClassName="text-[36px] leading-none font-semibold tracking-[-0.045em]"
+                  unitClassName="text-[13px] font-medium opacity-[0.72]"
                 />
-                <span className="text-[13px] font-medium opacity-[0.72]">{copy.minuteUnit}</span>
               </p>
               <p className="mt-1.5 flex items-center justify-end gap-1.5 text-[12px] leading-none font-medium opacity-[0.85]">
                 <span className={cn("size-1.5 rounded-full", TONE_DOT[reading.tone])} />

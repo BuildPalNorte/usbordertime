@@ -49,6 +49,7 @@ export type Copy = {
   live: string;
   cameraLabel: (name: string) => string;
   cameraUnavailable: string;
+  hourUnit: string;
   minuteUnit: string;
   notPublished: string;
   status: string;
@@ -188,6 +189,41 @@ export type Copy = {
   laneStatus: Record<StatusKey, string>;
 };
 
+export type DurationParts = {
+  hours: number;
+  minutes: number;
+};
+
+/** Whole hours and the minutes left over. 90 becomes 1 hour and 30 minutes. */
+export function durationParts(totalMinutes: number): DurationParts {
+  const total = Math.max(0, Math.round(totalMinutes));
+  return { hours: Math.floor(total / 60), minutes: total % 60 };
+}
+
+/** Compact label: "45 min", "1 hr", "1 hr 30 min". */
+export function formatDuration(totalMinutes: number, hourUnit: string, minuteUnit: string): string {
+  const { hours, minutes } = durationParts(totalMinutes);
+  if (hours === 0) return `${minutes} ${minuteUnit}`;
+  if (minutes === 0) return `${hours} ${hourUnit}`;
+  return `${hours} ${hourUnit} ${minutes} ${minuteUnit}`;
+}
+
+/** Sentence form: "45 minutes", "1 hour", "1 hour 30 minutes". */
+function durationSpoken(
+  totalMinutes: number,
+  hourOne: string,
+  hourMany: string,
+  minuteOne: string,
+  minuteMany: string,
+): string {
+  const { hours, minutes } = durationParts(totalMinutes);
+  const hourLabel = hours === 1 ? hourOne : hourMany;
+  const minuteLabel = minutes === 1 ? minuteOne : minuteMany;
+  if (hours === 0) return `${minutes} ${minuteLabel}`;
+  if (minutes === 0) return `${hours} ${hourLabel}`;
+  return `${hours} ${hourLabel} ${minutes} ${minuteLabel}`;
+}
+
 export const COPY: Record<Locale, Copy> = {
   en: {
     metaTitle: "Border Time",
@@ -226,6 +262,7 @@ export const COPY: Record<Locale, Copy> = {
     live: "Live",
     cameraLabel: (name) => `Live camera at ${name}`,
     cameraUnavailable: "Camera unavailable",
+    hourUnit: "hr",
     minuteUnit: "min",
     notPublished: "Not published here",
     status: "Status",
@@ -314,17 +351,23 @@ export const COPY: Record<Locale, Copy> = {
     shareFailed: "Could not share",
     shareTitle: (name, wait) => `${name} · ${wait}`,
     shareWait: (name, minutes, lane, place) =>
-      `${name} is ${minutes} min to cross right now. ${lane}, ${place}.`,
+      `${name} is ${formatDuration(minutes, "hr", "min")} to cross right now. ${lane}, ${place}.`,
     shareStatus: (name, status, lane, place) => `${name} — ${status}. ${lane}, ${place}.`,
     savedSummary: (count, updatedAt) => {
       const noun = count === 1 ? "crossing" : "crossings";
       return updatedAt ? `${count} ${noun}, updated ${updatedAt}` : `${count} ${noun}`;
     },
     reportedCount: (count) => `${count} crossings reported by CBP`,
-    minutes: (count) => `${count} min`,
-    minuteWait: (count) => `${count} minute wait`,
-    averageShort: (count) => `avg ${count} min`,
-    averageLabel: (count) => `Average wait at this hour, ${count} minutes`,
+    minutes: (count) => formatDuration(count, "hr", "min"),
+    minuteWait: (count) => {
+      const { hours, minutes } = durationParts(count);
+      if (hours === 0) return `${minutes} minute wait`;
+      if (minutes === 0) return `${hours} hour wait`;
+      return `${hours} hour ${minutes} minute wait`;
+    },
+    averageShort: (count) => `avg ${formatDuration(count, "hr", "min")}`,
+    averageLabel: (count) =>
+      `Average wait at this hour, ${durationSpoken(count, "hour", "hours", "minute", "minutes")}`,
     lanesOpen: (open, max) => {
       const base = `${open} ${open === 1 ? "lane" : "lanes"} open`;
       return max ? `${base} of ${max}` : base;
@@ -343,8 +386,10 @@ export const COPY: Record<Locale, Copy> = {
     alertOff: "Off",
     alertGroup: "Notify me when the wait is under",
     alertHintOff: "Pick a wait and we'll notify you when this lane drops under it.",
-    alertHintOn: (lane, minutes) => `We'll notify you when ${lane} drops under ${minutes} min.`,
-    alertOnToast: (name, lane, minutes) => `Alert on: ${name}, ${lane}, under ${minutes} min`,
+    alertHintOn: (lane, minutes) =>
+      `We'll notify you when ${lane} drops under ${formatDuration(minutes, "hr", "min")}.`,
+    alertOnToast: (name, lane, minutes) =>
+      `Alert on: ${name}, ${lane}, under ${formatDuration(minutes, "hr", "min")}`,
     alertOffToast: (name) => `Alert off for ${name}`,
     alertDenied: "Notifications are blocked. Allow them for this site in your browser settings.",
     alertUnsupported: "This browser can't send notifications.",
@@ -389,12 +434,12 @@ export const COPY: Record<Locale, Copy> = {
     scheduleFailed: "Could not save the schedule. Try again.",
     scheduleMissing: "That schedule no longer exists.",
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
-    scheduleWait: (name, minutes) => `${name}: ${minutes} min`,
+    scheduleWait: (name, minutes) => `${name}: ${formatDuration(minutes, "hr", "min")}`,
     scheduleStatus: (name, status) => `${name}: ${status}`,
     alertTestTitle: "Border Time",
     alertTestBody: "This is a test. A real alert names the bridge and the wait.",
     alertPushBody: (lane, minutes, threshold) =>
-      `${lane} is ${minutes} min, under your ${threshold} min alert.`,
+      `${lane} is ${formatDuration(minutes, "hr", "min")}, under your ${formatDuration(threshold, "hr", "min")} alert.`,
     installTitle: "Add Border Time to your Home Screen",
     installBody: "Open it like an app and get wait alerts.",
     installAdd: "Add",
@@ -470,6 +515,7 @@ export const COPY: Record<Locale, Copy> = {
     live: "En vivo",
     cameraLabel: (name) => `Cámara en vivo de ${name}`,
     cameraUnavailable: "Cámara no disponible",
+    hourUnit: "h",
     minuteUnit: "min",
     notPublished: "Aquí no se publica",
     status: "Estado",
@@ -558,17 +604,19 @@ export const COPY: Record<Locale, Copy> = {
     shareFailed: "No se pudo compartir",
     shareTitle: (name, wait) => `${name} · ${wait}`,
     shareWait: (name, minutes, lane, place) =>
-      `${name} está a ${minutes} min para cruzar. ${lane}, ${place}.`,
+      `${name} está a ${formatDuration(minutes, "h", "min")} para cruzar. ${lane}, ${place}.`,
     shareStatus: (name, status, lane, place) => `${name} — ${status}. ${lane}, ${place}.`,
     savedSummary: (count, updatedAt) => {
       const noun = count === 1 ? "cruce" : "cruces";
       return updatedAt ? `${count} ${noun}, actualizado ${updatedAt}` : `${count} ${noun}`;
     },
     reportedCount: (count) => `${count} cruces reportados por CBP`,
-    minutes: (count) => `${count} min`,
-    minuteWait: (count) => `espera de ${count} min`,
-    averageShort: (count) => `promedio ${count} min`,
-    averageLabel: (count) => `Espera promedio a esta hora, ${count} minutos`,
+    minutes: (count) => formatDuration(count, "h", "min"),
+    minuteWait: (count) =>
+      `espera de ${durationSpoken(count, "hora", "horas", "minuto", "minutos")}`,
+    averageShort: (count) => `promedio ${formatDuration(count, "h", "min")}`,
+    averageLabel: (count) =>
+      `Espera promedio a esta hora, ${durationSpoken(count, "hora", "horas", "minuto", "minutos")}`,
     lanesOpen: (open, max) => {
       const unit = open === 1 ? "carril abierto" : "carriles abiertos";
       const base = `${open} ${unit}`;
@@ -588,8 +636,10 @@ export const COPY: Record<Locale, Copy> = {
     alertOff: "Apagada",
     alertGroup: "Avísame cuando la espera sea menor a",
     alertHintOff: "Elige una espera y te avisamos cuando este carril baje de ella.",
-    alertHintOn: (lane, minutes) => `Te avisamos cuando ${lane} baje de ${minutes} min.`,
-    alertOnToast: (name, lane, minutes) => `Alerta activa: ${name}, ${lane}, menos de ${minutes} min`,
+    alertHintOn: (lane, minutes) =>
+      `Te avisamos cuando ${lane} baje de ${formatDuration(minutes, "h", "min")}.`,
+    alertOnToast: (name, lane, minutes) =>
+      `Alerta activa: ${name}, ${lane}, menos de ${formatDuration(minutes, "h", "min")}`,
     alertOffToast: (name) => `Alerta apagada para ${name}`,
     alertDenied: "Las notificaciones están bloqueadas. Permítelas para este sitio en los ajustes del navegador.",
     alertUnsupported: "Este navegador no puede enviar notificaciones.",
@@ -634,12 +684,12 @@ export const COPY: Record<Locale, Copy> = {
     scheduleFailed: "No se pudo guardar el horario. Intenta de nuevo.",
     scheduleMissing: "Ese horario ya no existe.",
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
-    scheduleWait: (name, minutes) => `${name}: ${minutes} min`,
+    scheduleWait: (name, minutes) => `${name}: ${formatDuration(minutes, "h", "min")}`,
     scheduleStatus: (name, status) => `${name}: ${status}`,
     alertTestTitle: "Border Time",
     alertTestBody: "Esto es una prueba. Una alerta real dice el puente y la espera.",
     alertPushBody: (lane, minutes, threshold) =>
-      `${lane} está a ${minutes} min, menos de tu alerta de ${threshold} min.`,
+      `${lane} está a ${formatDuration(minutes, "h", "min")}, menos de tu alerta de ${formatDuration(threshold, "h", "min")}.`,
     installTitle: "Agrega Border Time a tu pantalla de inicio",
     installBody: "Ábrela como una app y recibe alertas de espera.",
     installAdd: "Agregar",

@@ -1,5 +1,5 @@
 import { crossingPreview } from "@/lib/crossing-preview";
-import { modeName, placeSubtitle, presentClock, waitLabel } from "@/lib/i18n";
+import { durationParts, modeName, placeSubtitle, presentClock, waitLabel } from "@/lib/i18n";
 import { cardBackground, paletteFor, portName, readLane, type Tone } from "@/lib/ports";
 import { localeQuery } from "@/lib/routes";
 import { ImageResponse } from "next/og";
@@ -72,23 +72,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ por
       </div>
 
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "flex-end" }}>
-          <div
-            style={{
-              display: "flex",
-              fontSize: reading.minutes !== null ? 176 : 84,
-              lineHeight: 0.9,
-              letterSpacing: reading.minutes !== null ? -8 : -2,
-            }}
-          >
-            {reading.minutes !== null ? String(reading.minutes) : waitLabel(reading, copy)}
+        {reading.minutes !== null ? (
+          <OgDuration minutes={reading.minutes} hourUnit={copy.hourUnit} minuteUnit={copy.minuteUnit} muted={muted} />
+        ) : (
+          <div style={{ display: "flex", fontSize: 84, lineHeight: 0.9, letterSpacing: -2 }}>
+            {waitLabel(reading, copy)}
           </div>
-          {reading.minutes !== null ? (
-            <div style={{ display: "flex", fontSize: 48, marginLeft: 18, marginBottom: 16, color: muted }}>
-              {copy.minuteUnit}
-            </div>
-          ) : null}
-        </div>
+        )}
         <div style={{ display: "flex", fontSize: 64, marginTop: 36, letterSpacing: -1.5 }}>
           {name.title}
         </div>
@@ -103,5 +93,70 @@ export async function GET(request: NextRequest, context: { params: Promise<{ por
         "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
       },
     },
+  );
+}
+
+function OgDuration({
+  minutes,
+  hourUnit,
+  minuteUnit,
+  muted,
+}: {
+  minutes: number;
+  hourUnit: string;
+  minuteUnit: string;
+  muted: string;
+}) {
+  const { hours, minutes: rest } = durationParts(minutes);
+  const both = hours > 0 && rest > 0;
+  const numberSize = both ? 128 : 176;
+
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end" }}>
+      {hours > 0 ? (
+        <OgPart value={hours} unit={hourUnit} numberSize={numberSize} muted={muted} />
+      ) : null}
+      {hours === 0 || rest > 0 ? (
+        <OgPart
+          value={rest}
+          unit={minuteUnit}
+          numberSize={numberSize}
+          muted={muted}
+          gap={hours > 0}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function OgPart({
+  value,
+  unit,
+  numberSize,
+  muted,
+  gap = false,
+}: {
+  value: number;
+  unit: string;
+  numberSize: number;
+  muted: string;
+  gap?: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", marginLeft: gap ? 28 : 0 }}>
+      <div
+        style={{
+          display: "flex",
+          fontSize: numberSize,
+          lineHeight: 0.9,
+          letterSpacing: numberSize > 140 ? -8 : -4,
+        }}
+      >
+        {String(value)}
+      </div>
+      <div style={{ display: "flex", fontSize: 48, marginLeft: 16, marginBottom: 14, color: muted }}>
+        {unit}
+      </div>
+    </div>
   );
 }

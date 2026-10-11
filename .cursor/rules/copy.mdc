@@ -14,4 +14,6 @@ Appearance is `"light"` or `"dark"`. Until the user picks one, the page follows 
 
 CBP text stays as published. Construction notices, hours, and port status are not translated. `waitLabel`, `presentHours`, and `presentPortStatus` only wrap those values.
 
+A wait stays in minutes until it reaches an hour, then it is hours and minutes: `45 min`, `1 hr`, `1 hr 30 min` (Spanish `45 min`, `1 h`, `1 h 30 min`). `formatDuration` builds those words. `WaitDuration` draws the number on a card.
+
 A label change needs a look at the screen in both languages, including a crossing that is open, one that is closed, and one that does not offer the lane on screen.

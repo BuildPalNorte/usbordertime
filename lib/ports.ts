@@ -145,7 +145,7 @@ const CROSSING_STREAM: Record<string, CrossingStream> = {
     alias: "61af904e45b24",
   },
   "brownsville|b&m": {
-    src: "https://s90.ipcamlive.com/streams/5aormyelwpo5cdtxw/stream.m3u8",
+    src: "https://s40.ipcamlive.com/streams/28jy1ltckvk0nadxq/stream.m3u8",
     alias: "5df59f3827371",
   },
 };

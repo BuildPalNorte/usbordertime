@@ -1,6 +1,7 @@
 /**
  * IPCamLive keeps a stable alias per camera. The playlist host and stream id
- * move, so a 404 asks the alias for the address in use right now.
+ * move. A missing playlist is an Apache 404 with no CORS header, so the
+ * browser cannot read that status. The server checks it, then asks the alias.
  */
 
 export async function lookupCameraStream(alias: string): Promise<string | null> {
@@ -44,28 +45,21 @@ export async function lookupCameraStream(alias: string): Promise<string | null> 
   return url.toString();
 }
 
-/** Asks this app for the address IPCamLive currently assigns to the alias. */
-export async function requestCameraStream(alias: string): Promise<string | null> {
+/**
+ * Asks this app whether `src` is a 404. Only a confirmed 404 comes back as a
+ * new playlist. The same address means the failure was something else.
+ */
+export async function requestCameraStream(alias: string, src: string): Promise<string | null> {
   try {
     const response = await fetch("/api/camera-streams", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ alias }),
+      body: JSON.stringify({ alias, src }),
     });
     if (!response.ok) return null;
     const body = (await response.json()) as { src?: unknown };
     return typeof body.src === "string" ? body.src : null;
   } catch {
     return null;
-  }
-}
-
-/** True only when the playlist itself is gone. Other failures stay failures. */
-export async function cameraPlaylistMissing(src: string): Promise<boolean> {
-  try {
-    const response = await fetch(src, { cache: "no-store" });
-    return response.status === 404;
-  } catch {
-    return false;
   }
 }

@@ -21,6 +21,7 @@ import { TrashIcon } from "@heroicons-animated/react/trash";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef } from "react";
 import { HapticPad } from "./haptic-pad";
+import { WaitDuration } from "./wait-duration";
 import { haptic } from "@/lib/haptics";
 import { SPRING } from "./motion";
 
@@ -90,12 +91,10 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
               </span>
               <span className="mt-1.5 block text-[22px] leading-none font-semibold tracking-[-0.03em] tabular-nums">
                 {reading.minutes !== null ? (
-                  <>
-                    {reading.minutes}
-                    <span className="ml-1 text-[13px] font-medium tracking-normal text-muted">
-                      {copy.minuteUnit}
-                    </span>
-                  </>
+                  <WaitDuration
+                    minutes={reading.minutes}
+                    unitClassName="text-[13px] font-medium tracking-normal text-muted"
+                  />
                 ) : (
                   <span className="text-[15px] tracking-[-0.01em]">{waitLabel(reading, copy)}</span>
                 )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/locale-provider";
-import { cameraPlaylistMissing, requestCameraStream } from "@/lib/camera-stream";
+import { requestCameraStream } from "@/lib/camera-stream";
 import { reportCameraExpanded, videoIsExpanded } from "@/lib/screen-orientation";
 import { useEffect, useRef, useState } from "react";
 import { useCameraStreams } from "./camera-streams";
@@ -9,7 +9,8 @@ import { useCameraStreams } from "./camera-streams";
 /**
  * Plays one live HLS camera. Safari uses the video element. Other browsers
  * load hls.js only after this view mounts, and the effect tears it down on close.
- * A 404 playlist is saved through the alias, then played. Other visits read that address.
+ * A playlist that fails to load is checked on the server. A 404 is saved
+ * through the alias, then played. Other visits read that address.
  */
 export function CrossingCamera({
   src,
@@ -64,7 +65,7 @@ export function CrossingCamera({
       setFailed(true);
     }
 
-    async function recover(knownNotFound: boolean) {
+    async function recover() {
       if (gone || looking) return;
       if (tried.current.size >= 1) {
         fail();
@@ -78,16 +79,8 @@ export function CrossingCamera({
       media.removeAttribute("src");
       media.load();
 
-      const missing = knownNotFound || (await cameraPlaylistMissing(playing));
-      if (gone) return;
-      if (!missing) {
-        looking = false;
-        fail();
-        return;
-      }
-
       tried.current.add(playing);
-      const next = await requestCameraStream(alias);
+      const next = await requestCameraStream(alias, playing);
       if (gone) return;
       looking = false;
       if (!next || next === playing || tried.current.has(next)) {
@@ -100,7 +93,7 @@ export function CrossingCamera({
     }
 
     function onError() {
-      void recover(false);
+      void recover();
     }
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
@@ -130,11 +123,12 @@ export function CrossingCamera({
         next.on(Hls.Events.ERROR, (_event, data) => {
           if (!data.fatal || gone) return;
           const status = data.response?.code;
-          const playlist =
-            data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
-            data.url === playing;
-          if (playlist && (status === 404 || status === undefined)) {
-            void recover(status === 404);
+          const manifest = data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR;
+          // Apache's 404 has no CORS header, so hls.js reports status 0.
+          const hidden =
+            data.url === playing && (status === 404 || status === 0 || status === undefined);
+          if (manifest || hidden) {
+            void recover();
             return;
           }
           fail();

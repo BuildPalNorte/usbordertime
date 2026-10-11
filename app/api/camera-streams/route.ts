@@ -13,9 +13,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   let alias: unknown;
+  let current: string | undefined;
   try {
-    const body = (await request.json()) as { alias?: unknown };
+    const body = (await request.json()) as { alias?: unknown; src?: unknown };
     alias = body.alias;
+    if (typeof body.src === "string") current = body.src;
   } catch {
     return Response.json({ error: "Expected a camera alias." }, { status: 400 });
   }
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const src = await refreshCameraStream(alias);
+    const src = await refreshCameraStream(alias, current);
     if (!src) return Response.json({ error: "Camera lookup failed." }, { status: 502 });
     return Response.json({ alias, src });
   } catch {

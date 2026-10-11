@@ -23,6 +23,7 @@ import {
   TONE_DOT,
 } from "@/lib/ports";
 import { AverageWait } from "./average-wait";
+import { WaitDuration } from "./wait-duration";
 import { useCameraStreams } from "./camera-streams";
 import { CrossingCamera } from "./crossing-camera";
 import { HapticPad } from "./haptic-pad";
@@ -580,12 +581,10 @@ function CrossingRow({
                     </span>
                     <span className="mt-1 block text-[18px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
                       {lane.minutes !== null ? (
-                        <>
-                          {lane.minutes}
-                          <span className="ml-1 text-[12px] font-medium tracking-normal text-muted">
-                            {copy.minuteUnit}
-                          </span>
-                        </>
+                        <WaitDuration
+                          minutes={lane.minutes}
+                          unitClassName="text-[12px] font-medium tracking-normal text-muted"
+                        />
                       ) : (
                         <span className="text-[14px]">
                           {waitLabel(lane, copy)}

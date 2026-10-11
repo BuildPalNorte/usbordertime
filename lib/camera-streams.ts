@@ -49,6 +49,17 @@ function mergeCameraStreams(rows: CameraRow[]): Record<string, string> {
   return streams;
 }
 
+/** True only when the playlist itself is gone. The browser cannot see this 404. */
+async function playlistIsGone(src: string): Promise<boolean> {
+  if (!savedPlaylist(src)) return false;
+  try {
+    const response = await fetch(src, { cache: "no-store" });
+    return response.status === 404;
+  } catch {
+    return false;
+  }
+}
+
 /** Shared playlist addresses. A 404 refresh drops this tag, so the next read is the new row. */
 export async function getCameraStreams(): Promise<Record<string, string>> {
   "use cache";
@@ -61,9 +72,17 @@ export async function getCameraStreams(): Promise<Record<string, string>> {
   return mergeCameraStreams(rows);
 }
 
-/** Looks the alias up, saves the playlist, and expires the shared cache. */
-export async function refreshCameraStream(alias: string): Promise<string | null> {
+/**
+ * Looks the alias up when `current` is a 404, saves that playlist, and expires
+ * the shared cache. A playlist that is still there is returned unchanged.
+ */
+export async function refreshCameraStream(
+  alias: string,
+  current?: string,
+): Promise<string | null> {
   if (!isCameraAlias(alias)) return null;
+  if (current && !(await playlistIsGone(current))) return current;
+
   const src = await lookupCameraStream(alias);
   if (!src) return null;
 
