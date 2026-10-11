@@ -201,4 +201,4 @@ Wallet modes read one lane each:
 | `truck` | `commercial.standard` |
 | `fast` | `commercial.fast` |
 
-`portName()` in `lib/ports.ts` turns the uppercase CBP names into a title and subtitle. Cards use the crossing when it names a bridge, and the port name when the crossing is empty or generic (`East`, `West`, `Commercial`, `Passenger`, `PedWest`).
+`portName()` in `lib/ports.ts` turns the uppercase CBP names into a title and subtitle. Cards use the crossing when it names a bridge, and the port name when the crossing is empty or generic (`East`, `West`, `Commercial`, `Passenger`, `PedWest`). Three Brownsville bridges show the local name instead: Veterans International is De los tomates, B&M is Viejo, and Gateway is Nuevo. Los Indios stays Los Indios.

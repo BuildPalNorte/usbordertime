@@ -103,7 +103,7 @@ export function BrowsePane({
             title: name.title,
             pinKey: cityPinKey(port.border, name.city),
             search:
-              `${name.city} ${name.crossing ?? ""} ${port.portNumber}`.toLowerCase(),
+              `${name.city} ${name.crossing ?? ""} ${port.crossingName ?? ""} ${port.portNumber}`.toLowerCase(),
           };
         })
         .sort(

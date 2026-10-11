@@ -124,6 +124,17 @@ function tidy(raw: string | null): string {
 
 const GENERIC_CROSSINGS = new Set(["east", "west", "commercial", "passenger", "pedwest"]);
 
+/** Names people use, keyed by tidied city and CBP crossing. */
+const LOCAL_CROSSING: Record<string, string> = {
+  "brownsville|veterans international": "De los tomates",
+  "brownsville|b&m": "Viejo",
+  "brownsville|gateway": "Nuevo",
+};
+
+function localCrossing(city: string, crossing: string): string {
+  return LOCAL_CROSSING[`${city.toLowerCase()}|${crossing.toLowerCase()}`] ?? crossing;
+}
+
 export type PortName = {
   city: string;
   crossing: string | null;
@@ -138,6 +149,7 @@ export function portName(port: PortWaitTime): PortName {
   const city = tidy(port.portName);
   let crossing: string | null = tidy(port.crossingName) || null;
   if (crossing && crossing.toLowerCase() === city.toLowerCase()) crossing = null;
+  if (crossing) crossing = localCrossing(city, crossing);
 
   const region = port.border.toLowerCase().includes("canad")
     ? "Canadian border"
