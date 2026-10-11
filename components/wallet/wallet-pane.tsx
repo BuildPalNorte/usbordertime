@@ -5,15 +5,14 @@ import type { PortWaitTime } from "@/lib/border-wait-times";
 import type { Mode } from "@/lib/ports";
 import { AccountButton } from "./account-button";
 import { StreakChip } from "./streak-chip";
-import { ArrowPathIcon } from "@heroicons-animated/react/arrow-path";
 import { PlusIcon } from "@heroicons-animated/react/plus";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { forwardRef, useRef, useState } from "react";
+import { HeaderActions, usePublishPaneChrome, type PaneAction } from "./pane-header";
 import { CardStack, type StackItem } from "./card-stack";
 import { RouteRow } from "./route-row";
 import { HapticPad } from "./haptic-pad";
 import { InstallBanner } from "./install-prompt";
-import { haptic } from "@/lib/haptics";
 import { CARD_H, PEEK, SPRING } from "./motion";
 
 type Props = {
@@ -41,6 +40,8 @@ type Props = {
   routesLabel: string | null;
   routesMissing: boolean;
   onDismissRoutes: () => void;
+  /** This tab owns the phone header, which stays put while the body slides. */
+  ownsHeader: boolean;
 };
 
 export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(props, headerRef) {
@@ -61,10 +62,9 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
     routesLabel,
     routesMissing,
     onDismissRoutes,
+    ownsHeader,
   } = props;
   const { copy } = useLocale();
-  const reduce = useReducedMotion();
-  const refreshIcon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
   const open = expandedId !== null && items.some((i) => i.port.portNumber === expandedId);
   const holding = routes !== null || routesMissing;
   // Once the notification row has been on screen, the stack should return in place.
@@ -82,67 +82,43 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
       : items.length === 0
         ? copy.nothingSaved
         : copy.savedSummary(items.length, updatedAt);
+  const action: PaneAction = open || holding ? "done" : "refresh";
+
+  usePublishPaneChrome(ownsHeader, { subtitle, action, checking, refreshing }, {
+    onRefresh,
+    onDone: () => {
+      if (open) onCollapse();
+      else onDismissRoutes();
+    },
+    onAdd: () => {},
+  });
 
   return (
     <div>
-      <header ref={headerRef} className="flex min-h-[4.5rem] items-end justify-between gap-4 pb-5">
+      <header ref={headerRef} className="hidden min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:flex">
         <div className="min-w-0">
           <h1 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.wallet}</h1>
           <p className="mt-2 truncate text-[14px] leading-none text-muted">{subtitle}</p>
         </div>
 
         <div className="relative flex h-11 items-center justify-end gap-2">
-          <AnimatePresence mode="popLayout" initial={false}>
-            {open || holding ? (
-              <motion.button
-                key="done"
-                type="button"
-                onClick={() => {
-                  haptic("soft");
-                  if (open) onCollapse();
-                  else onDismissRoutes();
-                }}
-                initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
-                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
-                transition={SPRING.snap}
-                whileTap={reduce ? undefined : { scale: 0.94 }}
-                className="relative h-11 rounded-full bg-accent px-6 text-[15px] font-semibold text-accent-ink"
-              >
-                <HapticPad />
-                {copy.done}
-              </motion.button>
-            ) : (
-              <motion.button
-                key="refresh"
-                type="button"
-                onClick={onRefresh}
-                aria-label={copy.refresh}
-                aria-busy={checking}
-                onPointerEnter={() => refreshIcon.current?.startAnimation()}
-                onPointerLeave={() => refreshIcon.current?.stopAnimation()}
-                initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
-                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
-                transition={SPRING.snap}
-                whileTap={reduce ? undefined : { scale: 0.92 }}
-                className="relative grid size-11 place-items-center rounded-full bg-surface text-foreground"
-              >
-                <HapticPad />
-                <span
-                  className="grid place-items-center"
-                  style={refreshing ? { animation: "spin 0.9s linear infinite" } : undefined}
-                >
-                  <ArrowPathIcon ref={refreshIcon} size={20} aria-hidden />
-                </span>
-              </motion.button>
-            )}
-          </AnimatePresence>
+          <HeaderActions
+            action={action}
+            checking={checking}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            onDone={() => {
+              if (open) onCollapse();
+              else onDismissRoutes();
+            }}
+            onAdd={() => {}}
+          />
           <StreakChip />
           <AccountButton />
         </div>
       </header>
 
+      <div className="pane-body">
       {!open && !holding && <InstallBanner />}
 
       {!hydrated || loading ? (
@@ -178,6 +154,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
           returnFrom={seenRoutes ? rowIds : null}
         />
       )}
+      </div>
     </div>
   );
 });

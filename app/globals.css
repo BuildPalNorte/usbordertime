@@ -139,12 +139,13 @@ body {
   display: none;
 }
 
-/* Mobile shows one pane at a time; desktop shows both. Display toggling restarts the animation. */
+/* Mobile shows one pane at a time; desktop shows both. Display toggling restarts the animation.
+   Only the body travels, and only after a tab change — the phone header stays mounted. */
 @media (max-width: 1023px) {
   .pane[data-active="false"] {
     display: none;
   }
-  .pane[data-active="true"] {
+  .panes-animate .pane[data-active="true"] .pane-body {
     animation: pane-in 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
@@ -490,7 +491,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pane[data-active="true"],
+  .panes-animate .pane[data-active="true"] .pane-body,
   .rise {
     animation: fade-only 200ms ease both;
   }

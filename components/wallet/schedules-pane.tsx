@@ -20,8 +20,7 @@ import {
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { AccountButton } from "./account-button";
-import { StreakChip } from "./streak-chip";
+import { HeaderActions, usePublishPaneChrome, type PaneAction } from "./pane-header";
 import { HapticPad } from "./haptic-pad";
 import { REDUCED, SPRING } from "./motion";
 import { ScheduleSheet } from "./schedule-sheet";
@@ -34,13 +33,14 @@ type Props = {
   items: StackItem[];
   hydrated: boolean;
   onBrowse: () => void;
+  /** This tab owns the phone header, which stays put while the body slides. */
+  ownsHeader: boolean;
 };
 
 type Editing = { schedule: Schedule | null } | null;
 
-export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
+export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: Props) {
   const { copy } = useLocale();
-  const reduce = useReducedMotion();
   const { schedules, loading, failed, refetch, save, remove } = useSchedules();
   const [editing, setEditing] = useState<Editing>(null);
 
@@ -79,32 +79,34 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
   };
 
   const subtitle = !hydrated || loading ? "\u00A0" : copy.schedulesSummary(count);
+  const action: PaneAction = !noBridges && !full && count > 0 ? "add" : "none";
+
+  usePublishPaneChrome(
+    ownsHeader,
+    { subtitle, action, checking: false, refreshing: false },
+    { onRefresh: () => {}, onDone: () => {}, onAdd: () => open(null) },
+  );
 
   return (
     <div>
-      <header className="flex min-h-[4.5rem] items-end justify-between gap-4 pb-5">
+      <header className="hidden min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:flex">
         <div className="min-w-0">
           <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.schedules}</h2>
           <p className="mt-2 truncate text-[14px] leading-none text-muted">{subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
-          {!noBridges && !full && count > 0 && (
-            <motion.button
-              type="button"
-              aria-label={copy.scheduleNew}
-              onClick={() => open(null)}
-              whileTap={reduce ? undefined : { scale: 0.92 }}
-              transition={SPRING.snap}
-              className="relative grid size-11 place-items-center rounded-full bg-accent text-accent-ink"
-            >
-              <HapticPad />
-              <PlusIcon size={20} aria-hidden />
-            </motion.button>
-          )}
-          <StreakChip className="lg:hidden" />
-          <AccountButton className="lg:hidden" />
+          <HeaderActions
+            action={action}
+            checking={false}
+            refreshing={false}
+            onRefresh={() => {}}
+            onDone={() => {}}
+            onAdd={() => open(null)}
+          />
         </div>
       </header>
+
+      <div className="pane-body">
 
       {!hydrated || loading ? (
         <ListSkeleton />
@@ -157,6 +159,7 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
           {showTest && sample && <ScheduleTest ports={sample.ports} mode={sample.mode} />}
         </>
       )}
+      </div>
 
       <AnimatePresence>
         {editing && (

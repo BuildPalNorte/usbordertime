@@ -29,8 +29,7 @@ import { CrossingCamera } from "./crossing-camera";
 import { HapticPad } from "./haptic-pad";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { haptic } from "@/lib/haptics";
-import { AccountButton } from "./account-button";
-import { StreakChip } from "./streak-chip";
+import { usePublishPaneChrome } from "./pane-header";
 import {
   BookmarkIcon,
   type BookmarkIconHandle,
@@ -64,6 +63,8 @@ type Props = {
   onToggle: (port: PortWaitTime) => void;
   onPin: (border: string, city: string) => void;
   onRetry: () => void;
+  /** This tab owns the phone header, which stays put while the body slides. */
+  ownsHeader: boolean;
 };
 
 type Row = {
@@ -91,6 +92,7 @@ export function BrowsePane({
   onToggle,
   onPin,
   onRetry,
+  ownsHeader,
 }: Props) {
   const { copy } = useLocale();
   const [border, setBorder] = useState<BorderFilter>("mexican");
@@ -186,25 +188,27 @@ export function BrowsePane({
     return [...pinned, ...rest];
   }, [rows, border, query, pins]);
 
+  const subtitle = loading ? copy.loading : copy.reportedCount(counts.all);
+  usePublishPaneChrome(
+    ownsHeader,
+    { subtitle, action: "none", checking: false, refreshing: false },
+    { onRefresh: () => {}, onDone: () => {}, onAdd: () => {} },
+  );
+
   let rowIndex = 0;
 
   return (
     <div>
-      <header className="flex min-h-[4.5rem] items-end justify-between gap-4 pb-5">
+      <header className="hidden min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:flex">
         <div>
           <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">
             {copy.crossings}
           </h2>
-          <p className="mt-2 text-[14px] leading-none text-muted">
-            {loading ? copy.loading : copy.reportedCount(counts.all)}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 lg:hidden">
-          <StreakChip />
-          <AccountButton />
+          <p className="mt-2 text-[14px] leading-none text-muted">{subtitle}</p>
         </div>
       </header>
 
+      <div className="pane-body">
       <SearchField value={query} onChange={setQuery} />
 
       <div
@@ -286,6 +290,7 @@ export function BrowsePane({
             );
           })
         )}
+      </div>
       </div>
     </div>
   );

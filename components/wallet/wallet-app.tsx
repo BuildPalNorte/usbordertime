@@ -40,6 +40,7 @@ import { RoutesFocusSync } from "./route-row";
 import { SchedulesPane } from "./schedules-pane";
 import { TabBar, type Tab } from "./tab-bar";
 import { Toast, type ToastState } from "./toast";
+import { MobilePaneHeader, PaneChromeProvider, type PaneAction } from "./pane-header";
 import { WalletPane } from "./wallet-pane";
 
 const NAV = { scroll: false } as const;
@@ -230,6 +231,7 @@ export function WalletApp({
   }, [focusItems, items]);
 
   const [paneFrom, setPaneFrom] = useState(28);
+  const [paneMotion, setPaneMotion] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastId = useRef(0);
   const headerRef = useRef<HTMLElement>(null);
@@ -334,6 +336,7 @@ export function WalletApp({
   const prevTab = useRef(tab);
   useLayoutEffect(() => {
     if (prevTab.current === tab) return;
+    setPaneMotion(true);
     setPaneFrom(TAB_ORDER.indexOf(tab) > TAB_ORDER.indexOf(prevTab.current) ? 28 : -28);
     prevTab.current = tab;
   }, [tab]);
@@ -367,7 +370,7 @@ export function WalletApp({
         // Desktop: the wallet scrolls inside its own sticky pane; leave the page where it is.
         header?.closest("section")?.scrollTo({ top: 0, behavior });
       } else {
-        header?.scrollIntoView({ block: "start", behavior });
+        scrollerRef.current?.scrollTo({ top: 0, behavior });
       }
     },
     [go, reduce, focus],
@@ -582,7 +585,20 @@ export function WalletApp({
     return <NotFoundScreen />;
   }
 
+  const headerTitle =
+    tab === "browse" ? copy.crossings : tab === "schedules" ? copy.schedules : copy.wallet;
+  const headerAction: PaneAction =
+    tab === "wallet" && (expandedId !== null || routesRow !== null || routesMissing) ? "done" : tab === "wallet" ? "refresh" : "none";
+
   return (
+    <PaneChromeProvider
+      initial={{
+        subtitle: "\u00A0",
+        action: headerAction,
+        checking: false,
+        refreshing: false,
+      }}
+    >
     <CameraStreamProvider streams={cameraStreams} replace={replaceStream}>
     <Suspense fallback={null}>
       <RoutesFocusSync onKey={onFocusKey} />
@@ -594,7 +610,13 @@ export function WalletApp({
         ref={scrollerRef}
         className="relative mx-auto w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-32 sm:px-6 max-lg:h-full max-lg:overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain lg:max-w-6xl lg:pb-16"
       >
-        <div className="lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20">
+        <MobilePaneHeader tab={tab} title={headerTitle} />
+        <div
+          className={cn(
+            "lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20",
+            paneMotion && "panes-animate",
+          )}
+        >
           <section
             className="pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6"
             data-active={tab === "wallet"}
@@ -633,6 +655,7 @@ export function WalletApp({
               routesLabel={routesLabel}
               routesMissing={routesMissing}
               onDismissRoutes={dismissRoutes}
+              ownsHeader={tab === "wallet"}
             />
           </section>
 
@@ -659,6 +682,7 @@ export function WalletApp({
                   else if (performance.now() - started > 280) haptic("success");
                 });
               }}
+              ownsHeader={tab === "browse"}
             />
           </section>
 
@@ -673,6 +697,7 @@ export function WalletApp({
               items={items}
               hydrated={hydrated}
               onBrowse={() => changeTab("browse")}
+              ownsHeader={tab === "schedules"}
             />
           </section>
         </div>
@@ -682,5 +707,6 @@ export function WalletApp({
       <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
     </CameraStreamProvider>
+    </PaneChromeProvider>
   );
 }
