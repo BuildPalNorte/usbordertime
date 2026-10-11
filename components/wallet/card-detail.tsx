@@ -12,7 +12,6 @@ import {
   waitLabel,
 } from "@/lib/i18n";
 import { crossingStream, MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
-import { AlertControl } from "./alert-control";
 import { AverageWait } from "./average-wait";
 import { useCameraStreams } from "./camera-streams";
 import { CrossingCamera } from "./crossing-camera";
@@ -134,8 +133,6 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
           }
         />
       </dl>
-
-      {selected.available && <AlertControl port={port} mode={mode} />}
 
       <button
         type="button"

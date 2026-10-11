@@ -132,11 +132,9 @@ export type Copy = {
   alertUnsupported: string;
   alertNeedsInstall: string;
   alertFailed: string;
-  alertTest: string;
+  alertSchedule: string;
   alertTestTitle: string;
   alertTestBody: string;
-  alertTestSent: string;
-  alertTestFailed: string;
   alertPushBody: (lane: string, minutes: number, threshold: number) => string;
   installTitle: string;
   installBody: string;
@@ -314,11 +312,9 @@ export const COPY: Record<Locale, Copy> = {
     alertUnsupported: "This browser can't send notifications.",
     alertNeedsInstall: "On iPhone, alerts need Border Time on your Home Screen. Add it, then open it from there.",
     alertFailed: "Could not save the alert. Try again.",
-    alertTest: "Send a test",
+    alertSchedule: "Schedule a notification",
     alertTestTitle: "Border Time",
     alertTestBody: "This is a test. A real alert names the bridge and the wait.",
-    alertTestSent: "Test sent. Look for it in a moment.",
-    alertTestFailed: "The test didn't go out. Try again.",
     alertPushBody: (lane, minutes, threshold) =>
       `${lane} is ${minutes} min, under your ${threshold} min alert.`,
     installTitle: "Add Border Time to your Home Screen",
@@ -521,11 +517,9 @@ export const COPY: Record<Locale, Copy> = {
     alertUnsupported: "Este navegador no puede enviar notificaciones.",
     alertNeedsInstall: "En iPhone, las alertas necesitan Border Time en tu pantalla de inicio. Agrégala y ábrela desde ahí.",
     alertFailed: "No se pudo guardar la alerta. Intenta de nuevo.",
-    alertTest: "Enviar una prueba",
+    alertSchedule: "Programar una notificación",
     alertTestTitle: "Border Time",
     alertTestBody: "Esto es una prueba. Una alerta real dice el puente y la espera.",
-    alertTestSent: "Prueba enviada. Búscala en un momento.",
-    alertTestFailed: "La prueba no salió. Intenta de nuevo.",
     alertPushBody: (lane, minutes, threshold) =>
       `${lane} está a ${minutes} min, menos de tu alerta de ${threshold} min.`,
     installTitle: "Agrega Border Time a tu pantalla de inicio",

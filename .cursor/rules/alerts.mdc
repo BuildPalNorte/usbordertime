@@ -24,9 +24,11 @@ A new alert saves `below` from the current reading, so setting one on an already
 
 `public/sw.js` shows pushes and handles taps. It caches nothing and does not touch fetches. `next.config.ts` serves it with `Cache-Control: no-cache`. A tap focuses an open window or opens the card, same origin only.
 
-`POST /api/alerts/test` sends one test to every device on the signed-in account and changes no alert. The "Send a test" button on `AlertControl` calls it after `enablePush()`. Each test uses a new tag. Do not set `requireInteraction`: on macOS that skips the banner and only fills Notification Center. Do not also show the alert inside the page. The system notification is the only one.
+The clock button on `CardFace`, just left of share, opens the picker for the lane on screen: off, or a threshold. It shows the chosen minutes once an alert is on. That press does not open, reorder, or swipe the card. There is no test button in the app.
 
-`enablePush()` runs from the tap on a threshold chip or the test button. It asks permission first, with nothing awaited before it, then registers the worker, subscribes with `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, and `PUT`s `/api/push-subscription`. A device belongs to whoever registered it last. Sign-out calls `disablePush()` while the session still exists, which deletes the device row and unsubscribes. `AlertSync` re-registers the device on open when the account has alerts and permission is already granted. It never prompts.
+`POST /api/alerts/test` sends one test to the device named in the body and changes no alert. Each test uses a new tag. Do not set `requireInteraction`: on macOS that skips the banner and only fills Notification Center. Do not also show the alert inside the page. The system notification is the only one.
+
+`enablePush()` runs from the tap on a threshold chip. It asks permission first, with nothing awaited before it, then registers the worker, subscribes with `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, and `PUT`s `/api/push-subscription`. A device belongs to whoever registered it last. Sign-out calls `disablePush()` while the session still exists, which deletes the device row and unsubscribes. `AlertSync` re-registers the device on open when the account has alerts and permission is already granted. It never prompts.
 
 iPhone Safari has no `PushManager` until the site runs from the Home Screen, so `pushSupport()` reports `needs-install` there and the alert control points at the install steps instead of prompting. The Home Screen copy has its own storage, so the person signs in again inside it.
 

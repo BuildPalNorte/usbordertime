@@ -7,35 +7,53 @@ import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { modeName } from "@/lib/i18n";
 import { installStore } from "@/lib/install-store";
-import type { Mode } from "@/lib/ports";
-import { enablePush, pushEndpoint, pushSupport, type PushSupport } from "@/lib/push-client";
-import { BellIcon, type BellIconHandle } from "@heroicons-animated/react/bell";
-import { useReducedMotion } from "motion/react";
-import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { readLane, type Mode } from "@/lib/ports";
+import { enablePush, pushSupport, type PushSupport } from "@/lib/push-client";
+import { ClockIcon, type ClockIconHandle } from "@heroicons-animated/react/clock";
+import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { HapticPad } from "./haptic-pad";
+import { SPRING } from "./motion";
 import { useAlerts } from "./use-alerts";
 
-type Problem = "denied" | "unsupported" | "install" | "failed" | "test";
+type Problem = "denied" | "unsupported" | "install" | "failed";
 
 const noopSubscribe = () => () => {};
 
+type Place = { top: number; left: number; up: boolean };
+
 /**
- * "Tell me when this lane drops under N minutes." One alert per crossing and lane, kept with the
- * account. Choosing a wait asks the browser for notification permission, so it has to be a tap.
+ * Clock on the card. A tap opens "tell me when this lane drops under N minutes."
+ * One alert per crossing and lane, kept with the account. Choosing a wait asks for
+ * notification permission, so that choice has to be the tap.
  */
-export function AlertControl({ port, mode }: { port: PortWaitTime; mode: Mode }) {
+export function AlertButton({
+  port,
+  mode,
+  light,
+}: {
+  port: PortWaitTime;
+  mode: Mode;
+  light: boolean;
+}) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
-  const bell = useRef<BellIconHandle>(null);
+  const clock = useRef<ClockIconHandle>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dialogId = useId();
+  const titleId = useId();
   const { find, set, clear } = useAlerts();
+  const [open, setOpen] = useState(false);
+  const [place, setPlace] = useState<Place | null>(null);
   const [busy, setBusy] = useState<number | "off" | null>(null);
-  const [testing, setTesting] = useState(false);
-  const [sent, setSent] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
 
   const support = useSyncExternalStore<PushSupport>(noopSubscribe, pushSupport, () => "ask");
 
   const current = find(port.portNumber, mode);
+  const reading = readLane(port, mode);
   const lane = modeName(mode, port, copy);
   const waits = [...new Set([...ALERT_PRESETS, ...(current ? [current.threshold] : [])])].sort(
     (a, b) => a - b,
@@ -51,6 +69,68 @@ export function AlertControl({ port, mode }: { port: PortWaitTime; mode: Mode })
           : null;
   const shown = problem ?? blocked;
 
+  useLayoutEffect(() => {
+    if (!open) {
+      setPlace(null);
+      return;
+    }
+    const button = buttonRef.current;
+    const panel = panelRef.current;
+    if (!button || !panel) return;
+    const anchor = button.getBoundingClientRect();
+    const width = panel.offsetWidth;
+    const height = panel.offsetHeight;
+    const margin = 12;
+    const gap = 8;
+    let left = anchor.right - width;
+    left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+    const spaceBelow = window.innerHeight - anchor.bottom - gap;
+    const spaceAbove = anchor.top - gap;
+    const up = spaceBelow < height && spaceAbove > spaceBelow;
+    const top = up
+      ? Math.max(margin, anchor.top - gap - height)
+      : Math.min(anchor.bottom + gap, window.innerHeight - height - margin);
+    setPlace({ top, left, up });
+  }, [open, shown, current, waits.length, busy]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (buttonRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      event.stopPropagation();
+      event.preventDefault();
+      setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    const onScroll = () => setOpen(false);
+    document.addEventListener("pointerdown", onPointer, true);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer, true);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      clock.current?.stopAnimation();
+      return;
+    }
+    clock.current?.startAnimation();
+    if (!place) return;
+    panelRef.current?.focus({ preventScroll: true });
+  }, [open, place]);
+
+  if (!reading.available && !current) return null;
+
   const turnOff = async () => {
     if (busy !== null || !current) return;
     haptic("selection");
@@ -58,8 +138,10 @@ export function AlertControl({ port, mode }: { port: PortWaitTime; mode: Mode })
     setBusy("off");
     const ok = await clear(port.portNumber, mode);
     setBusy(null);
-    if (ok) haptic("light");
-    else {
+    if (ok) {
+      haptic("light");
+      setOpen(false);
+    } else {
       haptic("error");
       setProblem("failed");
     }
@@ -91,54 +173,13 @@ export function AlertControl({ port, mode }: { port: PortWaitTime; mode: Mode })
 
     const saved = await set({ portNumber: port.portNumber, mode, threshold });
     setBusy(null);
-    if (saved === "ok") haptic("success");
-    else {
+    if (saved === "ok") {
+      haptic("success");
+      setOpen(false);
+    } else {
       haptic("error");
       setProblem("failed");
     }
-  };
-
-  const sendTest = async () => {
-    if (busy !== null || testing || blocked) return;
-    haptic("selection");
-    setProblem(null);
-    setSent(false);
-    setTesting(true);
-
-    const enabled = await enablePush();
-    if (enabled !== "ok") {
-      setTesting(false);
-      haptic("error");
-      setProblem(
-        enabled === "denied"
-          ? "denied"
-          : enabled === "unsupported"
-            ? "unsupported"
-            : enabled === "needs-install"
-              ? "install"
-              : "test",
-      );
-      return;
-    }
-
-    try {
-      const endpoint = await pushEndpoint();
-      const response = await fetch("/api/alerts/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ portNumber: port.portNumber, mode, endpoint }),
-      });
-      setTesting(false);
-      if (response.ok) {
-        haptic("success");
-        setSent(true);
-        return;
-      }
-    } catch {
-      setTesting(false);
-    }
-    haptic("error");
-    setProblem("test");
   };
 
   const message =
@@ -150,89 +191,130 @@ export function AlertControl({ port, mode }: { port: PortWaitTime; mode: Mode })
           ? copy.alertUnsupported
           : shown === "failed"
             ? copy.alertFailed
-            : shown === "test"
-              ? copy.alertTestFailed
-              : sent
-              ? copy.alertTestSent
-              : current
+            : current
               ? copy.alertHintOn(lane, current.threshold)
               : copy.alertHintOff;
 
+  const label = current ? copy.alertHintOn(lane, current.threshold) : copy.alertSchedule;
+
   return (
-    <div
-      role="group"
-      aria-label={copy.alertTitle}
-      className="rounded-2xl bg-surface px-4 py-3.5"
-      onPointerEnter={() => bell.current?.startAnimation()}
-      onPointerLeave={() => bell.current?.stopAnimation()}
-    >
-      <div className="flex items-center gap-2 text-[14px] font-medium">
-        <BellIcon ref={bell} size={18} aria-hidden className={current ? "text-accent" : "text-muted"} />
-        <span>{copy.alertTitle}</span>
-        <span className="text-muted">· {lane}</span>
-      </div>
-
-      <div role="radiogroup" aria-label={copy.alertGroup} className="mt-3 grid grid-cols-3 gap-2">
-        <Chip
-          active={!current}
-          pending={busy === "off"}
-          disabled={!current || busy !== null}
-          reduce={Boolean(reduce)}
-          onClick={() => void turnOff()}
-        >
-          {copy.alertOff}
-        </Chip>
-        {waits.map((wait) => (
-          <Chip
-            key={wait}
-            active={current?.threshold === wait}
-            pending={busy === wait}
-            disabled={Boolean(blocked) || busy !== null}
-            reduce={Boolean(reduce)}
-            onClick={() => void choose(wait)}
-          >
-            {copy.minutes(wait)}
-          </Chip>
-        ))}
-      </div>
-
-      <p
-        role={shown ? "alert" : "status"}
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label={label}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-controls={open ? dialogId : undefined}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (!open) haptic("selection");
+          setProblem(null);
+          setOpen((value) => !value);
+        }}
+        onPointerEnter={() => clock.current?.startAnimation()}
+        onPointerLeave={() => {
+          if (!open) clock.current?.stopAnimation();
+        }}
         className={cn(
-          "mt-3 text-[13px] leading-snug",
-          shown === "failed" || shown === "test" || shown === "denied" ? "text-danger" : "text-muted",
+          "relative flex h-10 items-center justify-center rounded-full transition-transform active:scale-95",
+          current ? "gap-1 px-2.5" : "w-10",
+          light
+            ? current
+              ? "bg-white text-[#10131a]"
+              : "bg-white/20 text-white"
+            : current
+              ? "bg-[#10131a] text-white"
+              : "bg-black/10 text-[#10131a]",
         )}
       >
-        {message}
-      </p>
+        <HapticPad />
+        <ClockIcon ref={clock} size={18} aria-hidden />
+        {current && (
+          <span className="text-[13px] font-semibold tabular-nums">{current.threshold}</span>
+        )}
+      </button>
 
-      {!blocked && (
-        <button
-          type="button"
-          onClick={() => void sendTest()}
-          disabled={testing || busy !== null}
-          aria-busy={testing}
-          className="relative mt-3 h-10 rounded-full bg-foreground/[0.07] px-5 text-[14px] font-medium active:scale-[0.98] disabled:opacity-50"
-        >
-          <HapticPad />
-          {copy.alertTest}
-        </button>
-      )}
+      {open &&
+        createPortal(
+            <motion.div
+              key={place ? "placed" : "measure"}
+              ref={panelRef}
+              id={dialogId}
+              role="dialog"
+              tabIndex={-1}
+              aria-labelledby={titleId}
+              initial={
+                !place || reduce ? false : { opacity: 0, y: place.up ? 8 : -8, scale: 0.96 }
+              }
+              animate={place ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0 }}
+              transition={reduce ? { duration: 0.16 } : SPRING.snap}
+              style={{
+                top: place?.top ?? 0,
+                left: place?.left ?? 0,
+                visibility: place ? "visible" : "hidden",
+                transformOrigin: place?.up ? "bottom right" : "top right",
+              }}
+              className="glass fixed z-50 w-[min(18rem,calc(100vw-1.5rem))] rounded-2xl p-3.5 outline-none"
+            >
+              <p id={titleId} className="text-[14px] font-medium">
+                {copy.alertTitle}
+                <span className="text-muted"> · {lane}</span>
+              </p>
+              <p className="mt-1 text-[12px] leading-snug text-muted">{copy.alertGroup}</p>
 
-      {shown === "install" && (
-        <button
-          type="button"
-          onClick={() => {
-            haptic("selection");
-            void installStore.start();
-          }}
-          className="relative mt-2 h-10 rounded-full bg-accent px-5 text-[14px] font-semibold text-accent-ink active:opacity-80"
-        >
-          <HapticPad />
-          {copy.installMenu}
-        </button>
-      )}
-    </div>
+              <div role="radiogroup" aria-label={copy.alertGroup} className="mt-3 grid grid-cols-3 gap-1.5">
+                <Chip
+                  active={!current}
+                  pending={busy === "off"}
+                  disabled={!current || busy !== null}
+                  reduce={Boolean(reduce)}
+                  onClick={() => void turnOff()}
+                >
+                  {copy.alertOff}
+                </Chip>
+                {waits.map((wait) => (
+                  <Chip
+                    key={wait}
+                    active={current?.threshold === wait}
+                    pending={busy === wait}
+                    disabled={Boolean(blocked) || busy !== null}
+                    reduce={Boolean(reduce)}
+                    onClick={() => void choose(wait)}
+                  >
+                    {copy.minutes(wait)}
+                  </Chip>
+                ))}
+              </div>
+
+              <p
+                role={shown ? "alert" : "status"}
+                className={cn(
+                  "mt-3 text-[13px] leading-snug",
+                  shown === "failed" || shown === "denied" ? "text-danger" : "text-muted",
+                )}
+              >
+                {message}
+              </p>
+
+              {shown === "install" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic("selection");
+                    setOpen(false);
+                    void installStore.start();
+                  }}
+                  className="relative mt-3 h-10 w-full rounded-full bg-accent text-[14px] font-semibold text-accent-ink active:opacity-80"
+                >
+                  <HapticPad />
+                  {copy.installMenu}
+                </button>
+              )}
+            </motion.div>,
+          document.body,
+        )}
+    </>
   );
 }
 

@@ -461,7 +461,7 @@ function StackCard({
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return;
-    if (event.target instanceof Element && event.target.closest("[data-card-share]")) return;
+    if (event.target instanceof Element && event.target.closest("[data-card-action]")) return;
     stopListening.current?.();
     const offset = swipeX.get();
     const front = canReorder && index === count - 1;
