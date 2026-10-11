@@ -6,20 +6,22 @@ import { auth } from "@/lib/auth/server";
 import { getBorderWaitTimes, type BorderWaitTimes } from "@/lib/border-wait-times";
 import { ensureProfile } from "@/lib/profile";
 import { headers } from "next/headers";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 
-export default function Home() {
+export const instant = false;
+
+export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <main>
       <Suspense fallback={<ShellSkeleton wordless />}>
-        <GatedHome />
+        <GatedHome>{children}</GatedHome>
       </Suspense>
     </main>
   );
 }
 
 /** The bridges render only after Google sign-in, and that visit writes the profile. */
-async function GatedHome() {
+async function GatedHome({ children }: { children: ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user;
   if (!user?.id || !user.email) return <SignInScreen />;
@@ -37,18 +39,25 @@ async function GatedHome() {
 
   return (
     <SessionGate>
-      <LiveWallet />
+      <LiveWallet>{children}</LiveWallet>
     </SessionGate>
   );
 }
 
 /** Fetches the cached CBP snapshot on the server. If CBP is down, the client retries on its own. */
-async function LiveWallet() {
+async function LiveWallet({ children }: { children: ReactNode }) {
   let initial: BorderWaitTimes | null = null;
   try {
     initial = await getBorderWaitTimes();
   } catch {
     initial = null;
   }
-  return <WalletApp initial={initial} />;
+  return (
+    <>
+      <Suspense fallback={<ShellSkeleton wordless />}>
+        <WalletApp initial={initial} />
+      </Suspense>
+      {children}
+    </>
+  );
 }

@@ -6,13 +6,13 @@ alwaysApply: false
 
 # Wallet UI
 
-`WalletApp` owns the wait-times query, both stores, the open card, the tab, and toasts. Panes receive that snapshot and callbacks. They do not write storage. A crossing loads its own hourly average when it is on screen.
+`WalletApp` owns the wait-times query, both stores, the open card, the tab, and toasts. The tab and open card are the URL: `/` is Puentes, `/explore` is Explorar, and `/{portNumber}` is that card open. Panes receive that snapshot and callbacks. They do not write storage. A crossing loads its own hourly average when it is on screen.
 
 The `["wait-times"]` query starts from the server snapshot, treats it as fresh for 30 seconds, and refetches every 60 seconds. `loading` means `isPending && !data`, so a failed first load can show the error state.
 
 Below 1024px, `.pane[data-active]` shows one tab and `TabBar` switches them. The shell is fixed to the viewport and the active pane scrolls inside it, so the document never scrolls and the tab bar stays absolute at the bottom of that shell. At `lg` and up the tab bar is hidden, both panes stay on the page, and the wallet column scrolls inside its own sticky pane.
 
-`WalletPane` renders `CardStack` (`CardFace` and `CardDetail`). `expandedId` is derived: if that port leaves the stack, the card closes. Escape closes it too.
+`WalletPane` renders `CardStack` (`CardFace` and `CardDetail`). `expandedId` is the `/{portNumber}` route. Closing the card, Escape, or switching to Explorar goes back to `/` or `/explore`. If that port leaves the feed, the card closes.
 
 A short tap on a closed card opens it. Holding one still for about half a second picks it up; the card then tracks the finger, fades to 82% opacity so the drop target underneath stays visible, and the others spring into the gap. `CardStack` reports the drop through `onReorder` and does not write storage. Reorder is off while a card is open, and with a single card. Alt+ArrowUp and Alt+ArrowDown move the focused card for the keyboard.
 

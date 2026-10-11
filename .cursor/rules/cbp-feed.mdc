@@ -10,7 +10,7 @@ alwaysApply: false
 
 The raw body is a JSON array of snake_case port objects. Field names, the status strings CBP actually sends, and the normalized shape are in `docs/cbp-wait-times.md`. `normalizePort` drops an entry with no `port_number` or `port_name`. A non-array body or an empty list throws `BorderWaitTimesError`. A missing lane group becomes `EMPTY_LANE` (`operationalStatus: "N/A"`, counts `null`). `""` and `"N/A"` counts are `null`, not `0`.
 
-`app/page.tsx` calls `getBorderWaitTimes()` inside Suspense and passes the snapshot as `initial`. A thrown error becomes `initial={null}` so the client can retry. Do not fail the page.
+`app/(app)/layout.tsx` calls `getBorderWaitTimes()` inside Suspense and passes the snapshot as `initial`. A thrown error becomes `initial={null}` so the client can retry. Do not fail the page.
 
 `GET /api/wait-times` reuses that cached snapshot. `border` must be omitted, `mexican`, or `canadian` (400 otherwise). `port` matches port number, port name, or crossing name. A CBP failure or an empty feed returns 502. The response cache is `public, max-age=60, stale-while-revalidate=300`.
 

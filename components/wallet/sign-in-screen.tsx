@@ -3,6 +3,7 @@
 import { useLocale } from "@/components/locale-provider";
 import { authClient } from "@/lib/auth/client";
 import { haptic, type Haptic } from "@/lib/haptics";
+import { currentCallbackURL } from "@/lib/routes";
 import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import {
@@ -52,8 +53,8 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
     setFailed(false);
     const { error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/",
-      errorCallbackURL: "/?sign-in=failed",
+      callbackURL: currentCallbackURL(),
+      errorCallbackURL: `${window.location.pathname}?sign-in=failed`,
     });
     if (error) {
       busyRef.current = false;

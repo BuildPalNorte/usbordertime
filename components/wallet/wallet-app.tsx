@@ -1,13 +1,16 @@
 "use client";
 
 import { useLocale } from "@/components/locale-provider";
+import { NotFoundScreen } from "@/components/not-found-screen";
 import type { BorderWaitTimes, PortWaitTime } from "@/lib/border-wait-times";
 import { haptic } from "@/lib/haptics";
 import { cityPinKey, pinStore } from "@/lib/pin-store";
 import { defaultMode, paletteFor, portName, type Mode } from "@/lib/ports";
+import { crossingPath, EXPLORE_PATH, parseAppPath } from "@/lib/routes";
 import { walletStore } from "@/lib/wallet-store";
 import { useQuery } from "@tanstack/react-query";
 import { useReducedMotion } from "motion/react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -25,6 +28,8 @@ import { TabBar, type Tab } from "./tab-bar";
 import { Toast, type ToastState } from "./toast";
 import { WalletPane } from "./wallet-pane";
 
+const NAV = { scroll: false } as const;
+
 const EMPTY_PORTS: PortWaitTime[] = [];
 const noopSubscribe = () => () => {};
 
@@ -37,6 +42,10 @@ async function fetchWaitTimes(): Promise<BorderWaitTimes> {
 export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
+  const pathname = usePathname();
+  const router = useRouter();
+  const route = parseAppPath(pathname);
+  const tab: Tab = route.tab;
 
   // Server renders no saved cards; the client reads localStorage after hydration.
   const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
@@ -69,11 +78,17 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     () => false,
   );
 
+  const routePort = route.port ? byNumber.get(route.port) : undefined;
+
   const items = useMemo<StackItem[]>(() => {
     const list = entries.flatMap((entry) => {
       const port = byNumber.get(entry.portNumber);
       return port ? [{ port, mode: entry.mode }] : [];
     });
+    // A shared card can open before it is saved. Keep it on the front of the stack.
+    if (routePort && !list.some((item) => item.port.portNumber === routePort.portNumber)) {
+      list.push({ port: routePort, mode: defaultMode(routePort) });
+    }
     // Until the one-time seed, keep the old "bookmarks float" order so the stack doesn't jump.
     if (orderReady) return list;
     const pinIndex = new Map(pins.map((key, index) => [key, index]));
@@ -84,21 +99,20 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
         pinIndex.get(cityPinKey(b.port.border, portName(b.port).city)) ?? Number.POSITIVE_INFINITY;
       return ai - bi;
     });
-  }, [entries, byNumber, pins, orderReady]);
+  }, [entries, byNumber, pins, orderReady, routePort]);
   const saved = useMemo(() => new Set(entries.map((e) => e.portNumber)), [entries]);
 
-  const [tab, setTab] = useState<Tab>("wallet");
   const [paneFrom, setPaneFrom] = useState(28);
-  const [requestedId, setRequestedId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastId = useRef(0);
   const headerRef = useRef<HTMLElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const autoSaved = useRef(new Set<string>());
 
-  // Derived: if the open card disappears (removed, or dropped from the feed), nothing is open.
+  // The open card is the route. If that port leaves the feed, nothing is open.
   const expandedId =
-    requestedId !== null && items.some((i) => i.port.portNumber === requestedId)
-      ? requestedId
+    routePort && items.some((i) => i.port.portNumber === routePort.portNumber)
+      ? routePort.portNumber
       : null;
   const openItem = items.find((i) => i.port.portNumber === expandedId) ?? null;
   const openCityPinned = openItem
@@ -116,30 +130,64 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     return () => window.clearTimeout(id);
   }, [toast]);
 
+  const go = useCallback(
+    (href: string) => {
+      router.push(href, NAV);
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    router.prefetch("/");
+    router.prefetch(EXPLORE_PATH);
+  }, [router]);
+
+  useEffect(() => {
+    document.title = openItem
+      ? copy.pageTitle(portName(openItem.port).title)
+      : tab === "browse"
+        ? copy.pageTitle(copy.browse)
+        : copy.metaTitle;
+  }, [openItem, tab, copy]);
+
   useEffect(() => {
     if (!hydrated || orderReady) return;
     walletStore.adoptOrder(items.map((item) => item.port.portNumber));
   }, [hydrated, orderReady, items]);
 
   useEffect(() => {
+    if (!hydrated || !routePort || saved.has(routePort.portNumber)) return;
+    if (autoSaved.current.has(routePort.portNumber)) return;
+    autoSaved.current.add(routePort.portNumber);
+    walletStore.add({ portNumber: routePort.portNumber, mode: defaultMode(routePort) });
+  }, [hydrated, routePort, saved]);
+
+  useEffect(() => {
     if (!expandedId) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       haptic("light");
-      setRequestedId(null);
+      go("/");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [expandedId]);
+  }, [expandedId, go]);
+
+  const prevTab = useRef(tab);
+  useLayoutEffect(() => {
+    if (prevTab.current === tab) return;
+    setPaneFrom(tab === "browse" ? 28 : -28);
+    prevTab.current = tab;
+  }, [tab]);
 
   const changeTab = useCallback(
     (next: Tab) => {
       if (next === tab) return;
       haptic("selection");
       setPaneFrom(next === "browse" ? 28 : -28);
-      setTab(next);
+      go(next === "browse" ? EXPLORE_PATH : "/");
     },
-    [tab],
+    [tab, go],
   );
 
   // Mobile scrolls inside the shell, not the document. Start each tab at the top
@@ -153,7 +201,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
   const expand = useCallback(
     (portNumber: string) => {
       haptic("light");
-      setRequestedId(portNumber);
+      go(crossingPath(portNumber));
       // Bring the header (and the Done button) into view so the open card never lands off-screen.
       const behavior = reduce ? "auto" : "smooth";
       const header = headerRef.current;
@@ -164,8 +212,12 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
         header?.scrollIntoView({ block: "start", behavior });
       }
     },
-    [reduce],
+    [go, reduce],
   );
+
+  const collapse = useCallback(() => {
+    go("/");
+  }, [go]);
 
   const toggleSaved = useCallback(
     (port: PortWaitTime) => {
@@ -174,6 +226,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
         const index = entries.findIndex((e) => e.portNumber === port.portNumber);
         const entry = entries[index];
         haptic("heavy");
+        if (route.port === port.portNumber) go("/");
         walletStore.remove(port.portNumber);
         showToast({
           message: copy.removedToast(name),
@@ -190,11 +243,15 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
         walletStore.add({ portNumber: port.portNumber, mode: defaultMode(port) });
         showToast({
           message: copy.addedToast(name),
-          action: { label: copy.view, onClick: () => changeTab("wallet"), mobileOnly: true },
+          action: {
+            label: copy.view,
+            onClick: () => go(crossingPath(port.portNumber)),
+            mobileOnly: true,
+          },
         });
       }
     },
-    [saved, entries, showToast, changeTab, copy],
+    [saved, entries, showToast, go, copy, route.port],
   );
 
   const removeOpen = useCallback(
@@ -202,9 +259,12 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
       const index = entries.findIndex((e) => e.portNumber === portNumber);
       const entry = entries[index];
       const port = byNumber.get(portNumber);
-      if (!entry || !port) return;
+      if (!entry || !port) {
+        go("/");
+        return;
+      }
       haptic("heavy");
-      setRequestedId(null);
+      go("/");
       walletStore.remove(portNumber);
       showToast({
         message: copy.removedToast(portName(port).title),
@@ -217,7 +277,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
         },
       });
     },
-    [entries, byNumber, showToast, copy],
+    [entries, byNumber, showToast, copy, go],
   );
 
   const suggested = useMemo(
@@ -301,6 +361,12 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
     });
   }, [refetch]);
 
+  const feedReady = Boolean(data) && !isPending;
+  const missingPort = Boolean(route.port && feedReady && !routePort);
+  if (!route.known || missingPort) {
+    return <NotFoundScreen />;
+  }
+
   return (
     <div className="relative min-h-[100dvh] max-lg:fixed max-lg:inset-0 max-lg:min-h-0 max-lg:overflow-hidden">
       <Glow palette={openItem && tab === "wallet" ? paletteFor(openItem.port.portNumber) : null} />
@@ -327,7 +393,7 @@ export function WalletApp({ initial }: { initial: BorderWaitTimes | null }) {
               expandedId={expandedId}
               suggested={suggested}
               onExpand={expand}
-              onCollapse={() => setRequestedId(null)}
+              onCollapse={collapse}
               onMode={(portNumber: string, mode: Mode) => walletStore.setMode(portNumber, mode)}
               cityPinned={openCityPinned}
               onPinCity={() => {
