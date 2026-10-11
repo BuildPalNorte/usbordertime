@@ -4,7 +4,7 @@ import { useLocale } from "@/components/locale-provider";
 import { authClient } from "@/lib/auth/client";
 import { haptic, type Haptic } from "@/lib/haptics";
 import { currentCallbackURL } from "@/lib/routes";
-import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from "motion/react";
+import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import {
   useEffect,
@@ -179,6 +179,7 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
       </main>
 
       <SignInCard swipe={swipe} busy={busy} onTap={() => void signIn()} />
+      <SignInHandoff busy={busy} reduce={!!reduce} />
     </div>
   );
 }
@@ -371,6 +372,33 @@ function SignInCard({
         {copy.signInSwipe}
       </p>
     </motion.div>
+  );
+}
+
+/** Covers the page after sign-in starts, until Google takes over or the attempt fails. */
+function SignInHandoff({ busy, reduce }: { busy: boolean; reduce: boolean }) {
+  const { copy } = useLocale();
+  return (
+    <AnimatePresence>
+      {busy ? (
+        <motion.div
+          key="handoff"
+          role="status"
+          aria-live="polite"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={reduce ? REDUCED : { duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+          className="sign-in-handoff"
+        >
+          <span aria-hidden className="sign-in-mark">
+            <span className="sign-in-spinner" />
+            <GoogleMark />
+          </span>
+          <p className="text-[16px] leading-none font-semibold tracking-[-0.02em]">{copy.signInRedirecting}</p>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

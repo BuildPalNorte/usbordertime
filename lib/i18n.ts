@@ -69,6 +69,7 @@ export type Copy = {
   signInBody: string;
   signInWithGoogle: string;
   signInSwipe: string;
+  signInRedirecting: string;
   signInHeadline: string;
   signInSample: string;
   privacyPolicy: string;
@@ -183,6 +184,7 @@ export const COPY: Record<Locale, Copy> = {
     signInBody: "Sign in with Google to see the bridges you cross.",
     signInWithGoogle: "Sign in with Google",
     signInSwipe: "Swipe up",
+    signInRedirecting: "Signing in…",
     signInHeadline: "Know before you cross.",
     signInSample: "Sample",
     privacyPolicy: "Privacy policy",
@@ -349,6 +351,7 @@ export const COPY: Record<Locale, Copy> = {
     signInBody: "Inicia sesión con Google para ver los puentes que cruzas.",
     signInWithGoogle: "Iniciar sesión con Google",
     signInSwipe: "Desliza hacia arriba",
+    signInRedirecting: "Iniciando sesión…",
     signInHeadline: "Sabe antes de cruzar.",
     signInSample: "Ejemplo",
     privacyPolicy: "Política de privacidad",
