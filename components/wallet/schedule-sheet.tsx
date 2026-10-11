@@ -597,7 +597,7 @@ function TimePicker({ minute, onChange }: { minute: number; onChange: (minute: n
   };
 
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-stretch justify-center gap-3">
       <div className="flex items-center">
         <TimeDigit
           label={copy.scheduleHour}
@@ -606,7 +606,7 @@ function TimePicker({ minute, onChange }: { minute: number; onChange: (minute: n
           format={(hour) => String(hour)}
           onSelect={(hour) => pick(clockMinute({ ...face, hour }))}
         />
-        <span aria-hidden className="px-0.5 text-[40px] leading-none font-semibold tracking-[-0.045em] text-muted/70">
+        <span aria-hidden className="px-1 text-[56px] leading-none font-semibold tracking-[-0.045em] text-muted/70">
           :
         </span>
         <TimeDigit
@@ -618,7 +618,7 @@ function TimePicker({ minute, onChange }: { minute: number; onChange: (minute: n
         />
       </div>
 
-      <div role="radiogroup" aria-label={copy.schedulePeriod} className="flex flex-col gap-0.5 rounded-[20px] bg-surface p-1">
+      <div role="radiogroup" aria-label={copy.schedulePeriod} className="flex flex-col gap-1 rounded-[24px] bg-surface p-1.5">
           {[
             { pm: false, label: am },
             { pm: true, label: pm },
@@ -643,7 +643,7 @@ function TimePicker({ minute, onChange }: { minute: number; onChange: (minute: n
                   buttons?.[face.pm ? 0 : 1]?.focus();
                 }}
                 className={cn(
-                  "relative h-9 min-w-12 rounded-2xl px-2.5 text-[13px] font-semibold tracking-[-0.01em] whitespace-nowrap transition-[background-color,color,transform] duration-150 ease-out active:scale-95",
+                  "relative min-h-12 min-w-16 flex-1 rounded-2xl px-3 text-[16px] font-semibold tracking-[-0.01em] whitespace-nowrap transition-[background-color,color,transform] duration-150 ease-out active:scale-95",
                   checked ? "bg-background text-foreground" : "text-muted",
                 )}
               >
@@ -804,9 +804,9 @@ function TimeDigit({
           }
           openList();
         }}
-        className="relative cursor-pointer touch-none rounded-2xl bg-surface px-2.5 py-1 text-[48px] leading-none font-semibold tracking-[-0.045em] text-muted tabular-nums outline-none select-none transition-[background-color,color] duration-150 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-accent active:bg-surface-strong active:text-foreground [@media(hover:hover)_and_(pointer:fine)]:hover:bg-surface-strong [@media(hover:hover)_and_(pointer:fine)]:hover:text-foreground"
+        className="relative cursor-pointer touch-none rounded-[28px] bg-surface px-4 py-3 text-[72px] leading-none font-semibold tracking-[-0.045em] text-muted tabular-nums outline-none select-none transition-[background-color,color] duration-150 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-accent active:bg-surface-strong active:text-foreground [@media(hover:hover)_and_(pointer:fine)]:hover:bg-surface-strong [@media(hover:hover)_and_(pointer:fine)]:hover:text-foreground"
       >
-        <span ref={frameRef} className="block h-[1em] w-[2.4ch] overflow-hidden">
+        <span ref={frameRef} className="block h-[1em] w-[2.2ch] overflow-hidden">
           <motion.span style={{ transform }} className="flex flex-col">
             <span className="block h-[1em] text-center">{format(lower)}</span>
             <span className="block h-[1em] text-center">{format(value)}</span>
