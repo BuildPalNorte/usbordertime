@@ -46,6 +46,9 @@ export type Copy = {
   loadErrorBody: string;
   tryAgain: string;
   laneType: string;
+  live: string;
+  cameraLabel: (name: string) => string;
+  cameraUnavailable: string;
   minuteUnit: string;
   notPublished: string;
   status: string;
@@ -134,6 +137,9 @@ export const COPY: Record<Locale, Copy> = {
     loadErrorBody: "The CBP feed did not respond. Check your connection and try again.",
     tryAgain: "Try again",
     laneType: "Lane type",
+    live: "Live",
+    cameraLabel: (name) => `Live camera at ${name}`,
+    cameraUnavailable: "Camera unavailable",
     minuteUnit: "min",
     notPublished: "Not published here",
     status: "Status",
@@ -243,6 +249,9 @@ export const COPY: Record<Locale, Copy> = {
     loadErrorBody: "CBP no respondió. Revisa tu conexión e intenta de nuevo.",
     tryAgain: "Intentar de nuevo",
     laneType: "Tipo de carril",
+    live: "En vivo",
+    cameraLabel: (name) => `Cámara en vivo de ${name}`,
+    cameraUnavailable: "Cámara no disponible",
     minuteUnit: "min",
     notPublished: "Aquí no se publica",
     status: "Estado",

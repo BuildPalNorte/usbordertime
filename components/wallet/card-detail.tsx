@@ -11,8 +11,9 @@ import {
   presentPortStatus,
   waitLabel,
 } from "@/lib/i18n";
-import { MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
+import { crossingStream, MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
 import { AverageWait } from "./average-wait";
+import { CrossingCamera } from "./crossing-camera";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
 import { TrashIcon } from "@heroicons-animated/react/trash";
@@ -36,7 +37,9 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
   const reduce = useReducedMotion();
   const bookmark = useRef<BookmarkIconHandle>(null);
   const trash = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
-  const city = portName(port).city;
+  const name = portName(port);
+  const city = name.city;
+  const stream = crossingStream(port);
   const selected = readLane(port, mode);
   const averages = useLaneAverages(port.portNumber);
   // Only offer lane types this crossing actually publishes. The saved lane always stays selectable.
@@ -44,6 +47,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
 
   return (
     <div className="space-y-3 pt-1">
+      {stream && <CrossingCamera src={stream} name={name.title} />}
       <div role="radiogroup" aria-label={copy.laneType} className="grid grid-cols-2 gap-2.5">
         {lanes.map((id, index) => {
           const reading = readLane(port, id);

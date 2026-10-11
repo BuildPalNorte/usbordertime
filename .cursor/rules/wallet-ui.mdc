@@ -30,6 +30,8 @@ A tap on refresh flips the wait digits on the cards while that check runs, then 
 
 The usual wait for this hour sits under the live number on `CardFace`, so the front card and an open card show it. Stacked cards cover that line. `CardDetail` and an expanded browse row show it on every published lane. It is the CBP hourly average for that lane, not a blend of the lanes on screen. `useLaneAverages` loads it for a crossing that is on screen. A lane with no average leaves the line out.
 
+Nuevo (Gateway) and Viejo (B&M) show a live camera at the top of `CardDetail` and of an expanded browse row. `crossingStream` in `lib/ports.ts` is the only map. The player mounts when that view opens and unmounts when it closes, so a stacked card does not keep a stream open.
+
 Haptics are `haptic()` in `lib/haptics.ts`. A control ticks only when its value changes. Tabs, lanes, the border filter, the language switch, and the theme switch are selection ticks. Saving a crossing or pinning a city confirms. Removing a card is heavier. Refresh ticks on press and again when the digits settle. The minute refetch stays quiet. Picking a card up, crossing a reorder slot, setting it down, rubbing past the ends of the stack, dragging an open card past the dismiss line, and swiping the front card past the send-back line each tick with the gesture. A flick that sends the card back without having crossed that line ticks when it commits. On iPhone a tap lands on `HapticPad`, a transparent switch, because that is the tick Safari still plays. Drags call `haptic()` directly. Reduced motion does not mute haptics.
 
 A tap that switches tabs plays that tab's icon animation. Reduced motion skips it.

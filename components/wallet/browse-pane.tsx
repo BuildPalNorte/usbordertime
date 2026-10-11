@@ -14,6 +14,7 @@ import {
 import { cityPinKey } from "@/lib/pin-store";
 import {
   cardBackground,
+  crossingStream,
   defaultMode,
   MODE_IDS,
   paletteFor,
@@ -22,6 +23,7 @@ import {
   TONE_DOT,
 } from "@/lib/ports";
 import { AverageWait } from "./average-wait";
+import { CrossingCamera } from "./crossing-camera";
 import { HapticPad } from "./haptic-pad";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { haptic } from "@/lib/haptics";
@@ -468,6 +470,7 @@ function CrossingRow({
   const panelId = `details-${port.portNumber}`;
   const lanes = MODE_IDS.filter((id) => readLane(port, id).available);
   const averages = useLaneAverages(open ? port.portNumber : null);
+  const stream = crossingStream(port);
 
   return (
     <div className="rounded-2xl bg-surface">
@@ -547,6 +550,7 @@ function CrossingRow({
       >
         <div className="overflow-hidden" inert={!open}>
           <div className="space-y-2.5 px-3 pb-3">
+            {open && stream && <CrossingCamera src={stream} name={row.title} />}
             <div className="grid grid-cols-2 gap-2">
               {lanes.map((id) => {
                 const lane = readLane(port, id);

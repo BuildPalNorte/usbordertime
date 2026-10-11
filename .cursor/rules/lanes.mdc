@@ -30,3 +30,5 @@ A `Mode` picks one lane. Keep this mapping in `laneFor`. Do not add a second one
 `defaultMode` is the lane a newly saved crossing leads with: the first of `car`, `walk`, `truck` whose status is not `n/a`, otherwise `car`.
 
 `portName` turns CBP's uppercase names into `title` and `subtitle`. A few Brownsville bridges show the name people use: Veterans International is De los tomates, B&M is Viejo, and Gateway is Nuevo. Cards and toasts use `title`. City bookmarks use `city`. `paletteFor(portNumber)` is a stable hash, so a port keeps its card color.
+
+`crossingStream` returns the live camera for Nuevo (Gateway) and Viejo (B&M). Every other crossing returns null.
