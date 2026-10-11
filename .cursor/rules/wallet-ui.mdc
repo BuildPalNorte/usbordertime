@@ -20,7 +20,7 @@ Swiping the front card — the last one, fully visible — left or right sends i
 
 Dragging the open card down closes it. That close starts where the finger let go and settles straight into the card's slot. A short drag springs back to the open card.
 
-A schedule notification opens with `routes` and `lane` on the query. `WalletPane` then shows those bridges side by side (`RouteRow`) instead of the stack, on the schedule's lane, until Done or Escape. A tap still opens a card; closing it returns to the row. The query stays across tabs, so the row is there when they come back to Puentes. Dismissing drops the query and the stack returns in place, without the fan-in.
+A schedule notification opens with `routes` and `lane` on the query. `WalletPane` then shows those bridges as full cards, one above the other (`RouteRow`), instead of the peeking stack, until Done or Escape. A known `lane` is used when that crossing offers it. An unknown lane still shows the bridges, each on its usual lane. A tap still opens a card; closing it returns to the cards. The query stays across tabs. Dismissing drops the query and the stack returns in place, without the fan-in.
 
 A card that can be reordered keeps `touch-action: none` from the very first touch, not just once the hold completes. `touch-action` is decided once at the start of a touch gesture and ignores later changes, so turning it off only after the hold would be too late — the browser would already be panning the page. Because `touch-action` is off the whole time, an early move that cancels the hold (over `SLOP` before `HOLD_MS`) does its own scroll of `document.scrollingElement` by hand, so swiping past a card still scrolls the list normally.
 

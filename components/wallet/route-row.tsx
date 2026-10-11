@@ -20,8 +20,7 @@ const SLOP = 10;
 export function RoutesFocusSync({ onKey }: { onKey: (key: string | null) => void }) {
   const params = useSearchParams();
   const routes = params.get("routes");
-  const lane = params.get("lane");
-  const key = routes && lane ? `${routes}\n${lane}` : null;
+  const key = routes ? `${routes}\n${params.get("lane") ?? ""}` : null;
   useLayoutEffect(() => {
     onKey(key);
   }, [key, onKey]);
@@ -29,7 +28,7 @@ export function RoutesFocusSync({ onKey }: { onKey: (key: string | null) => void
 }
 
 /**
- * The bridges a notification named, in a row. Scrolls sideways when they don't fit.
+ * The bridges a notification named, each one a full card, one above the other.
  * Stays until the wallet dismisses it.
  */
 export function RouteRow({
@@ -49,33 +48,28 @@ export function RouteRow({
   const reduce = useReducedMotion();
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:mx-0" style={{ containerType: "inline-size" }}>
-      <ul
-        aria-label={label}
-        className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 pb-2 sm:scroll-px-6 sm:px-6 lg:scroll-px-0 lg:px-0"
-      >
-        {items.map((item, index) => {
-          const id = item.port.portNumber;
-          return (
-            <motion.li
-              key={id}
-              className="w-[min(22rem,calc(100cqw-7.5rem))] shrink-0 snap-start"
-              initial={reduce ? { opacity: 0 } : { opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ ...(reduce ? REDUCED : SPRING.move), delay: reduce ? 0 : index * 0.04 }}
-            >
-              <RouteCard
-                item={item}
-                label={cardLabel(item, copy)}
-                checking={checking}
-                onOpen={() => onOpen(id)}
-                onShare={() => onShare(item.port, item.mode)}
-              />
-            </motion.li>
-          );
-        })}
-      </ul>
-    </div>
+    <ul aria-label={label} className="flex flex-col gap-3">
+      {items.map((item, index) => {
+        const id = item.port.portNumber;
+        return (
+          <motion.li
+            key={id}
+            className="w-full"
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...(reduce ? REDUCED : SPRING.move), delay: reduce ? 0 : index * 0.04 }}
+          >
+            <RouteCard
+              item={item}
+              label={cardLabel(item, copy)}
+              checking={checking}
+              onOpen={() => onOpen(id)}
+              onShare={() => onShare(item.port, item.mode)}
+            />
+          </motion.li>
+        );
+      })}
+    </ul>
   );
 }
 

@@ -69,7 +69,7 @@ async function deliver(
     // A name replaces the title. The time and lane move to the first line of the body.
     title: schedule.name ?? when,
     body: (schedule.name ? [when, ...lines] : lines).join("\n"),
-    // A tap lays these bridges out side by side, on this lane, until dismissed.
+    // A tap shows these bridges as full cards, one above the other, until dismissed.
     url: routesFocusPath(
       ports.map((port) => port.portNumber),
       schedule.mode,

@@ -68,8 +68,8 @@ const noopSubscribe = () => () => {};
 function focusKeyFromLocation(): string | null {
   const params = new URLSearchParams(window.location.search);
   const routes = params.get("routes");
-  const lane = params.get("lane");
-  return routes && lane ? `${routes}\n${lane}` : null;
+  if (!routes) return null;
+  return `${routes}\n${params.get("lane") ?? ""}`;
 }
 
 function subscribeFocusKey(onChange: () => void): () => void {
@@ -188,7 +188,7 @@ export function WalletApp({
       const port = byNumber.get(number);
       if (!port) return [];
       const chosen = lanes[number] ?? focus.mode;
-      const mode = readLane(port, chosen).available ? chosen : defaultMode(port);
+      const mode = chosen && readLane(port, chosen).available ? chosen : defaultMode(port);
       return [{ port, mode }];
     });
   }, [focus, byNumber, lanes]);
@@ -566,8 +566,6 @@ export function WalletApp({
     return <NotFoundScreen />;
   }
 
-  const wideRoutes = tab === "wallet" && routesRow !== null;
-
   return (
     <CameraStreamProvider streams={cameraStreams} replace={replaceStream}>
     <Suspense fallback={null}>
@@ -582,10 +580,7 @@ export function WalletApp({
       >
         <div className="lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20">
           <section
-            className={cn(
-              "pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6",
-              wideRoutes && "lg:col-span-2",
-            )}
+            className="pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6"
             data-active={tab === "wallet"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
             aria-label={copy.wallet}
@@ -627,7 +622,7 @@ export function WalletApp({
 
           <section
             // On a desktop the right column holds Browse, or Schedules while that tab is open.
-            className={cn("pane", (tab === "schedules" || wideRoutes) && "lg:hidden")}
+            className={cn("pane", tab === "schedules" && "lg:hidden")}
             data-active={tab === "browse"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
             aria-label={copy.browseCrossings}

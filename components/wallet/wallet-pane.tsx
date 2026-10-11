@@ -35,7 +35,7 @@ type Props = {
   onRefresh: () => void;
   onBrowse: () => void;
   onAddSuggested: () => void;
-  /** Bridges from a notification, shown side by side. Null when that view is closed. */
+  /** Bridges from a notification, full cards one above the other. Null when that view is closed. */
   routes: StackItem[] | null;
   routesLabel: string | null;
   routesMissing: boolean;

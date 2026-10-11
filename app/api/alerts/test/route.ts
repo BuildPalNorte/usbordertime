@@ -11,7 +11,7 @@ import { badRequest, NO_STORE, serverError, sessionUserId, unauthorized } from "
 
 /**
  * Sends one test notification to the browser that asked for it. It does not change any alert.
- * `ports` opens those bridges side by side. A single `portNumber` opens that card.
+ * `ports` opens those bridges as full cards. A single `portNumber` opens that card.
  */
 export async function POST(request: Request) {
   const userId = await sessionUserId();

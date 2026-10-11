@@ -466,7 +466,7 @@ export const COPY: Record<Locale, Copy> = {
     scheduleTest: "Send a test",
     scheduleTestSending: "Sending…",
     scheduleTestSent: "Sent. Tap the notification.",
-    scheduleTestBody: "This is a test. Tap it to see these bridges side by side.",
+    scheduleTestBody: "This is a test. Tap it to see these bridges.",
     alertTestTitle: "Border Time",
     alertTestBody: "This is a test. A real alert names the bridge and the wait.",
     alertPushBody: (lane, minutes, threshold) =>
@@ -732,7 +732,7 @@ export const COPY: Record<Locale, Copy> = {
     scheduleTest: "Enviar una prueba",
     scheduleTestSending: "Enviando…",
     scheduleTestSent: "Enviada. Toca la notificación.",
-    scheduleTestBody: "Esto es una prueba. Tócala para ver estos puentes uno al lado del otro.",
+    scheduleTestBody: "Esto es una prueba. Tócala para ver estos puentes.",
     alertTestTitle: "Border Time",
     alertTestBody: "Esto es una prueba. Una alerta real dice el puente y la espera.",
     alertPushBody: (lane, minutes, threshold) =>

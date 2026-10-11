@@ -31,10 +31,13 @@ export function localeQuery(value: string | null): Locale | null {
   return isLocale(value) ? value : null;
 }
 
-/** The bridges a schedule notification named, and the lane they share. */
-export type RoutesFocus = { ports: string[]; mode: Mode };
+/**
+ * The bridges a schedule notification named. `mode` is the lane they share.
+ * Null when the query named a lane this app does not use; the cards still show.
+ */
+export type RoutesFocus = { ports: string[]; mode: Mode | null };
 
-/** Where a schedule notification opens: those bridges, side by side, on that lane. */
+/** Where a schedule notification opens: those bridges, full, one above the other. */
 export function routesFocusPath(portNumbers: readonly string[], mode: Mode): string {
   return withRoutesFocus("/", { ports: focusPorts(portNumbers), mode });
 }
@@ -44,17 +47,16 @@ export function withRoutesFocus(path: string, focus: RoutesFocus | null): string
   if (!focus || focus.ports.length === 0) return path;
   const query = path.indexOf("?");
   const pathname = query === -1 ? path : path.slice(0, query);
-  const params = new URLSearchParams({ routes: focus.ports.join(","), lane: focus.mode });
+  const params = new URLSearchParams({ routes: focus.ports.join(",") });
+  if (focus.mode) params.set("lane", focus.mode);
   return `${pathname}?${params.toString()}`;
 }
 
-/** Null when the query is missing a real lane or any real port number. */
+/** Null when the query names no real port. An unknown lane still returns the ports. */
 export function parseRoutesFocus(routes: string | null, lane: string | null): RoutesFocus | null {
-  const mode = laneQuery(lane);
-  if (!mode) return null;
   const ports = focusPorts((routes ?? "").split(","));
   if (ports.length === 0) return null;
-  return { ports, mode };
+  return { ports, mode: laneQuery(lane) };
 }
 
 function focusPorts(values: readonly string[]): string[] {
