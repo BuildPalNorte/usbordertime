@@ -5,6 +5,7 @@ import { WalletApp } from "@/components/wallet/wallet-app";
 import { auth } from "@/lib/auth/server";
 import { getBorderWaitTimes, type BorderWaitTimes } from "@/lib/border-wait-times";
 import { ensureProfile } from "@/lib/profile";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 
 export default function Home() {
@@ -19,8 +20,8 @@ export default function Home() {
 
 /** The bridges render only after Google sign-in, and that visit writes the profile. */
 async function GatedHome() {
-  const { data } = await auth.getSession();
-  const user = data?.user;
+  const session = await auth.api.getSession({ headers: await headers() });
+  const user = session?.user;
   if (!user?.id || !user.email) return <SignInScreen />;
 
   try {

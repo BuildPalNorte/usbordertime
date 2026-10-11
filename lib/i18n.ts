@@ -186,7 +186,7 @@ export const COPY: Record<Locale, Copy> = {
     privacySections: [
       {
         heading: "Your account",
-        body: "Signing in uses Google, through Neon Auth. Each visit saves a profile: the account id, your email, your name, and the address of your Google profile photo. A later visit refreshes those fields. We use them to keep you signed in and to show your name and photo. We do not sell them, and we do not use them for advertising.",
+        body: "Signing in uses Google. Each visit saves a profile: the account id, your email, your name, and the address of your Google profile photo. A later visit refreshes those fields. We use them to keep you signed in and to show your name and photo. We do not sell them, and we do not use them for advertising.",
       },
       {
         heading: "On this device",
@@ -198,7 +198,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Neon stores the account and the profile. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account and the profile. IPCamLive serves the two cameras. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
@@ -344,7 +344,7 @@ export const COPY: Record<Locale, Copy> = {
     privacySections: [
       {
         heading: "Tu cuenta",
-        body: "El inicio de sesión usa Google, a través de Neon Auth. Cada visita guarda un perfil: el id de la cuenta, tu correo, tu nombre y la dirección de tu foto de perfil de Google. Una visita posterior actualiza esos datos. Los usamos para mantener tu sesión y para mostrar tu nombre y tu foto. No los vendemos y no los usamos para publicidad.",
+        body: "El inicio de sesión usa Google. Cada visita guarda un perfil: el id de la cuenta, tu correo, tu nombre y la dirección de tu foto de perfil de Google. Una visita posterior actualiza esos datos. Los usamos para mantener tu sesión y para mostrar tu nombre y tu foto. No los vendemos y no los usamos para publicidad.",
       },
       {
         heading: "En este dispositivo",
@@ -356,7 +356,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Neon guarda la cuenta y el perfil. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta y el perfil. IPCamLive sirve las dos cámaras. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",

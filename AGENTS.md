@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## How this app fits together
 
-Border Time shows live U.S. land-port wait times from the public CBP feed. The home page stays on the sign-in screen until Google sign-in succeeds through Neon Auth (`lib/auth`). That visit upserts `profile` (id, email, name, image), keyed to `neon_auth.user`. Saved crossings, city bookmarks, the language choice, and the appearance choice stay in the browser.
+Border Time shows live U.S. land-port wait times from the public CBP feed. The home page stays on the sign-in screen until Google sign-in succeeds through Better Auth in this app (`lib/auth`). That visit upserts `profile` (id, email, name, image), keyed to the auth user. Saved crossings, city bookmarks, the language choice, and the appearance choice stay in the browser.
 
 Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is the short version of how that code works.
 

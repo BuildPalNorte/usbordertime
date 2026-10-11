@@ -1,12 +1,33 @@
-import { createNeonAuth } from "@neondatabase/auth/next/server";
+import { betterAuth } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
+import { Pool } from "pg";
 
-function required(name: "NEON_AUTH_BASE_URL" | "NEON_AUTH_COOKIE_SECRET"): string {
+function required(name: "DATABASE_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET"): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing ${name}`);
   return value;
 }
 
-export const auth = createNeonAuth({
-  baseUrl: required("NEON_AUTH_BASE_URL"),
-  cookies: { secret: required("NEON_AUTH_COOKIE_SECRET") },
+const globalForAuth = globalThis as unknown as { authPool?: Pool };
+
+const pool =
+  globalForAuth.authPool ??
+  new Pool({
+    connectionString: required("DATABASE_URL"),
+    max: 5,
+  });
+
+if (process.env.NODE_ENV !== "production") globalForAuth.authPool = pool;
+
+export const auth = betterAuth({
+  secret: required("BETTER_AUTH_SECRET"),
+  baseURL: process.env.BETTER_AUTH_URL,
+  database: pool,
+  socialProviders: {
+    google: {
+      clientId: required("GOOGLE_CLIENT_ID"),
+      clientSecret: required("GOOGLE_CLIENT_SECRET"),
+    },
+  },
+  plugins: [nextCookies()],
 });
