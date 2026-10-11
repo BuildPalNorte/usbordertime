@@ -2,7 +2,7 @@ import { SessionGate } from "@/components/wallet/session-gate";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
-import { auth } from "@/lib/auth/server";
+import { getAuth } from "@/lib/auth/server";
 import { getBorderWaitTimes, type BorderWaitTimes } from "@/lib/border-wait-times";
 import { getCameraStreams } from "@/lib/camera-streams";
 import { fallbackCameraStreams } from "@/lib/ports";
@@ -24,7 +24,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
 /** The bridges render only after Google sign-in, and that visit writes the profile. */
 async function GatedHome({ children }: { children: ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getAuth().api.getSession({ headers: await headers() });
   const user = session?.user;
   if (!user?.id || !user.email) return <SignInScreen />;
 

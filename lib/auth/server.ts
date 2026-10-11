@@ -8,26 +8,36 @@ function required(name: "DATABASE_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_I
   return value;
 }
 
-const globalForAuth = globalThis as unknown as { authPool?: Pool };
+type Auth = ReturnType<typeof createAuth>;
 
-const pool =
-  globalForAuth.authPool ??
-  new Pool({
-    connectionString: required("DATABASE_URL"),
-    max: 5,
-  });
+const globalForAuth = globalThis as unknown as { authPool?: Pool; auth?: Auth };
 
-if (process.env.NODE_ENV !== "production") globalForAuth.authPool = pool;
+function createAuth() {
+  const pool =
+    globalForAuth.authPool ??
+    new Pool({
+      connectionString: required("DATABASE_URL"),
+      max: 5,
+    });
 
-export const auth = betterAuth({
-  secret: required("BETTER_AUTH_SECRET"),
-  baseURL: process.env.BETTER_AUTH_URL,
-  database: pool,
-  socialProviders: {
-    google: {
-      clientId: required("GOOGLE_CLIENT_ID"),
-      clientSecret: required("GOOGLE_CLIENT_SECRET"),
+  if (process.env.NODE_ENV !== "production") globalForAuth.authPool = pool;
+
+  return betterAuth({
+    secret: required("BETTER_AUTH_SECRET"),
+    baseURL: process.env.BETTER_AUTH_URL,
+    database: pool,
+    socialProviders: {
+      google: {
+        clientId: required("GOOGLE_CLIENT_ID"),
+        clientSecret: required("GOOGLE_CLIENT_SECRET"),
+      },
     },
-  },
-  plugins: [nextCookies()],
-});
+    plugins: [nextCookies()],
+  });
+}
+
+/** Built on first use so `next build` can collect the auth route without the secrets. */
+export function getAuth(): Auth {
+  globalForAuth.auth ??= createAuth();
+  return globalForAuth.auth;
+}
