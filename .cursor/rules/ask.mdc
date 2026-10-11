@@ -1,6 +1,6 @@
 ---
 description: The Ask tab, its chat and voice input, and what the AI is given
-globs: components/wallet/ask-pane.tsx,lib/ask.server.ts,lib/ask-knowledge.ts,app/api/ask/**,app/api/transcribe/**
+globs: components/wallet/ask-pane.tsx,components/wallet/ask-markdown.tsx,lib/ask.server.ts,lib/ask-knowledge.ts,app/api/ask/**
 alwaysApply: false
 ---
 
@@ -10,8 +10,10 @@ alwaysApply: false
 
 Text goes to `POST /api/ask` with the locale. `lib/ask.server.ts` builds a system prompt from `ASK_RULES`, a compact line per port from `getBorderWaitTimes()` (lanes through `readLane`, so waits and statuses match the cards), and `BORDER_KNOWLEDGE` (customs and Aduana reference, in `lib/ask-knowledge.ts`). The model is `gpt-4o-mini` over the chat completions API. It has one tool, `usual_waits`, which reads `getLaneAverages` so it can answer ETA questions for a later departure and "best time to cross". Up to three tool rounds, then it must answer.
 
-Voice is transcription, not a voice model. The browser records with `MediaRecorder`, posts the clip to `POST /api/transcribe` (`gpt-4o-mini-transcribe`, 4 MB cap, 45 s cap on the client), and sends the returned text as a normal question. The mic button is the only voice control; no audio is kept.
+Voice uses the browser's speech recognition (`SpeechRecognition`, with the `webkit` prefix where that is the one available). Nothing is recorded and nothing is uploaded. The mic shows the words as they arrive, in `es-MX` or `en-US` from the app locale, and Stop sends that text as a normal question. Listening stops itself after 45 seconds. A browser without speech recognition asks the rider to type.
 
-Both routes need a signed-in session and are rate limited per account (12 a minute, best effort per server instance). `OPENAI_API_KEY` is server-only. Do not import `lib/ask.server.ts` from client code.
+Answers are markdown. `AskMarkdown` renders paragraphs, bold, italics, lists, and http(s) links as elements. It does not insert HTML. The prompt asks for that shape: short paragraphs, bold for a port, a lane, or a time, and a bullet list for a comparison. User messages stay plain text.
+
+`POST /api/ask` needs a signed-in session and is rate limited per account (12 a minute, best effort per server instance). `OPENAI_API_KEY` is server-only. Do not import `lib/ask.server.ts` from client code.
 
 CBP waits are northbound and do not include the drive to the bridge. The prompt says so; keep it that way. When the customs reference changes, keep it hedged and point to CBP or Aduana. Do not state a rule as settled when it changes often.

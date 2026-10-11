@@ -8,8 +8,6 @@ import { MODE_IDS, isMode, portName, readLane, type Mode } from "@/lib/ports";
 
 /** Cheap chat model. The tool loop is small, so cost per question stays a fraction of a cent. */
 export const ASK_MODEL = "gpt-4o-mini";
-/** Speech to text, not a realtime voice model. */
-export const TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe";
 
 export const MAX_TURNS = 12;
 export const MAX_MESSAGE_CHARS = 1000;

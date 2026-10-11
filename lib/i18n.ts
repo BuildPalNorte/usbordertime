@@ -175,7 +175,6 @@ export type Copy = {
   askMic: string;
   askStop: string;
   askRecording: string;
-  askTranscribing: string;
   askThinking: string;
   askClear: string;
   askNote: string;
@@ -402,7 +401,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts, your alarms, your visit streak, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. OpenAI receives the questions you type or say in Ask, and the recording when you use your voice, to answer them; we do not store the chat or the audio. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, your saved bridges, bookmarks, language, and appearance, your wait alerts, your alarms, your visit streak, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. OpenAI receives the questions you type in Ask, and the text of a question you speak. Your browser turns speech into text before it is sent; we do not receive the recording, and we do not store the chat. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
@@ -510,9 +509,8 @@ export const COPY: Record<Locale, Copy> = {
     askPlaceholder: "Ask about a crossing or customs",
     askSend: "Send",
     askMic: "Ask with your voice",
-    askStop: "Stop recording",
+    askStop: "Stop",
     askRecording: "Listening…",
-    askTranscribing: "Turning your voice into text…",
     askThinking: "Checking the bridges…",
     askClear: "New chat",
     askNote: "AI can be wrong. For rules, confirm with CBP or Mexican customs.",
@@ -521,7 +519,7 @@ export const COPY: Record<Locale, Copy> = {
     askVoiceFailed: "Could not hear that. Try again or type it.",
     askNoSpeech: "No voice came through. Try again.",
     askMicDenied: "Microphone is blocked. Allow it for this site in your browser settings.",
-    askMicUnsupported: "This browser can't record audio. Type your question.",
+    askMicUnsupported: "This browser can't turn speech into text. Type your question.",
     scheduleEmptyTitle: "A wait report, on time",
     scheduleEmptyBody:
       "Choose a bridge you saved, a time, and the days. We send the current wait to your phone, right then.",
@@ -738,7 +736,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus alarmas, tu racha de visitas y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. OpenAI recibe las preguntas que escribes o dices en Preguntar, y la grabación si usas tu voz, para responderlas; no guardamos el chat ni el audio. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus alarmas, tu racha de visitas y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. OpenAI recibe las preguntas que escribes en Preguntar, y el texto de una pregunta que dices. Tu navegador convierte la voz en texto antes de enviarla; nosotros no recibimos la grabación, y no guardamos el chat. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",
@@ -843,9 +841,8 @@ export const COPY: Record<Locale, Copy> = {
     askPlaceholder: "Pregunta sobre un puente o la aduana",
     askSend: "Enviar",
     askMic: "Preguntar con tu voz",
-    askStop: "Detener grabación",
+    askStop: "Detener",
     askRecording: "Escuchando…",
-    askTranscribing: "Convirtiendo tu voz en texto…",
     askThinking: "Revisando los puentes…",
     askClear: "Nuevo chat",
     askNote: "La IA puede equivocarse. Confirma las reglas con CBP o la aduana de México.",
@@ -854,7 +851,7 @@ export const COPY: Record<Locale, Copy> = {
     askVoiceFailed: "No se pudo escuchar. Intenta de nuevo o escríbelo.",
     askNoSpeech: "No se oyó tu voz. Intenta de nuevo.",
     askMicDenied: "El micrófono está bloqueado. Permítelo para este sitio en los ajustes del navegador.",
-    askMicUnsupported: "Este navegador no puede grabar audio. Escribe tu pregunta.",
+    askMicUnsupported: "Este navegador no puede convertir la voz en texto. Escribe tu pregunta.",
     scheduleEmptyTitle: "Tu reporte de espera, a tiempo",
     scheduleEmptyBody:
       "Elige un puente que guardaste, una hora y los días. Te mandamos la espera actual al teléfono, justo entonces.",

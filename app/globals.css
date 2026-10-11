@@ -132,6 +132,22 @@ body {
   }
 }
 
+/* The Ask composer uses the frosted fill without the hairline. The field itself draws none either. */
+.ask-composer {
+  border: 0;
+}
+
+.ask-field {
+  border: 0;
+}
+
+.ask-field:focus,
+.ask-field:focus-visible {
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
 }

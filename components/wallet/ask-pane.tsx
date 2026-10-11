@@ -8,16 +8,23 @@ import { MicrophoneIcon } from "@heroicons-animated/react/microphone";
 import { PaperAirplaneIcon } from "@heroicons-animated/react/paper-airplane";
 import { StopIcon } from "@heroicons-animated/react/stop";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
+import { AskMarkdown } from "./ask-markdown";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 import { usePublishPaneChrome } from "./pane-header";
 
 type Message = { role: "user" | "assistant"; content: string };
-type Status = "idle" | "recording" | "transcribing" | "thinking";
+type Status = "idle" | "listening" | "thinking";
 
-/** A recording longer than this stops itself. The server rejects very large files too. */
-const MAX_RECORD_SECONDS = 45;
+/** Listening longer than this stops itself. */
+const MAX_LISTEN_SECONDS = 45;
 const MAX_CHARS = 1000;
 
 type Props = {
@@ -25,18 +32,33 @@ type Props = {
   ownsHeader: boolean;
 };
 
-function recorderType(): string {
-  if (typeof MediaRecorder === "undefined") return "";
-  for (const type of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]) {
-    if (MediaRecorder.isTypeSupported(type)) return type;
-  }
-  return "";
-}
+type SpeechResultEvent = {
+  results: ArrayLike<{ isFinal: boolean; 0?: { transcript: string } }>;
+};
 
-function extensionFor(type: string): string {
-  if (type.includes("mp4")) return "m4a";
-  if (type.includes("ogg")) return "ogg";
-  return "webm";
+type SpeechErrorEvent = { error: string };
+
+type SpeechSession = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechResultEvent) => void) | null;
+  onerror: ((event: SpeechErrorEvent) => void) | null;
+  onend: (() => void) | null;
+};
+
+/** The browser's own speech recognition. No audio is uploaded. */
+function speechSession(): SpeechSession | null {
+  if (typeof window === "undefined") return null;
+  const root = window as unknown as {
+    SpeechRecognition?: new () => SpeechSession;
+    webkitSpeechRecognition?: new () => SpeechSession;
+  };
+  const Ctor = root.SpeechRecognition ?? root.webkitSpeechRecognition;
+  return Ctor ? new Ctor() : null;
 }
 
 export function AskPane({ ownsHeader }: Props) {
@@ -47,42 +69,51 @@ export function AskPane({ ownsHeader }: Props) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
+  const [heard, setHeard] = useState("");
 
   const endRef = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
-  const recorder = useRef<MediaRecorder | null>(null);
-  const stream = useRef<MediaStream | null>(null);
+  const speech = useRef<SpeechSession | null>(null);
+  const heardRef = useRef("");
+  /** Words kept when the browser ends a phrase and listening starts again. */
+  const carried = useRef("");
+  const listening = useRef(false);
+  const finishing = useRef(false);
   const timer = useRef(0);
   const history = useRef<Message[]>([]);
   const busy = status !== "idle";
 
   usePublishPaneChrome(
     ownsHeader,
-    { subtitle: copy.askSubtitle, action: "none", checking: false, refreshing: false },
+    {
+      subtitle: copy.askSubtitle,
+      action: "none",
+      checking: false,
+      refreshing: false,
+    },
     { onRefresh: () => {}, onDone: () => {}, onAdd: () => {} },
   );
-
-  const releaseMic = useCallback(() => {
-    window.clearInterval(timer.current);
-    stream.current?.getTracks().forEach((track) => track.stop());
-    stream.current = null;
-  }, []);
 
   useEffect(
     () => () => {
       abort.current?.abort();
-      const active = recorder.current;
-      if (active && active.state !== "inactive") {
-        active.onstop = null;
-        active.stop();
+      listening.current = false;
+      finishing.current = false;
+      window.clearInterval(timer.current);
+      try {
+        speech.current?.abort();
+      } catch {
+        // Already stopped.
       }
-      releaseMic();
     },
-    [releaseMic],
+    [],
   );
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    endRef.current?.scrollIntoView({
+      block: "nearest",
+      behavior: reduce ? "auto" : "smooth",
+    });
   }, [messages, status, reduce]);
 
   const send = useCallback(
@@ -111,14 +142,20 @@ export function AskPane({ ownsHeader }: Props) {
           haptic("error");
           return;
         }
-        const body = (await response.json().catch(() => null)) as { reply?: unknown } | null;
-        if (!response.ok || typeof body?.reply !== "string") throw new Error("ask failed");
+        const body = (await response.json().catch(() => null)) as {
+          reply?: unknown;
+        } | null;
+        if (!response.ok || typeof body?.reply !== "string")
+          throw new Error("ask failed");
         const reply: Message = { role: "assistant", content: body.reply };
         history.current = [...history.current, reply];
         setMessages(history.current);
         haptic("success");
       } catch (caught) {
-        if (controller.signal.aborted || (caught instanceof Error && caught.name === "AbortError")) {
+        if (
+          controller.signal.aborted ||
+          (caught instanceof Error && caught.name === "AbortError")
+        ) {
           return;
         }
         setError(copy.askError);
@@ -133,106 +170,132 @@ export function AskPane({ ownsHeader }: Props) {
     [locale, copy],
   );
 
-  const transcribe = useCallback(
-    async (blob: Blob, type: string) => {
-      setStatus("transcribing");
-      const controller = new AbortController();
-      abort.current = controller;
-      try {
-        const form = new FormData();
-        form.set("audio", blob, `voice.${extensionFor(type)}`);
-        const response = await fetch("/api/transcribe", {
-          method: "POST",
-          body: form,
-          signal: controller.signal,
-        });
-        if (response.status === 429) {
-          setError(copy.askBusy);
-          haptic("error");
-          setStatus("idle");
-          return;
-        }
-        const body = (await response.json().catch(() => null)) as { text?: unknown } | null;
-        if (!response.ok || typeof body?.text !== "string") throw new Error("transcribe failed");
-        const text = body.text.trim();
-        if (!text) {
-          setError(copy.askNoSpeech);
-          haptic("error");
-          setStatus("idle");
-          return;
-        }
-        abort.current = null;
-        await send(text);
-      } catch (caught) {
-        if (controller.signal.aborted || (caught instanceof Error && caught.name === "AbortError")) {
-          return;
-        }
-        setError(copy.askVoiceFailed);
-        haptic("error");
-        setStatus("idle");
-      }
-    },
-    [copy, send],
-  );
+  const deliver = useCallback(() => {
+    if (!finishing.current) return;
+    finishing.current = false;
+    listening.current = false;
+    window.clearInterval(timer.current);
+    const session = speech.current;
+    speech.current = null;
+    if (session) session.onend = null;
+    const text = heardRef.current.trim();
+    heardRef.current = "";
+    setHeard("");
+    setSeconds(0);
+    if (!text) {
+      setError(copy.askNoSpeech);
+      haptic("error");
+      setStatus("idle");
+      return;
+    }
+    void send(text);
+  }, [copy, send]);
 
-  const stopRecording = useCallback(() => {
-    const active = recorder.current;
-    if (active && active.state !== "inactive") active.stop();
-  }, []);
+  const stopListening = useCallback(() => {
+    if (finishing.current) return;
+    finishing.current = true;
+    listening.current = false;
+    window.clearInterval(timer.current);
+    const session = speech.current;
+    if (!session) {
+      deliver();
+      return;
+    }
+    try {
+      session.stop();
+    } catch {
+      deliver();
+      return;
+    }
+    // stop() is supposed to end the session. If it never does, send what we heard.
+    window.setTimeout(() => deliver(), 700);
+  }, [deliver]);
 
-  const startRecording = useCallback(async () => {
+  const startListening = useCallback(() => {
     setError(null);
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+    const session = speechSession();
+    if (!session) {
       setError(copy.askMicUnsupported);
       haptic("error");
       return;
     }
-    let media: MediaStream;
+    heardRef.current = "";
+    carried.current = "";
+    setHeard("");
+    let restarts = 0;
+    session.lang = locale === "es" ? "es-MX" : "en-US";
+    session.continuous = true;
+    session.interimResults = true;
+    session.onresult = (event) => {
+      let text = "";
+      for (let index = 0; index < event.results.length; index += 1) {
+        text += event.results[index][0]?.transcript ?? "";
+      }
+      const next = `${carried.current} ${text}`.trim();
+      heardRef.current = next;
+      setHeard(next);
+    };
+    session.onerror = (event) => {
+      if (event.error === "aborted" || event.error === "no-speech") return;
+      listening.current = false;
+      finishing.current = false;
+      window.clearInterval(timer.current);
+      speech.current = null;
+      setHeard("");
+      heardRef.current = "";
+      setStatus("idle");
+      haptic("error");
+      setError(
+        event.error === "not-allowed" || event.error === "service-not-allowed"
+          ? copy.askMicDenied
+          : copy.askVoiceFailed,
+      );
+    };
+    session.onend = () => {
+      // Some browsers end the phrase on a pause. Keep going until Stop, within a cap.
+      if (listening.current && !finishing.current && restarts < 12) {
+        restarts += 1;
+        carried.current = heardRef.current;
+        try {
+          session.start();
+          return;
+        } catch {
+          finishing.current = true;
+        }
+      } else if (listening.current && !finishing.current) {
+        finishing.current = true;
+      }
+      deliver();
+    };
+    speech.current = session;
+    listening.current = true;
+    finishing.current = false;
     try {
-      media = await navigator.mediaDevices.getUserMedia({ audio: true });
+      session.start();
     } catch {
-      setError(copy.askMicDenied);
+      listening.current = false;
+      speech.current = null;
+      setError(copy.askVoiceFailed);
       haptic("error");
       return;
     }
-    const type = recorderType();
-    const chunks: Blob[] = [];
-    const active = new MediaRecorder(media, type ? { mimeType: type } : undefined);
-    stream.current = media;
-    recorder.current = active;
-    active.ondataavailable = (event) => {
-      if (event.data.size > 0) chunks.push(event.data);
-    };
-    active.onstop = () => {
-      releaseMic();
-      recorder.current = null;
-      const mime = active.mimeType || type || "audio/webm";
-      const blob = new Blob(chunks, { type: mime });
-      if (blob.size < 1000) {
-        setError(copy.askNoSpeech);
-        setStatus("idle");
-        return;
-      }
-      void transcribe(blob, mime);
-    };
-    active.start();
     haptic("medium");
     setSeconds(0);
-    setStatus("recording");
+    setStatus("listening");
     const started = Date.now();
     timer.current = window.setInterval(() => {
       const elapsed = Math.floor((Date.now() - started) / 1000);
       setSeconds(elapsed);
-      if (elapsed >= MAX_RECORD_SECONDS) stopRecording();
+      if (elapsed >= MAX_LISTEN_SECONDS) stopListening();
     }, 250);
-  }, [copy, releaseMic, transcribe, stopRecording]);
+  }, [copy, locale, deliver, stopListening]);
 
   function onMic() {
-    if (status === "recording") {
+    if (status === "listening") {
       haptic("selection");
-      stopRecording();
+      stopListening();
     } else if (status === "idle") {
-      void startRecording();
+      startListening();
     }
   }
 
@@ -243,7 +306,12 @@ export function AskPane({ ownsHeader }: Props) {
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.nativeEvent.isComposing
+    )
+      return;
     event.preventDefault();
     onSubmit();
   }
@@ -252,6 +320,17 @@ export function AskPane({ ownsHeader }: Props) {
     haptic("selection");
     abort.current?.abort();
     abort.current = null;
+    listening.current = false;
+    finishing.current = false;
+    window.clearInterval(timer.current);
+    try {
+      speech.current?.abort();
+    } catch {
+      // Already stopped.
+    }
+    speech.current = null;
+    heardRef.current = "";
+    setHeard("");
     history.current = [];
     setMessages([]);
     setError(null);
@@ -265,8 +344,12 @@ export function AskPane({ ownsHeader }: Props) {
     <div>
       <header className="hidden min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:flex">
         <div className="min-w-0">
-          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.ask}</h2>
-          <p className="mt-2 truncate text-[14px] leading-none text-muted">{copy.askSubtitle}</p>
+          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">
+            {copy.ask}
+          </h2>
+          <p className="mt-2 truncate text-[14px] leading-none text-muted">
+            {copy.askSubtitle}
+          </p>
         </div>
       </header>
 
@@ -276,8 +359,12 @@ export function AskPane({ ownsHeader }: Props) {
             <div className="grid size-12 place-items-center rounded-2xl bg-foreground/[0.07]">
               <QuestionMarkCircleIcon size={24} aria-hidden />
             </div>
-            <h3 className="mt-4 text-[20px] font-bold tracking-[-0.02em]">{copy.askEmptyTitle}</h3>
-            <p className="mt-1.5 text-[15px] leading-snug text-muted">{copy.askEmptyBody}</p>
+            <h3 className="mt-4 text-[20px] font-bold tracking-[-0.02em]">
+              {copy.askEmptyTitle}
+            </h3>
+            <p className="mt-1.5 text-[15px] leading-snug text-muted">
+              {copy.askEmptyBody}
+            </p>
             <div className="mt-5 flex flex-col gap-2">
               {copy.askSuggestions.map((suggestion) => (
                 <button
@@ -306,13 +393,17 @@ export function AskPane({ ownsHeader }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={SPRING.snap}
                   className={cn(
-                    "max-w-[88%] rounded-3xl px-4 py-2.5 text-[16px] leading-snug whitespace-pre-wrap",
+                    "max-w-[88%] rounded-3xl px-4 py-2.5 text-[16px] leading-snug",
                     message.role === "user"
-                      ? "self-end rounded-br-lg bg-accent text-accent-ink"
+                      ? "self-end rounded-br-lg bg-accent text-accent-ink whitespace-pre-wrap"
                       : "self-start rounded-bl-lg bg-surface",
                   )}
                 >
-                  {message.content}
+                  {message.role === "assistant" ? (
+                    <AskMarkdown text={message.content} />
+                  ) : (
+                    message.content
+                  )}
                 </motion.li>
               ))}
             </ul>
@@ -328,7 +419,7 @@ export function AskPane({ ownsHeader }: Props) {
         )}
 
         <AnimatePresence initial={false}>
-          {(status === "thinking" || status === "transcribing") && (
+          {status === "thinking" && (
             <motion.p
               key={status}
               initial={appear}
@@ -337,15 +428,22 @@ export function AskPane({ ownsHeader }: Props) {
               transition={SPRING.snap}
               role="status"
               className="self-start rounded-3xl rounded-bl-lg bg-surface px-4 py-2.5 text-[15px] text-muted"
-              style={reduce ? undefined : { animation: "ask-pulse 1.4s ease-in-out infinite" }}
+              style={
+                reduce
+                  ? undefined
+                  : { animation: "ask-pulse 1.4s ease-in-out infinite" }
+              }
             >
-              {status === "thinking" ? copy.askThinking : copy.askTranscribing}
+              {copy.askThinking}
             </motion.p>
           )}
         </AnimatePresence>
 
         {error && (
-          <p role="alert" className="self-center px-2 text-center text-[14px] text-rose-400">
+          <p
+            role="alert"
+            className="self-center px-2 text-center text-[14px] text-rose-400"
+          >
             {error}
           </p>
         )}
@@ -353,22 +451,36 @@ export function AskPane({ ownsHeader }: Props) {
         <div ref={endRef} aria-hidden />
 
         {/* The phone tab bar floats over the bottom of the scroller, so the composer rests above it. */}
-        <div className="sticky bottom-24 z-10 lg:bottom-4">
+        <div className="sticky bottom-0 z-10">
           <div className="relative rounded-[28px] p-1.5">
-            <div aria-hidden className="glass pointer-events-none absolute inset-0 rounded-[28px]" />
+            <div
+              aria-hidden
+              className="glass ask-composer pointer-events-none absolute inset-0 rounded-[28px]"
+            />
             <div className="relative flex items-end gap-1.5">
-              {status === "recording" ? (
+              {status === "listening" ? (
                 <div
                   role="status"
-                  className="flex h-11 min-w-0 flex-1 items-center gap-2.5 px-3.5 text-[15px] text-muted"
+                  className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 px-3.5 py-2.5 text-[15px]"
                 >
                   <span
                     aria-hidden
                     className="size-2.5 shrink-0 rounded-full bg-rose-400"
-                    style={reduce ? undefined : { animation: "ask-pulse 1s ease-in-out infinite" }}
+                    style={
+                      reduce
+                        ? undefined
+                        : { animation: "ask-pulse 1s ease-in-out infinite" }
+                    }
                   />
-                  <span className="truncate">{copy.askRecording}</span>
-                  <span className="ml-auto tabular-nums">
+                  <span
+                    className={cn(
+                      "min-w-0 flex-1 leading-snug",
+                      heard ? "text-foreground" : "text-muted",
+                    )}
+                  >
+                    {heard || copy.askRecording}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-muted">
                     0:{String(seconds).padStart(2, "0")}
                   </span>
                 </div>
@@ -383,34 +495,36 @@ export function AskPane({ ownsHeader }: Props) {
                   placeholder={copy.askPlaceholder}
                   aria-label={copy.askPlaceholder}
                   enterKeyHint="send"
-                  className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-3.5 py-[11px] text-[16px] leading-snug outline-none placeholder:text-muted disabled:opacity-60"
-                  style={{ fieldSizing: "content" } as React.CSSProperties}
+                  className="ask-field max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-3.5 py-[11px] text-[16px] leading-snug placeholder:text-muted disabled:opacity-60"
+                  style={
+                    { fieldSizing: "content", outline: "none", boxShadow: "none" } as React.CSSProperties
+                  }
                 />
               )}
 
               <motion.button
                 type="button"
                 onClick={onMic}
-                disabled={status === "thinking" || status === "transcribing"}
-                aria-label={status === "recording" ? copy.askStop : copy.askMic}
+                disabled={status === "thinking"}
+                aria-label={status === "listening" ? copy.askStop : copy.askMic}
                 whileTap={reduce ? undefined : { scale: 0.92 }}
                 transition={SPRING.snap}
                 className={cn(
                   "relative grid size-11 shrink-0 cursor-pointer place-items-center rounded-full disabled:opacity-50",
-                  status === "recording"
+                  status === "listening"
                     ? "bg-rose-500 text-white"
                     : "bg-foreground/[0.08] text-foreground",
                 )}
               >
                 <HapticPad />
-                {status === "recording" ? (
+                {status === "listening" ? (
                   <StopIcon size={20} aria-hidden />
                 ) : (
                   <MicrophoneIcon size={20} aria-hidden />
                 )}
               </motion.button>
 
-              {status !== "recording" && (
+              {status !== "listening" && (
                 <motion.button
                   type="button"
                   onClick={onSubmit}
@@ -426,7 +540,9 @@ export function AskPane({ ownsHeader }: Props) {
               )}
             </div>
           </div>
-          <p className="mt-2 px-3 text-center text-[12px] leading-snug text-muted">{copy.askNote}</p>
+          <p className="mt-2 px-3 text-center text-[12px] leading-snug text-muted">
+            {copy.askNote}
+          </p>
         </div>
       </div>
     </div>
