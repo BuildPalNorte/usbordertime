@@ -21,7 +21,9 @@ import {
   readLane,
   TONE_DOT,
 } from "@/lib/ports";
+import { AverageWait } from "./average-wait";
 import { HapticPad } from "./haptic-pad";
+import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { haptic } from "@/lib/haptics";
 import { LanguageSwitch } from "./language-switch";
 import { ThemeSwitch } from "./theme-switch";
@@ -411,6 +413,7 @@ function CrossingRow({
   const { locale } = useLocale();
   const panelId = `details-${port.portNumber}`;
   const lanes = MODE_IDS.filter((id) => readLane(port, id).available);
+  const averages = useLaneAverages(open ? port.portNumber : null);
 
   return (
     <div className="rounded-2xl bg-surface">
@@ -486,6 +489,7 @@ function CrossingRow({
             <div className="grid grid-cols-2 gap-2">
               {lanes.map((id) => {
                 const lane = readLane(port, id);
+                const average = shownAverage(averages.data, id, port.time, lane.available);
                 return (
                   <div key={id} className="rounded-xl bg-surface-strong px-3 py-2.5">
                     <span className="flex items-center justify-between gap-2 text-[12px] font-medium text-muted">
@@ -506,6 +510,10 @@ function CrossingRow({
                         <span className="text-[14px]">{waitLabel(lane, copy)}</span>
                       )}
                     </span>
+                    <AverageWait
+                      minutes={average}
+                      className="mt-1 block text-[11px] leading-none font-medium text-muted tabular-nums"
+                    />
                     <span className="mt-1 block truncate text-[11px] leading-none text-muted">
                       {lanesLabel(lane, copy)}
                     </span>

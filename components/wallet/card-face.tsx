@@ -7,7 +7,9 @@ import { lanesLabel, modeName, placeSubtitle, presentHours, waitLabel } from "@/
 import { cardBackground, paletteFor, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
 import { motion, useMotionTemplate, useMotionValue } from "motion/react";
 import type { PointerEvent } from "react";
+import { AverageWait } from "./average-wait";
 import { CARD_H } from "./motion";
+import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { WaitNumber } from "./wait-number";
 
 /**
@@ -27,6 +29,8 @@ export function CardFace({
   const palette = paletteFor(port.portNumber);
   const name = portName(port);
   const reading = readLane(port, mode);
+  const averages = useLaneAverages(port.portNumber);
+  const average = shownAverage(averages.data, mode, port.time, reading.available);
   const light = palette.ink === "light";
 
   // Pointer-tracked sheen lives in motion values so moving the mouse never re-renders React.
@@ -99,11 +103,21 @@ export function CardFace({
                 <span className={cn("size-1.5 rounded-full", TONE_DOT[reading.tone])} />
                 {copy.tone[reading.tone]}
               </p>
+              <AverageWait
+                minutes={average}
+                className="mt-1.5 block text-right text-[12px] leading-none font-medium tabular-nums opacity-[0.72]"
+              />
             </>
           ) : (
-            <p className="pt-1 text-[16px] leading-tight font-semibold tracking-[-0.01em]">
-              {waitLabel(reading, copy)}
-            </p>
+            <>
+              <p className="pt-1 text-[16px] leading-tight font-semibold tracking-[-0.01em]">
+                {waitLabel(reading, copy)}
+              </p>
+              <AverageWait
+                minutes={average}
+                className="mt-1.5 block text-right text-[12px] leading-none font-medium tabular-nums opacity-[0.72]"
+              />
+            </>
           )}
         </div>
       </div>

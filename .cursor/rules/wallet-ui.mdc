@@ -1,12 +1,12 @@
 ---
 description: How the wallet screen is composed and how its motion works
-globs: components/wallet/**/*.tsx,components/wallet/motion.ts
+globs: components/wallet/**/*.tsx,components/wallet/motion.ts,components/wallet/use-lane-averages.ts
 alwaysApply: false
 ---
 
 # Wallet UI
 
-`WalletApp` owns the query, both stores, the open card, the tab, and toasts. Panes receive data and callbacks. They do not fetch, and they do not write storage.
+`WalletApp` owns the wait-times query, both stores, the open card, the tab, and toasts. Panes receive that snapshot and callbacks. They do not write storage. A crossing loads its own hourly average when it is on screen.
 
 The `["wait-times"]` query starts from the server snapshot, treats it as fresh for 30 seconds, and refetches every 60 seconds. `loading` means `isPending && !data`, so a failed first load can show the error state.
 
@@ -27,6 +27,8 @@ A card that can be reordered keeps `touch-action: none` from the very first touc
 Motion lives in `motion.ts`. Use `SPRING.move` for layout, `snap` for small state changes, `release` after a flick, and `pop` for badges. When `useReducedMotion()` is set, use `REDUCED` or skip the travel. Card height is `CARD_H` (212) and the visible strip is `PEEK` (76). Stack height comes from `stackHeight`.
 
 A tap on refresh flips the wait digits on the cards while that check runs, then they settle. The minute refetch does not flip them. Reduced motion pulses the number instead of moving it.
+
+The usual wait for this hour sits under the live number on `CardFace`, so the front card and an open card show it. Stacked cards cover that line. `CardDetail` and an expanded browse row show it on every published lane. It is the CBP hourly average for that lane, not a blend of the lanes on screen. `useLaneAverages` loads it for a crossing that is on screen. A lane with no average leaves the line out.
 
 Haptics are `haptic()` in `lib/haptics.ts`. A control ticks only when its value changes. Tabs, lanes, the border filter, the language switch, and the theme switch are selection ticks. Saving a crossing or pinning a city confirms. Removing a card is heavier. Refresh ticks on press and again when the digits settle. The minute refetch stays quiet. Picking a card up, crossing a reorder slot, setting it down, rubbing past the ends of the stack, dragging an open card past the dismiss line, and swiping the front card past the send-back line each tick with the gesture. A flick that sends the card back without having crossed that line ticks when it commits. On iPhone a tap lands on `HapticPad`, a transparent switch, because that is the tick Safari still plays. Drags call `haptic()` directly. Reduced motion does not mute haptics.
 

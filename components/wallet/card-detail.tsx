@@ -12,6 +12,8 @@ import {
   waitLabel,
 } from "@/lib/i18n";
 import { MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
+import { AverageWait } from "./average-wait";
+import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
 import { TrashIcon } from "@heroicons-animated/react/trash";
 import { motion, useReducedMotion } from "motion/react";
@@ -36,6 +38,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
   const trash = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
   const city = portName(port).city;
   const selected = readLane(port, mode);
+  const averages = useLaneAverages(port.portNumber);
   // Only offer lane types this crossing actually publishes. The saved lane always stays selectable.
   const lanes = MODE_IDS.filter((id) => id === mode || readLane(port, id).available);
 
@@ -44,6 +47,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
       <div role="radiogroup" aria-label={copy.laneType} className="grid grid-cols-2 gap-2.5">
         {lanes.map((id, index) => {
           const reading = readLane(port, id);
+          const average = shownAverage(averages.data, id, port.time, reading.available);
           const active = id === mode;
           return (
             <motion.button
@@ -89,6 +93,10 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
                   <span className="text-[15px] tracking-[-0.01em]">{waitLabel(reading, copy)}</span>
                 )}
               </span>
+              <AverageWait
+                minutes={average}
+                className="mt-1.5 block text-[12px] leading-none font-medium text-muted tabular-nums"
+              />
               <span className="mt-1.5 block truncate text-[12px] leading-none text-muted">
                 {reading.available ? lanesLabel(reading, copy) : copy.notPublished}
               </span>

@@ -29,6 +29,8 @@ Closed ports, closed lanes, and crossings that do not publish a lane type are la
 
 The server fetches `https://bwt.cbp.gov/api/waittimes`, drops entries that are missing a port number or name, and normalizes lane groups into a stable shape. That snapshot is cached for a few minutes. The browser asks `/api/wait-times` again every 60 seconds.
 
+Field names, status strings, and the normalized shape are written up in [docs/cbp-wait-times.md](docs/cbp-wait-times.md).
+
 CBP owns the wait times. Their notices are shown in the language CBP published, which is English.
 
 ## API

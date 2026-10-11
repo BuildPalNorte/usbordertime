@@ -81,6 +81,8 @@ export type Copy = {
   reportedCount: (count: number) => string;
   minutes: (count: number) => string;
   minuteWait: (count: number) => string;
+  averageShort: (count: number) => string;
+  averageLabel: (count: number) => string;
   lanesOpen: (open: number, max: number | null) => string;
   bookmark: (city: string) => string;
   removeBookmark: (city: string) => string;
@@ -170,6 +172,8 @@ export const COPY: Record<Locale, Copy> = {
     reportedCount: (count) => `${count} crossings reported by CBP`,
     minutes: (count) => `${count} min`,
     minuteWait: (count) => `${count} minute wait`,
+    averageShort: (count) => `avg ${count} min`,
+    averageLabel: (count) => `Average wait at this hour, ${count} minutes`,
     lanesOpen: (open, max) => {
       const base = `${open} ${open === 1 ? "lane" : "lanes"} open`;
       return max ? `${base} of ${max}` : base;
@@ -277,6 +281,8 @@ export const COPY: Record<Locale, Copy> = {
     reportedCount: (count) => `${count} cruces reportados por CBP`,
     minutes: (count) => `${count} min`,
     minuteWait: (count) => `espera de ${count} min`,
+    averageShort: (count) => `promedio ${count} min`,
+    averageLabel: (count) => `Espera promedio a esta hora, ${count} minutos`,
     lanesOpen: (open, max) => {
       const unit = open === 1 ? "carril abierto" : "carriles abiertos";
       const base = `${open} ${unit}`;
