@@ -18,6 +18,17 @@ function required(name: "DATABASE_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_I
   return value;
 }
 
+/**
+ * Neon ships `sslmode=require`. `pg` still treats that as `verify-full` and
+ * warns until the string says so. The next major release will weaken `require`.
+ */
+function databaseUrl(): string {
+  return required("DATABASE_URL").replace(
+    /([?&])sslmode=(?:prefer|require|verify-ca)\b/,
+    "$1sslmode=verify-full",
+  );
+}
+
 type Auth = ReturnType<typeof createAuth>;
 
 const globalForAuth = globalThis as unknown as { authPool?: Pool; auth?: Auth };
@@ -29,7 +40,7 @@ function createAuth() {
   const pool =
     globalForAuth.authPool ??
     new Pool({
-      connectionString: required("DATABASE_URL"),
+      connectionString: databaseUrl(),
       max: 5,
     });
 

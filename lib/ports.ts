@@ -157,6 +157,15 @@ export function fallbackCameraStreams(): Record<string, string> {
   );
 }
 
+/** Nuevo and Viejo, with the playlist this file ships before a saved row replaces it. */
+export function listedCameras(): { name: string; alias: string; src: string }[] {
+  return Object.entries(CROSSING_STREAM).map(([key, entry]) => ({
+    name: LOCAL_CROSSING[key] ?? key,
+    alias: entry.alias,
+    src: entry.src,
+  }));
+}
+
 export function isCameraAlias(alias: string): boolean {
   return Object.values(CROSSING_STREAM).some((entry) => entry.alias === alias);
 }

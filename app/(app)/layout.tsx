@@ -1,3 +1,4 @@
+import { AdminAccess } from "@/components/wallet/admin-access";
 import { AlertSync } from "@/components/wallet/alert-sync";
 import { PreferenceSync } from "@/components/wallet/preference-sync";
 import { SessionGate } from "@/components/wallet/session-gate";
@@ -5,6 +6,7 @@ import { StreakSync } from "@/components/wallet/streak-sync";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
+import { isAdminEmail } from "@/lib/admin.server";
 import { getAuth } from "@/lib/auth/server";
 import { getBorderWaitTimes, type BorderWaitTimes } from "@/lib/border-wait-times";
 import { getCameraStreams } from "@/lib/camera-streams";
@@ -55,12 +57,14 @@ async function GatedHome({ children }: { children: ReactNode }) {
   }
 
   return (
-    <SessionGate>
-      <PreferenceSync userId={user.id} initial={preference} ready={preferenceReady} />
-      <AlertSync />
-      <StreakSync />
-      <LiveWallet>{children}</LiveWallet>
-    </SessionGate>
+    <AdminAccess allowed={isAdminEmail(user.email)}>
+      <SessionGate>
+        <PreferenceSync userId={user.id} initial={preference} ready={preferenceReady} />
+        <AlertSync />
+        <StreakSync />
+        <LiveWallet>{children}</LiveWallet>
+      </SessionGate>
+    </AdminAccess>
   );
 }
 

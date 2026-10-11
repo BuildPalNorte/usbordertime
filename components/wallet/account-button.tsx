@@ -7,7 +7,7 @@ import { haptic } from "@/lib/haptics";
 import { installStore } from "@/lib/install-store";
 import { nextMilestone, streakLevel } from "@/lib/streak";
 import { disablePush } from "@/lib/push-client";
-import { currentCallbackURL, EXPLORE_PATH, SCHEDULES_PATH } from "@/lib/routes";
+import { ADMIN_PATH, currentCallbackURL, EXPLORE_PATH, SCHEDULES_PATH } from "@/lib/routes";
 import { ClockIcon } from "@heroicons-animated/react/clock";
 import { MapIcon } from "@heroicons-animated/react/map";
 import { cn } from "@/lib/cn";
@@ -21,6 +21,7 @@ import { LanguageSwitch } from "./language-switch";
 import { SPRING } from "./motion";
 import { GoogleMark } from "./sign-in-screen";
 import { ThemeSwitch } from "./theme-switch";
+import { useAdminAccess } from "./admin-access";
 import { DevStreakPicker } from "./dev-streak-picker";
 import { LEVEL_COLOR, LevelIcon, useIconLoop } from "./streak-chip";
 import { useStreak } from "./use-streak";
@@ -45,6 +46,7 @@ export function AccountButton({ className }: { className?: string }) {
   const levelColor = LEVEL_COLOR[level] ?? LEVEL_COLOR[0];
   const levelHandle = useIconLoop(level, open);
   const onSchedules = usePathname() === SCHEDULES_PATH;
+  const admin = useAdminAccess();
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -238,6 +240,19 @@ export function AccountButton({ className }: { className?: string }) {
                     <ArrowDownTrayIcon size={20} aria-hidden className="shrink-0" />
                     {copy.installMenu}
                   </button>
+                )}
+                {admin && (
+                  <Link
+                    href={ADMIN_PATH}
+                    role="menuitem"
+                    onClick={() => {
+                      haptic("selection");
+                      setOpen(false);
+                    }}
+                    className="flex h-10 w-full items-center rounded-xl px-3 text-left text-[14px] font-medium"
+                  >
+                    {copy.admin}
+                  </Link>
                 )}
                 <Link
                   href="/privacy"

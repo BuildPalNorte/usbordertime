@@ -6,6 +6,7 @@ import { MAX_SCHEDULE_PORTS } from "@/lib/schedule";
 
 export const EXPLORE_PATH = "/explore";
 export const SCHEDULES_PATH = "/schedules";
+export const ADMIN_PATH = "/admin";
 
 export function crossingPath(portNumber: string): string {
   return `/${portNumber}`;

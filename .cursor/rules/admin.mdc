@@ -1,0 +1,13 @@
+---
+description: Who can open the admin dashboard
+globs: lib/admin.server.ts,app/admin/**,components/admin/**,components/wallet/admin-access.tsx
+alwaysApply: false
+---
+
+# Admin
+
+`/admin` sits outside the wallet layout. `openAdmin()` in `lib/admin.server.ts` reads the Better Auth session and allows the visit only when that Google email is in the `ADMIN_EMAILS` env var (comma-separated). Comparison ignores case and surrounding spaces. Read it as `process.env.ADMIN_EMAILS`. An empty value lets nobody in. A signed-out visit shows the sign-in screen and returns to `/admin`. A signed-in account that is not on the list gets the missing page.
+
+Do not import `lib/admin.server.ts` from a client component. The account menu learns about access through `AdminAccess`, a boolean passed from the server. The email list stays on the server.
+
+The page reads counts and recent accounts from `profile`, `wait_alert`, `push_subscription`, and `schedule`, plus the camera rows and the cached CBP snapshot. It does not write those tables, except `ensureProfile` for the admin on that visit. It does not show push endpoints.

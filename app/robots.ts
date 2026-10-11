@@ -17,7 +17,7 @@ const AI_CRAWLERS = [
 ];
 
 const PUBLIC = ["/", "/guides", "/es/guias", "/privacy", "/llms.txt", "/llms-full.txt"];
-const PRIVATE = ["/api/", "/og/"];
+const PRIVATE = ["/api/", "/og/", "/admin"];
 
 export default function robots(): MetadataRoute.Robots {
   const origin = siteOrigin();

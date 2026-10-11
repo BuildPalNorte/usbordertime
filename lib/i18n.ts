@@ -89,6 +89,7 @@ export type Copy = {
   signInHeadline: string;
   signInSample: string;
   privacyPolicy: string;
+  admin: string;
   privacyTitle: string;
   privacyUpdated: string;
   privacyLead: string;
@@ -340,6 +341,7 @@ export const COPY: Record<Locale, Copy> = {
     signInHeadline: "Know before you cross.",
     signInSample: "Sample",
     privacyPolicy: "Privacy policy",
+    admin: "Admin",
     privacyTitle: "Privacy policy",
     privacyUpdated: "Updated October 11, 2026",
     privacyLead:
@@ -635,6 +637,7 @@ export const COPY: Record<Locale, Copy> = {
     signInHeadline: "Sabe antes de cruzar.",
     signInSample: "Ejemplo",
     privacyPolicy: "Política de privacidad",
+    admin: "Admin",
     privacyTitle: "Política de privacidad",
     privacyUpdated: "Actualizada el 11 de octubre de 2026",
     privacyLead:

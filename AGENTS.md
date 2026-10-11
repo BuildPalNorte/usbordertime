@@ -22,6 +22,7 @@ Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is 
 | English or Spanish copy, the locale, or appearance | `copy.mdc` |
 | The wallet screen, cards, motion, or live cameras | `wallet-ui.mdc` |
 | Wait alerts, push notifications, the cron check, or Home Screen install | `alerts.mdc` |
+| Who can open `/admin` | `admin.mdc` |
 
 Data moves one way. `getBorderWaitTimes()` normalizes `https://bwt.cbp.gov/api/waittimes`. The home page passes that snapshot into `WalletApp`. The client refetches `GET /api/wait-times` about once a minute. Search and the Mexico/Canada filter run on that snapshot in the browser. They do not call the API again.
 
