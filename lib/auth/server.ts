@@ -4,8 +4,19 @@ import { Pool } from "pg";
 
 function required(name: "DATABASE_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET"): string {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing ${name}`);
-  return value;
+  if (value) return value;
+  // `next build` imports the auth route and may prerender the gate. Secrets live on Vercel at runtime.
+  if (process.env.NEXT_PHASE === "phase-production-build") return `build-placeholder-${name}`;
+  throw new Error(`Missing ${name}`);
+}
+
+export function authConfigured(): boolean {
+  return Boolean(
+    process.env.DATABASE_URL &&
+      process.env.BETTER_AUTH_SECRET &&
+      process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET,
+  );
 }
 
 type Auth = ReturnType<typeof createAuth>;
