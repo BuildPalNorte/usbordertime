@@ -3,6 +3,7 @@ import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { COPY, modeName, waitLabel } from "@/lib/i18n";
 import { portName, readLane } from "@/lib/ports";
 import { sendPush } from "@/lib/push.server";
+import { routesFocusPath } from "@/lib/routes";
 import { clockLabel, isDue, localMoment } from "@/lib/schedule";
 import {
   claimSend,
@@ -68,7 +69,11 @@ async function deliver(
     // A name replaces the title. The time and lane move to the first line of the body.
     title: schedule.name ?? when,
     body: (schedule.name ? [when, ...lines] : lines).join("\n"),
-    url: "/",
+    // A tap lays these bridges out side by side, on this lane, until dismissed.
+    url: routesFocusPath(
+      ports.map((port) => port.portNumber),
+      schedule.mode,
+    ),
     // A retry replaces the same notification. Tomorrow's is a new one.
     tag: `schedule:${schedule.id}:${today}`,
   };

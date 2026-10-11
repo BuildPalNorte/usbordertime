@@ -151,6 +151,9 @@ export type Copy = {
   scheduleNext: string;
   scheduleBack: string;
   scheduleTime: string;
+  scheduleHour: string;
+  scheduleMinute: string;
+  schedulePeriod: string;
   scheduleDays: string;
   scheduleEveryDay: string;
   scheduleWeekdays: string;
@@ -177,6 +180,13 @@ export type Copy = {
   scheduleTitle: (time: string, lane: string) => string;
   scheduleWait: (name: string, minutes: number) => string;
   scheduleStatus: (name: string, status: string) => string;
+  routesLead: string;
+  routesSummary: (count: number) => string;
+  routesMissing: string;
+  scheduleTest: string;
+  scheduleTestSending: string;
+  scheduleTestSent: string;
+  scheduleTestBody: string;
   alertTestTitle: string;
   alertTestBody: string;
   alertPushBody: (lane: string, minutes: number, threshold: number) => string;
@@ -420,6 +430,9 @@ export const COPY: Record<Locale, Copy> = {
     scheduleNext: "Continue",
     scheduleBack: "Back",
     scheduleTime: "Send at",
+    scheduleHour: "Hour",
+    scheduleMinute: "Minute",
+    schedulePeriod: "AM or PM",
     scheduleDays: "On",
     scheduleEveryDay: "Every day",
     scheduleWeekdays: "Weekdays",
@@ -446,6 +459,14 @@ export const COPY: Record<Locale, Copy> = {
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
     scheduleWait: (name, minutes) => `${name}: ${formatDuration(minutes, "hr", "min")}`,
     scheduleStatus: (name, status) => `${name}: ${status}`,
+    routesLead: "From your notification",
+    routesSummary: (count) =>
+      count === 1 ? "1 bridge from your notification" : `${count} bridges from your notification`,
+    routesMissing: "Those bridges aren't in the latest report.",
+    scheduleTest: "Send a test",
+    scheduleTestSending: "Sending…",
+    scheduleTestSent: "Sent. Tap the notification.",
+    scheduleTestBody: "This is a test. Tap it to see these bridges side by side.",
     alertTestTitle: "Border Time",
     alertTestBody: "This is a test. A real alert names the bridge and the wait.",
     alertPushBody: (lane, minutes, threshold) =>
@@ -675,6 +696,9 @@ export const COPY: Record<Locale, Copy> = {
     scheduleNext: "Continuar",
     scheduleBack: "Atrás",
     scheduleTime: "Enviar a las",
+    scheduleHour: "Hora",
+    scheduleMinute: "Minuto",
+    schedulePeriod: "a. m. o p. m.",
     scheduleDays: "Los días",
     scheduleEveryDay: "Todos los días",
     scheduleWeekdays: "Entre semana",
@@ -701,6 +725,14 @@ export const COPY: Record<Locale, Copy> = {
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
     scheduleWait: (name, minutes) => `${name}: ${formatDuration(minutes, "h", "min")}`,
     scheduleStatus: (name, status) => `${name}: ${status}`,
+    routesLead: "De tu notificación",
+    routesSummary: (count) =>
+      count === 1 ? "1 puente de tu notificación" : `${count} puentes de tu notificación`,
+    routesMissing: "Esos puentes no están en el reporte más reciente.",
+    scheduleTest: "Enviar una prueba",
+    scheduleTestSending: "Enviando…",
+    scheduleTestSent: "Enviada. Toca la notificación.",
+    scheduleTestBody: "Esto es una prueba. Tócala para ver estos puentes uno al lado del otro.",
     alertTestTitle: "Border Time",
     alertTestBody: "Esto es una prueba. Una alerta real dice el puente y la espera.",
     alertPushBody: (lane, minutes, threshold) =>

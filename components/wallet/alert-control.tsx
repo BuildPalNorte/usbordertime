@@ -104,7 +104,11 @@ export function AlertButton({
       setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Escape") return;
+      // Capture so the wallet's Escape (close the card, or leave the notification
+      // row) sees this as already handled.
+      event.preventDefault();
+      setOpen(false);
     };
     // Opening focuses the dialog, which can nudge the scroller. Ignore that
     // before a real scroll should dismiss the picker.
@@ -117,13 +121,13 @@ export function AlertButton({
       setOpen(false);
     };
     document.addEventListener("pointerdown", onPointer, true);
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onScroll);
     return () => {
       window.clearTimeout(arm);
       document.removeEventListener("pointerdown", onPointer, true);
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", onScroll);
     };

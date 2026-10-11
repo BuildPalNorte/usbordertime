@@ -6,10 +6,12 @@ import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { modeName, waitLabel } from "@/lib/i18n";
 import { portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
+import { enablePush, pushEndpoint } from "@/lib/push-client";
 import {
   ALL_DAYS,
   clockParts,
   dayLabel,
+  MAX_SCHEDULE_PORTS,
   MAX_SCHEDULES,
   sameDays,
   WEEKDAYS,
@@ -17,7 +19,7 @@ import {
 } from "@/lib/schedule";
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { AccountButton } from "./account-button";
 import { HapticPad } from "./haptic-pad";
 import { REDUCED, SPRING } from "./motion";
@@ -58,6 +60,16 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
 
   const first = items[0];
   const startMode: Mode = first?.mode ?? "car";
+  const sample = useMemo(() => {
+    const schedule = (schedules ?? []).find((item) => item.ports.length > 0);
+    if (schedule) {
+      return { ports: schedule.ports.slice(0, MAX_SCHEDULE_PORTS), mode: schedule.mode };
+    }
+    const picked = items.slice(0, MAX_SCHEDULE_PORTS);
+    const mode = picked[0]?.mode;
+    if (!mode || picked.length === 0) return null;
+    return { ports: picked.map((item) => item.port.portNumber), mode };
+  }, [schedules, items]);
 
   const open = (schedule: Schedule | null) => {
     haptic("selection");
@@ -118,24 +130,29 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
           }}
         />
       ) : count === 0 ? (
-        <Empty body={copy.scheduleEmptyBody} action={copy.scheduleNew} onAction={() => open(null)} />
+        <Empty body={copy.scheduleEmptyBody} action={copy.scheduleNew} onAction={() => open(null)}>
+          {sample && <ScheduleTest ports={sample.ports} mode={sample.mode} />}
+        </Empty>
       ) : (
-        <ul className="space-y-3">
-          {(schedules ?? []).map((schedule, index) => (
-            <li key={schedule.id} className="rise" style={{ "--i": index } as CSSProperties}>
-              <ScheduleCard
-                schedule={schedule}
-                byNumber={byNumber}
-                onOpen={() => open(schedule)}
-                onToggle={async () => {
-                  haptic("selection");
-                  const result = await save({ ...schedule, enabled: !schedule.enabled });
-                  if (result.status !== "ok") haptic("error");
-                }}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="space-y-3">
+            {(schedules ?? []).map((schedule, index) => (
+              <li key={schedule.id} className="rise" style={{ "--i": index } as CSSProperties}>
+                <ScheduleCard
+                  schedule={schedule}
+                  byNumber={byNumber}
+                  onOpen={() => open(schedule)}
+                  onToggle={async () => {
+                    haptic("selection");
+                    const result = await save({ ...schedule, enabled: !schedule.enabled });
+                    if (result.status !== "ok") haptic("error");
+                  }}
+                />
+              </li>
+            ))}
+          </ul>
+          {sample && <ScheduleTest ports={sample.ports} mode={sample.mode} />}
+        </>
       )}
 
       <AnimatePresence>
@@ -299,14 +316,84 @@ function Switch({ on, label, onToggle }: { on: boolean; label: string; onToggle:
   );
 }
 
+function ScheduleTest({ ports, mode }: { ports: string[]; mode: Mode }) {
+  const { copy } = useLocale();
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function send() {
+    if (busy) return;
+    // Permission has to be the first await, or the browser drops the prompt.
+    const enabled = await enablePush();
+    if (enabled !== "ok") {
+      haptic("error");
+      setNote(
+        enabled === "denied"
+          ? copy.alertDenied
+          : enabled === "needs-install"
+            ? copy.alertNeedsInstall
+            : enabled === "unsupported"
+              ? copy.alertUnsupported
+              : copy.alertFailed,
+      );
+      return;
+    }
+    setBusy(true);
+    setNote(null);
+    try {
+      const endpoint = await pushEndpoint();
+      const response = endpoint
+        ? await fetch("/api/alerts/test", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint, ports, mode }),
+          })
+        : null;
+      if (!response?.ok) {
+        haptic("error");
+        setNote(copy.alertFailed);
+        return;
+      }
+      haptic("success");
+      setNote(copy.scheduleTestSent);
+    } catch {
+      haptic("error");
+      setNote(copy.alertFailed);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-8 flex flex-col items-center">
+      <button
+        type="button"
+        onClick={() => void send()}
+        disabled={busy}
+        className="relative h-11 rounded-full px-4 text-[15px] font-medium text-accent transition-opacity active:opacity-60 disabled:opacity-40"
+      >
+        <HapticPad />
+        {busy ? copy.scheduleTestSending : copy.scheduleTest}
+      </button>
+      {note && (
+        <p className="mx-auto mt-2 max-w-[32ch] text-center text-[13px] leading-relaxed text-muted">
+          {note}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Empty({
   body,
   action,
   onAction,
+  children,
 }: {
   body: string;
   action: string;
   onAction: () => void;
+  children?: ReactNode;
 }) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
@@ -355,6 +442,7 @@ function Empty({
         <PlusIcon size={20} aria-hidden />
         {action}
       </motion.button>
+      {children}
     </div>
   );
 }

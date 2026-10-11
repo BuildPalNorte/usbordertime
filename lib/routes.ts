@@ -1,5 +1,6 @@
 import { isLocale, type Locale } from "@/lib/i18n";
 import { isMode, type Mode } from "@/lib/ports";
+import { MAX_SCHEDULE_PORTS } from "@/lib/schedule";
 
 /** Paths the wallet shell owns. Card URLs are the CBP port number, so a share opens that crossing. */
 
@@ -28,6 +29,45 @@ export function laneQuery(value: string | null): Mode | null {
 
 export function localeQuery(value: string | null): Locale | null {
   return isLocale(value) ? value : null;
+}
+
+/** The bridges a schedule notification named, and the lane they share. */
+export type RoutesFocus = { ports: string[]; mode: Mode };
+
+/** Where a schedule notification opens: those bridges, side by side, on that lane. */
+export function routesFocusPath(portNumbers: readonly string[], mode: Mode): string {
+  return withRoutesFocus("/", { ports: focusPorts(portNumbers), mode });
+}
+
+/** Keeps a notification's bridges on the query while moving to `path`. */
+export function withRoutesFocus(path: string, focus: RoutesFocus | null): string {
+  if (!focus || focus.ports.length === 0) return path;
+  const query = path.indexOf("?");
+  const pathname = query === -1 ? path : path.slice(0, query);
+  const params = new URLSearchParams({ routes: focus.ports.join(","), lane: focus.mode });
+  return `${pathname}?${params.toString()}`;
+}
+
+/** Null when the query is missing a real lane or any real port number. */
+export function parseRoutesFocus(routes: string | null, lane: string | null): RoutesFocus | null {
+  const mode = laneQuery(lane);
+  if (!mode) return null;
+  const ports = focusPorts((routes ?? "").split(","));
+  if (ports.length === 0) return null;
+  return { ports, mode };
+}
+
+function focusPorts(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const ports: string[] = [];
+  for (const value of values) {
+    const port = value.trim();
+    if (!isPortParam(port) || seen.has(port)) continue;
+    seen.add(port);
+    ports.push(port);
+    if (ports.length >= MAX_SCHEDULE_PORTS) break;
+  }
+  return ports;
 }
 
 /** Same-origin path Google should return to after sign-in, including a shared card. */

@@ -27,7 +27,7 @@ export const MAX_SCHEDULES = 8;
 export const MAX_SCHEDULE_PORTS = 6;
 /** A name has to fit on one line of a notification. */
 export const MAX_SCHEDULE_NAME = 40;
-/** The time picker moves in steps this size. */
+/** The time step offers minutes in steps this size, and a saved schedule has to land on one. */
 export const SCHEDULE_STEP = 5;
 /**
  * A schedule can still send this long after its time, in case a cron run was late.
@@ -188,21 +188,28 @@ export function clockLabel(minute: number, locale: Locale): string {
   return period ? `${digits} ${period}` : digits;
 }
 
-/** `07:30`, the value of a time input. */
-export function toTimeValue(minute: number): string {
-  const hours = String(Math.floor(minute / 60)).padStart(2, "0");
-  const minutes = String(minute % 60).padStart(2, "0");
-  return `${hours}:${minutes}`;
+export type ClockFace = {
+  /** 1–12. */
+  hour: number;
+  /** Minutes past the hour, 0–59. */
+  minute: number;
+  pm: boolean;
+};
+
+/** The 12-hour face of a minute-after-midnight, so the picker and the readout stay the same clock. */
+export function clockFace(minute: number): ClockFace {
+  const hour24 = Math.floor(minute / 60) % 12;
+  return {
+    hour: hour24 === 0 ? 12 : hour24,
+    minute: minute % 60,
+    pm: minute >= 12 * 60,
+  };
 }
 
-/** Back from a time input, rounded down to the step. Null when the field is empty. */
-export function fromTimeValue(value: string): number | null {
-  const match = /^(\d{1,2}):(\d{2})/.exec(value);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return null;
-  return hours * 60 + minutes - ((hours * 60 + minutes) % SCHEDULE_STEP);
+/** Back to minutes after midnight. 12 AM is 0, 12 PM is noon. */
+export function clockMinute(face: ClockFace): number {
+  const base = face.hour % 12;
+  return (face.pm ? base + 12 : base) * 60 + face.minute;
 }
 
 /** A one-letter day for the chips, from the browser's own calendar so Spanish reads right. */

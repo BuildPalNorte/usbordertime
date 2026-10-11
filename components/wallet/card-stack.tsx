@@ -35,6 +35,8 @@ type Props = {
   onRemove: (portNumber: string) => void;
   onReorder: (portNumber: string, toIndex: number) => void;
   checking?: boolean;
+  /** Skip the fan-in. Used when the stack returns after the notification row. */
+  quiet?: boolean;
 };
 
 type ReorderDrag = { id: string; from: number; over: number };
@@ -62,6 +64,7 @@ export function CardStack({
   onRemove,
   onReorder,
   checking = false,
+  quiet = false,
 }: Props) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
@@ -71,7 +74,7 @@ export function CardStack({
   const canReorder = !anyOpen && items.length > 1;
 
   // Cards fan in once on first paint; after that, changes are immediate springs.
-  const [intro, setIntro] = useState(true);
+  const [intro, setIntro] = useState(!quiet);
   useEffect(() => {
     const id = window.setTimeout(() => setIntro(false), 900);
     return () => window.clearTimeout(id);
@@ -144,6 +147,7 @@ export function CardStack({
               lifted={drag?.id === id}
               canReorder={canReorder}
               intro={intro}
+              quiet={quiet}
               appearFrom={height + 120}
               reduce={Boolean(reduce)}
               spring={spring}
@@ -209,6 +213,7 @@ function StackCard({
   lifted,
   canReorder,
   intro,
+  quiet,
   appearFrom,
   reduce,
   spring,
@@ -234,6 +239,7 @@ function StackCard({
   lifted: boolean;
   canReorder: boolean;
   intro: boolean;
+  quiet: boolean;
   appearFrom: number;
   reduce: boolean;
   spring: typeof SPRING.move | typeof REDUCED;
@@ -250,8 +256,8 @@ function StackCard({
   checking: boolean;
 }) {
   const present = useIsPresent();
-  const y = useMotionValue(reduce ? targetY : appearFrom);
-  const enterDelay = useRef(intro && !reduce ? index * 0.06 : 0);
+  const y = useMotionValue(reduce || quiet ? targetY : appearFrom);
+  const enterDelay = useRef(!quiet && intro && !reduce ? index * 0.06 : 0);
   const pendingGesture = useRef<{ velocity?: number; from?: number } | null>(null);
   const flight = useRef<{ stop: () => void } | null>(null);
   const [pressed, setPressed] = useState(false);
@@ -758,7 +764,7 @@ function StackCard({
     <motion.div
       className="absolute inset-x-0 top-0"
       style={{ y, zIndex, pointerEvents: dimmed ? "none" : "auto" }}
-      initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
+      initial={quiet ? false : reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
       animate={{ opacity: dimmed ? 0 : dragging ? 0.82 : 1, scale: dimmed ? 0.95 : 1 }}
       exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92, transition: SPRING.move }}
       transition={{ ...spring, delay: reduce ? 0 : intro ? index * 0.06 : 0 }}

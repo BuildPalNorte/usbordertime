@@ -7,8 +7,9 @@ import { AccountButton } from "./account-button";
 import { ArrowPathIcon } from "@heroicons-animated/react/arrow-path";
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { forwardRef, useRef } from "react";
+import { forwardRef, useRef, useState } from "react";
 import { CardStack, type StackItem } from "./card-stack";
+import { RouteRow } from "./route-row";
 import { HapticPad } from "./haptic-pad";
 import { InstallBanner } from "./install-prompt";
 import { haptic } from "@/lib/haptics";
@@ -34,6 +35,11 @@ type Props = {
   onRefresh: () => void;
   onBrowse: () => void;
   onAddSuggested: () => void;
+  /** Bridges from a notification, shown side by side. Null when that view is closed. */
+  routes: StackItem[] | null;
+  routesLabel: string | null;
+  routesMissing: boolean;
+  onDismissRoutes: () => void;
 };
 
 export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(props, headerRef) {
@@ -50,17 +56,27 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
     onRefresh,
     onBrowse,
     onAddSuggested,
+    routes,
+    routesLabel,
+    routesMissing,
+    onDismissRoutes,
   } = props;
   const { copy } = useLocale();
   const reduce = useReducedMotion();
   const refreshIcon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
   const open = expandedId !== null && items.some((i) => i.port.portNumber === expandedId);
+  const holding = routes !== null || routesMissing;
+  // Once the notification row has been on screen, the stack should return in place.
+  const [seenRoutes, setSeenRoutes] = useState(false);
+  if (holding && !seenRoutes) setSeenRoutes(true);
 
-  const subtitle = !hydrated
-    ? "\u00A0"
-    : items.length === 0
-      ? copy.nothingSaved
-      : copy.savedSummary(items.length, updatedAt);
+  const subtitle = routesLabel
+    ? routesLabel
+    : !hydrated
+      ? "\u00A0"
+      : items.length === 0
+        ? copy.nothingSaved
+        : copy.savedSummary(items.length, updatedAt);
 
   return (
     <div>
@@ -72,13 +88,14 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
 
         <div className="relative flex h-11 items-center justify-end gap-2">
           <AnimatePresence mode="popLayout" initial={false}>
-            {open ? (
+            {open || holding ? (
               <motion.button
                 key="done"
                 type="button"
                 onClick={() => {
                   haptic("soft");
-                  onCollapse();
+                  if (open) onCollapse();
+                  else onDismissRoutes();
                 }}
                 initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" }}
                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
@@ -120,10 +137,22 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
         </div>
       </header>
 
-      {!open && <InstallBanner />}
+      {!open && !holding && <InstallBanner />}
 
       {!hydrated || loading ? (
         <StackSkeleton />
+      ) : routes ? (
+        <RouteRow
+          items={routes}
+          label={routesLabel ?? copy.routesLead}
+          checking={checking}
+          onOpen={props.onExpand}
+          onShare={props.onShare}
+        />
+      ) : routesMissing ? (
+        <p className="max-w-[28ch] pt-6 text-[17px] leading-snug font-medium tracking-[-0.02em]">
+          {copy.routesMissing}
+        </p>
       ) : items.length === 0 ? (
         <EmptyWallet suggested={suggested} onBrowse={onBrowse} onAddSuggested={onAddSuggested} />
       ) : (
@@ -139,6 +168,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
           onRemove={props.onRemove}
           onReorder={props.onReorder}
           checking={checking}
+          quiet={seenRoutes}
         />
       )}
     </div>

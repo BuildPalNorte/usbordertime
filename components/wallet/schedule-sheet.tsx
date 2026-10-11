@@ -10,19 +10,28 @@ import { MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
 import { enablePush, pushSupport, type PushSupport } from "@/lib/push-client";
 import {
   ALL_DAYS,
+  clockFace,
+  clockMinute,
+  clockParts,
   dayLabel,
-  fromTimeValue,
   MAX_SCHEDULE_NAME,
   MAX_SCHEDULE_PORTS,
   sameDays,
-  toTimeValue,
+  SCHEDULE_STEP,
   WEEKDAYS,
   type Schedule,
 } from "@/lib/schedule";
 import { CheckIcon } from "@heroicons-animated/react/check";
 import { XMarkIcon } from "@heroicons-animated/react/x-mark";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
@@ -446,21 +455,14 @@ export function ScheduleSheet({
 
             {step === 1 && (
               <section>
-                <input
-                  type="time"
-                  step={300}
-                  aria-label={copy.scheduleTime}
-                  value={toTimeValue(minute)}
-                  onChange={(event) => {
-                    const next = fromTimeValue(event.target.value);
-                    if (next !== null) {
-                      setMinute(next);
-                      setProblem(null);
-                    }
+                <TimePicker
+                  minute={minute}
+                  onChange={(next) => {
+                    setMinute(next);
+                    setProblem(null);
                   }}
-                  className="block h-[72px] w-full appearance-none rounded-2xl bg-surface px-4 text-center text-[44px] leading-none font-semibold tracking-[-0.04em] text-foreground tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 />
-                <p className="mt-2 text-center text-[12px] text-muted">{copy.scheduleZone(zone)}</p>
+                <p className="mt-4 text-center text-[12px] text-muted">{copy.scheduleZone(zone)}</p>
               </section>
             )}
 
@@ -574,6 +576,113 @@ export function ScheduleSheet({
       </motion.div>
     </motion.div>,
     document.body,
+  );
+}
+
+const HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+const MINUTES = Array.from({ length: 60 / SCHEDULE_STEP }, (_, index) => index * SCHEDULE_STEP);
+
+/** The clock is the control. Tapping the hour or the minute opens that dropdown. Minutes land on the 5-minute marks. */
+function TimePicker({ minute, onChange }: { minute: number; onChange: (minute: number) => void }) {
+  const { copy, locale } = useLocale();
+  const face = clockFace(minute);
+  const am = clockParts(0, locale).period ?? "AM";
+  const pm = clockParts(12 * 60, locale).period ?? "PM";
+
+  const pick = (next: number) => {
+    if (next === minute) return;
+    haptic("selection");
+    onChange(next);
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center">
+        <TimeDigit
+          label={copy.scheduleHour}
+          value={face.hour}
+          options={HOURS}
+          format={(hour) => String(hour)}
+          onSelect={(hour) => pick(clockMinute({ ...face, hour }))}
+        />
+        <span aria-hidden className="px-0.5 text-[40px] leading-none font-semibold tracking-[-0.045em] text-muted/70">
+          :
+        </span>
+        <TimeDigit
+          label={copy.scheduleMinute}
+          value={face.minute}
+          options={MINUTES}
+          format={(value) => String(value).padStart(2, "0")}
+          onSelect={(value) => pick(clockMinute({ ...face, minute: value }))}
+        />
+      </div>
+
+      <div role="radiogroup" aria-label={copy.schedulePeriod} className="flex flex-col gap-0.5 rounded-[20px] bg-surface p-1">
+          {[
+            { pm: false, label: am },
+            { pm: true, label: pm },
+          ].map((option) => {
+            const checked = face.pm === option.pm;
+            return (
+              <button
+                key={option.label}
+                type="button"
+                role="radio"
+                aria-checked={checked}
+                tabIndex={checked ? 0 : -1}
+                onClick={() => pick(clockMinute({ ...face, pm: option.pm }))}
+                onKeyDown={(event) => {
+                  if (event.repeat) return;
+                  if (event.key !== "ArrowUp" && event.key !== "ArrowDown" && event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+                    return;
+                  }
+                  event.preventDefault();
+                  pick(clockMinute({ ...face, pm: !face.pm }));
+                  const buttons = event.currentTarget.parentElement?.querySelectorAll("button");
+                  buttons?.[face.pm ? 0 : 1]?.focus();
+                }}
+                className={cn(
+                  "relative h-9 min-w-12 rounded-2xl px-2.5 text-[13px] font-semibold tracking-[-0.01em] whitespace-nowrap transition-[background-color,color,transform] duration-150 ease-out active:scale-95",
+                  checked ? "bg-background text-foreground" : "text-muted",
+                )}
+              >
+                <HapticPad />
+                {option.label}
+              </button>
+            );
+          })}
+      </div>
+    </div>
+  );
+}
+
+/** One clock digit. The number on screen is the dropdown. */
+function TimeDigit({
+  label,
+  value,
+  options,
+  format,
+  onSelect,
+}: {
+  label: string;
+  value: number;
+  options: readonly number[];
+  format: (value: number) => string;
+  onSelect: (value: number) => void;
+}) {
+  return (
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(event) => onSelect(Number(event.target.value))}
+      className="[field-sizing:content] cursor-pointer appearance-none rounded-2xl bg-surface px-2.5 py-1 text-center text-[48px] leading-none font-semibold tracking-[-0.045em] text-muted tabular-nums outline-none transition-[background-color,color] duration-150 hover:bg-surface-strong hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-accent active:bg-surface-strong active:text-foreground"
+    >
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {format(option)}
+        </option>
+      ))}
+    </select>
   );
 }
 

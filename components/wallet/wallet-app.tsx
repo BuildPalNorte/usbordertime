@@ -13,13 +13,16 @@ import {
   crossingSharePath,
   EXPLORE_PATH,
   parseAppPath,
+  parseRoutesFocus,
   SCHEDULES_PATH,
+  withRoutesFocus,
 } from "@/lib/routes";
 import { walletStore } from "@/lib/wallet-store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReducedMotion } from "motion/react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -33,6 +36,7 @@ import { CameraStreamProvider } from "./camera-streams";
 import { BrowsePane } from "./browse-pane";
 import type { StackItem } from "./card-stack";
 import { Glow } from "./glow";
+import { RoutesFocusSync } from "./route-row";
 import { SchedulesPane } from "./schedules-pane";
 import { TabBar, type Tab } from "./tab-bar";
 import { Toast, type ToastState } from "./toast";
@@ -58,7 +62,20 @@ function shareCancelled(error: unknown): boolean {
 }
 
 const EMPTY_PORTS: PortWaitTime[] = [];
+const NO_LANE: Partial<Record<string, Mode>> = {};
 const noopSubscribe = () => () => {};
+
+function focusKeyFromLocation(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  const routes = params.get("routes");
+  const lane = params.get("lane");
+  return routes && lane ? `${routes}\n${lane}` : null;
+}
+
+function subscribeFocusKey(onChange: () => void): () => void {
+  window.addEventListener("popstate", onChange);
+  return () => window.removeEventListener("popstate", onChange);
+}
 
 async function fetchWaitTimes(): Promise<BorderWaitTimes> {
   const response = await fetch("/api/wait-times");
@@ -141,6 +158,41 @@ export function WalletApp({
 
   const routePort = route.port ? byNumber.get(route.port) : undefined;
 
+  // A schedule notification names its bridges on the query. The URL is the source of
+  // truth on the first paint and on back/forward; client navigations publish the rest.
+  const urlKey = useSyncExternalStore(subscribeFocusKey, focusKeyFromLocation, () => null);
+  const [navKey, setNavKey] = useState<string | null | undefined>(undefined);
+  const onFocusKey = useCallback((key: string | null) => setNavKey(key), []);
+  useEffect(() => {
+    const onPop = () => setNavKey(undefined);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  const focusKey = navKey === undefined ? urlKey : navKey;
+  const [laneOverride, setLaneOverride] = useState<Partial<Record<string, Mode>>>({});
+  const [overrideFor, setOverrideFor] = useState<string | null>(focusKey);
+  if (focusKey !== overrideFor) {
+    setOverrideFor(focusKey);
+    setLaneOverride(NO_LANE);
+  }
+  const lanes = overrideFor === focusKey ? laneOverride : NO_LANE;
+  const focus = useMemo(() => {
+    if (!focusKey) return null;
+    const split = focusKey.indexOf("\n");
+    if (split < 0) return null;
+    return parseRoutesFocus(focusKey.slice(0, split), focusKey.slice(split + 1));
+  }, [focusKey]);
+  const focusItems = useMemo<StackItem[]>(() => {
+    if (!focus) return [];
+    return focus.ports.flatMap((number) => {
+      const port = byNumber.get(number);
+      if (!port) return [];
+      const chosen = lanes[number] ?? focus.mode;
+      const mode = readLane(port, chosen).available ? chosen : defaultMode(port);
+      return [{ port, mode }];
+    });
+  }, [focus, byNumber, lanes]);
+
   const items = useMemo<StackItem[]>(() => {
     const list = entries.flatMap((entry) => {
       const port = byNumber.get(entry.portNumber);
@@ -177,7 +229,25 @@ export function WalletApp({
     routePort && items.some((i) => i.port.portNumber === routePort.portNumber)
       ? routePort.portNumber
       : null;
-  const openItem = items.find((i) => i.port.portNumber === expandedId) ?? null;
+  // While a notification card is open, the stack behind it is that notification's bridges.
+  const viewItems =
+    focus && expandedId && focusItems.some((item) => item.port.portNumber === expandedId)
+      ? focusItems
+      : items;
+  const openItem = viewItems.find((i) => i.port.portNumber === expandedId) ?? null;
+  const feedReady = Boolean(data) && !isPending;
+  const focusPending = Boolean(focus) && !feedReady && expandedId === null;
+  const routesRow =
+    focus && !focusPending && expandedId === null && focusItems.length > 0 ? focusItems : null;
+  const routesMissing = Boolean(
+    focus && !focusPending && expandedId === null && focusItems.length === 0,
+  );
+  const routesLabel =
+    !focus || focusPending
+      ? null
+      : focusItems.length === 0
+        ? copy.routesLead
+        : copy.routesSummary(focusItems.length);
   const openCityPinned = openItem
     ? pins.includes(cityPinKey(openItem.port.border, portName(openItem.port).city))
     : false;
@@ -209,12 +279,14 @@ export function WalletApp({
   useEffect(() => {
     document.title = openItem
       ? copy.pageTitle(shareMessage(openItem.port, openItem.mode, copy).title)
-      : tab === "browse"
-        ? copy.pageTitle(copy.browse)
-        : tab === "schedules"
-          ? copy.pageTitle(copy.schedules)
-          : copy.metaTitle;
-  }, [openItem, tab, copy]);
+      : routesLabel && tab === "wallet"
+        ? copy.pageTitle(routesLabel)
+        : tab === "browse"
+          ? copy.pageTitle(copy.browse)
+          : tab === "schedules"
+            ? copy.pageTitle(copy.schedules)
+            : copy.metaTitle;
+  }, [openItem, tab, copy, routesLabel]);
 
   useEffect(() => {
     if (!hydrated || orderReady) return;
@@ -243,17 +315,6 @@ export function WalletApp({
     if (entry.mode !== lane) walletStore.setMode(routePort.portNumber, lane);
   }, [hydrated, routePort, entries, pathname]);
 
-  useEffect(() => {
-    if (!expandedId) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      haptic("light");
-      go("/");
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [expandedId, go]);
-
   const prevTab = useRef(tab);
   useLayoutEffect(() => {
     if (prevTab.current === tab) return;
@@ -266,9 +327,9 @@ export function WalletApp({
       if (next === tab) return;
       haptic("selection");
       setPaneFrom(TAB_ORDER.indexOf(next) > TAB_ORDER.indexOf(tab) ? 28 : -28);
-      go(TAB_PATH[next]);
+      go(withRoutesFocus(TAB_PATH[next], focus));
     },
-    [tab, go],
+    [tab, go, focus],
   );
 
   // Mobile scrolls inside the shell, not the document. Start each tab at the top
@@ -282,7 +343,7 @@ export function WalletApp({
   const expand = useCallback(
     (portNumber: string) => {
       haptic("light");
-      go(crossingPath(portNumber));
+      go(withRoutesFocus(crossingPath(portNumber), focus));
       // Bring the header (and the Done button) into view so the open card never lands off-screen.
       const behavior = reduce ? "auto" : "smooth";
       const header = headerRef.current;
@@ -293,12 +354,30 @@ export function WalletApp({
         header?.scrollIntoView({ block: "start", behavior });
       }
     },
-    [go, reduce],
+    [go, reduce, focus],
   );
 
   const collapse = useCallback(() => {
-    go("/");
-  }, [go]);
+    go(withRoutesFocus("/", focus));
+  }, [go, focus]);
+
+  const dismissRoutes = useCallback(() => {
+    setNavKey(null);
+    const path = tab === "browse" ? EXPLORE_PATH : tab === "schedules" ? SCHEDULES_PATH : "/";
+    go(path);
+  }, [go, tab]);
+
+  useEffect(() => {
+    if (!expandedId && !focus) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      haptic("light");
+      if (expandedId) collapse();
+      else dismissRoutes();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expandedId, focus, collapse, dismissRoutes]);
 
   const toggleSaved = useCallback(
     (port: PortWaitTime) => {
@@ -482,14 +561,18 @@ export function WalletApp({
     });
   }, [refetch]);
 
-  const feedReady = Boolean(data) && !isPending;
   const missingPort = Boolean(route.port && feedReady && !routePort);
   if (!route.known || missingPort) {
     return <NotFoundScreen />;
   }
 
+  const wideRoutes = tab === "wallet" && routesRow !== null;
+
   return (
     <CameraStreamProvider streams={cameraStreams} replace={replaceStream}>
+    <Suspense fallback={null}>
+      <RoutesFocusSync onKey={onFocusKey} />
+    </Suspense>
     <div className="relative min-h-[100dvh] max-lg:fixed max-lg:inset-0 max-lg:min-h-0 max-lg:overflow-hidden">
       <Glow palette={openItem && tab === "wallet" ? paletteFor(openItem.port.portNumber) : null} />
 
@@ -499,16 +582,19 @@ export function WalletApp({
       >
         <div className="lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20">
           <section
-            className="pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6"
+            className={cn(
+              "pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6",
+              wideRoutes && "lg:col-span-2",
+            )}
             data-active={tab === "wallet"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
             aria-label={copy.wallet}
           >
             <WalletPane
               ref={headerRef}
-              items={items}
+              items={viewItems}
               hydrated={hydrated}
-              loading={isPending && !data}
+              loading={(isPending && !data) || focusPending}
               refreshing={isFetching || checking}
               checking={checking}
               updatedAt={updatedAt}
@@ -516,7 +602,10 @@ export function WalletApp({
               suggested={suggested}
               onExpand={expand}
               onCollapse={collapse}
-              onMode={(portNumber: string, mode: Mode) => walletStore.setMode(portNumber, mode)}
+              onMode={(portNumber: string, mode: Mode) => {
+                walletStore.setMode(portNumber, mode);
+                if (focus) setLaneOverride((current) => ({ ...current, [portNumber]: mode }));
+              }}
               cityPinned={openCityPinned}
               onPinCity={() => {
                 if (openItem) togglePin(openItem.port.border, portName(openItem.port).city);
@@ -529,12 +618,16 @@ export function WalletApp({
               onRefresh={refresh}
               onBrowse={() => changeTab("browse")}
               onAddSuggested={addSuggested}
+              routes={routesRow}
+              routesLabel={routesLabel}
+              routesMissing={routesMissing}
+              onDismissRoutes={dismissRoutes}
             />
           </section>
 
           <section
             // On a desktop the right column holds Browse, or Schedules while that tab is open.
-            className={cn("pane", tab === "schedules" && "lg:hidden")}
+            className={cn("pane", (tab === "schedules" || wideRoutes) && "lg:hidden")}
             data-active={tab === "browse"}
             style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
             aria-label={copy.browseCrossings}
