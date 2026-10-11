@@ -2,10 +2,11 @@
 
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
+import { notePadTick } from "@/lib/haptics";
 import { MapIcon, type MapIconHandle } from "@heroicons-animated/react/map";
 import { WalletIcon, type WalletIconHandle } from "@heroicons-animated/react/wallet";
 import { motion, useReducedMotion } from "motion/react";
-import { useRef } from "react";
+import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 
@@ -36,7 +37,8 @@ export function TabBar({ tab, onChange }: Props) {
       className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-4 lg:hidden"
       style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="glass pointer-events-auto flex gap-1 rounded-full p-1.5">
+      <div className="pointer-events-auto relative flex cursor-pointer gap-1 rounded-full p-1.5">
+        <div aria-hidden className="glass pointer-events-none absolute inset-0 rounded-full" />
         <TabButton active={tab === "wallet"} label={copy.wallet} onClick={() => select("wallet")}>
           <WalletIcon ref={wallet} size={22} aria-hidden />
         </TabButton>
@@ -60,16 +62,60 @@ function TabButton({
   children: React.ReactNode;
 }) {
   const reduce = useReducedMotion();
+  const origin = useRef<{ id: number; x: number; y: number } | null>(null);
+  // A swipe leaves the browser unwilling to synthesize a click for the next
+  // finger tap, so the tab would sit there until a second tap. The lift still
+  // arrives. Switch on that, and ignore the click if it shows up afterward.
+  const skipClick = useRef(false);
+  const skipTimer = useRef(0);
+
+  useEffect(() => () => window.clearTimeout(skipTimer.current), []);
+
+  function onPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (event.button !== 0) return;
+    origin.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+  }
+
+  function onPointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
+    const start = origin.current;
+    origin.current = null;
+    if (!start || event.pointerId !== start.id || event.pointerType === "mouse") return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (dx * dx + dy * dy > 100) return;
+    skipClick.current = true;
+    window.clearTimeout(skipTimer.current);
+    skipTimer.current = window.setTimeout(() => {
+      skipClick.current = false;
+    }, 500);
+    // The switch under the finger ticks when its click arrives. Skip the copy.
+    notePadTick();
+    onClick();
+  }
+
+  function onActivate() {
+    if (skipClick.current) {
+      skipClick.current = false;
+      window.clearTimeout(skipTimer.current);
+      return;
+    }
+    onClick();
+  }
 
   return (
     <motion.button
       type="button"
       aria-current={active ? "page" : undefined}
-      onClick={onClick}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => {
+        origin.current = null;
+      }}
+      onClick={onActivate}
       whileTap={reduce ? undefined : { scale: 0.94 }}
       transition={SPRING.snap}
       className={cn(
-        "relative flex h-12 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold whitespace-nowrap",
+        "relative z-[1] flex h-12 cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold whitespace-nowrap",
         active ? "text-foreground" : "text-muted",
       )}
     >
