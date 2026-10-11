@@ -67,7 +67,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
                 <motion.span
                   layoutId="lane-ring"
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-accent"
+                  className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-inset ring-accent"
                   transition={SPRING.snap}
                 />
               )}
