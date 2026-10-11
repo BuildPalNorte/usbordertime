@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/locale-provider";
+import { reportCameraExpanded, videoIsExpanded } from "@/lib/screen-orientation";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -75,6 +76,29 @@ export function CrossingCamera({ src, name }: { src: string; name: string }) {
       .catch(() => fail());
 
     return stop;
+  }, [src]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const sync = () => reportCameraExpanded(video, videoIsExpanded(video));
+    // Begin/end fire as the native player opens, before presentation mode updates.
+    const expand = () => reportCameraExpanded(video, true);
+    const inline = () => reportCameraExpanded(video, false);
+
+    video.addEventListener("webkitbeginfullscreen", expand);
+    video.addEventListener("webkitendfullscreen", inline);
+    video.addEventListener("webkitpresentationmodechanged", sync);
+    document.addEventListener("fullscreenchange", sync);
+
+    return () => {
+      video.removeEventListener("webkitbeginfullscreen", expand);
+      video.removeEventListener("webkitendfullscreen", inline);
+      video.removeEventListener("webkitpresentationmodechanged", sync);
+      document.removeEventListener("fullscreenchange", sync);
+      reportCameraExpanded(video, false);
+    };
   }, [src]);
 
   return (

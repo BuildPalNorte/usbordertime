@@ -10,6 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
+    // Installed phone apps stay upright. An expanded camera releases this at runtime.
+    orientation: "portrait",
     background_color: "#ffffff",
     theme_color: THEME_COLOR.light,
     icons: [

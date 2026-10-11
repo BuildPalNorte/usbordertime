@@ -105,6 +105,10 @@ lib/pin-store.ts          bookmarked cities in localStorage
 
 On a phone, Wallet and Browse are separate tabs. On a wide screen both panes stay on the page.
 
+## License
+
+[MIT](LICENSE). You can use, change, and share this project if you keep the copyright notice.
+
 ## Contributing
 
 Issues and pull requests are welcome on [GitHub](https://github.com/BuildPalNorte/usbordertime).

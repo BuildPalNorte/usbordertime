@@ -2,6 +2,7 @@
 
 import { LocaleProvider } from "@/components/locale-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PortraitLock } from "@/components/wallet/portrait-lock";
 import type { Locale } from "@/lib/i18n";
 import type { ThemeChoice } from "@/lib/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -26,7 +27,10 @@ export function Providers({
   return (
     <QueryClientProvider client={client}>
       <ThemeProvider theme={theme}>
-        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+        <LocaleProvider locale={locale}>
+          <PortraitLock />
+          {children}
+        </LocaleProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

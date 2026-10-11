@@ -32,6 +32,8 @@ The usual wait for this hour sits under the live number on `CardFace`, so the fr
 
 Nuevo (Gateway) and Viejo (B&M) show a live camera at the top of `CardDetail` and of an expanded browse row. `crossingStream` in `lib/ports.ts` is the only map. The player mounts when that view opens and unmounts when it closes, so a stacked card does not keep a stream open.
 
+A phone stays portrait: the manifest `orientation` is `portrait`, and `PortraitLock` asks `screen.orientation` for the same where the browser allows it. Expanding the camera — the video's fullscreen presentation, including iPhone's native player — releases that lock so the picture can turn. Closing it locks portrait again. A desktop window is left free.
+
 Haptics are `haptic()` in `lib/haptics.ts`. A control ticks only when its value changes. Tabs, lanes, the border filter, the language switch, and the theme switch are selection ticks. Saving a crossing or pinning a city confirms. Removing a card is heavier. Refresh ticks on press and again when the digits settle. The minute refetch stays quiet. Picking a card up, crossing a reorder slot, setting it down, rubbing past the ends of the stack, dragging an open card past the dismiss line, and swiping the front card past the send-back line each tick with the gesture. A flick that sends the card back without having crossed that line ticks when it commits. On iPhone a tap lands on `HapticPad`, a transparent switch, because that is the tick Safari still plays. Drags call `haptic()` directly. Reduced motion does not mute haptics.
 
 A tap that switches tabs plays that tab's icon animation. Reduced motion skips it.
