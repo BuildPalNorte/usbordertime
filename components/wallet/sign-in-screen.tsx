@@ -78,8 +78,8 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
   // Same anatomy as the wallet: earlier cards peek above, the last one is the front card.
   const cards = [
     { name: "Nuevo", sub: "Brownsville", wait: 10, tone: "clear" as const, palette: pal("pine") },
-    { name: "Viejo", sub: "Brownsville", wait: 60, tone: "busy" as const, palette: pal("clay") },
-    { name: "De los tomates", sub: "Brownsville", wait: 160, tone: "slow" as const, palette: pal("cobalt") },
+    { name: "Viejo", sub: "Brownsville", wait: 25, tone: "busy" as const, palette: pal("clay") },
+    { name: "De los tomates", sub: "Brownsville", wait: 5, tone: "clear" as const, palette: pal("cobalt") },
   ];
 
   return (
