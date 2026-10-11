@@ -553,7 +553,7 @@ function CrossingRow({
         )}
       >
         <div className="overflow-hidden" inert={!open}>
-          <div className="space-y-2.5 px-3 pb-3">
+          <div className="space-y-2.5 px-3 pb-3 select-none [-webkit-touch-callout:none] [-webkit-user-select:none]">
             {open && stream && (
               <CrossingCamera src={stream.src} alias={stream.alias} name={row.title} />
             )}

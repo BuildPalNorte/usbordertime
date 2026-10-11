@@ -233,6 +233,9 @@ body {
   opacity: 0;
   cursor: inherit;
   touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   appearance: auto;
   -webkit-appearance: switch;
 }

@@ -48,7 +48,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
   const lanes = MODE_IDS.filter((id) => id === mode || readLane(port, id).available);
 
   return (
-    <div className="space-y-3 pt-1">
+    <div className="space-y-3 pt-1 select-none [-webkit-touch-callout:none] [-webkit-user-select:none]">
       {stream && (
         <CrossingCamera src={stream.src} alias={stream.alias} name={name.title} />
       )}
@@ -71,8 +71,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
               initial={reduce ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...SPRING.move, delay: reduce ? 0 : 0.05 + index * 0.04 }}
-              whileTap={reduce ? undefined : { scale: 0.97 }}
-              className="relative rounded-2xl bg-surface px-3.5 py-3 text-left"
+              className="relative touch-pan-y rounded-2xl bg-surface px-3.5 py-3 text-left select-none"
             >
               {!active && <HapticPad />}
               {active && (
