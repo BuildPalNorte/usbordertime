@@ -34,7 +34,7 @@ export const GUIDES_BASE: Record<Locale, string> = {
 export const GUIDES: readonly Guide[] = [
   {
     id: "read-a-wait",
-    related: ["san-ysidro-otay", "el-paso-juarez", "brownsville-matamoros"],
+    related: ["border-congestion", "san-ysidro-otay", "el-paso-juarez"],
     en: {
       slug: "how-to-read-a-border-wait",
       label: "How to read a border wait",
@@ -105,6 +105,96 @@ export const GUIDES: readonly Guide[] = [
           heading: "Mira la espera usual, no solo la actual",
           paragraphs: [
             "El número en vivo te dice cómo está ahora. La espera usual para esta hora te dice si ahora es normal. Border Time muestra las dos en cada cruce, así que 40 minutos en un puente que suele tener 15 es una decisión distinta a 40 en uno que siempre tiene 40.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "border-congestion",
+    related: ["read-a-wait", "san-ysidro-otay", "el-paso-juarez"],
+    en: {
+      slug: "border-wait-times-and-congestion",
+      label: "Wait times and congestion",
+      title: "How knowing border wait times reduces congestion",
+      description:
+        "Knowing a border wait time cuts congestion: people who can switch bridges, hours, or lanes stop joining the crossing that is already full.",
+      lead: "A border line is a shared queue. The wait U.S. Customs and Border Protection (CBP) posts gives people who can change their plan a reason to use another bridge, another hour, or another lane, and that is what eases congestion.",
+      sections: [
+        {
+          heading: "One more car lengthens the line",
+          paragraphs: [
+            "The delay at a booth is shared by every vehicle behind the one at the front. Each car that joins adds waiting for the rest. People who always take the same bridge at the same hour stack that delay on one crossing, even when another bridge nearby still has room.",
+          ],
+        },
+        {
+          heading: "Switch bridges",
+          paragraphs: [
+            "Cities with more than one crossing are where a posted wait does the most. San Ysidro and Otay Mesa, the El Paso–Juárez bridges, the Laredo bridges, Pharr and Hidalgo, and the Brownsville crossings each publish their own number. A long wait on the usual bridge and a shorter one a few miles away is a reason to move.",
+            "The cars that move are cars that no longer join the full line. Spare room at the quieter crossing gets used, and the busy one grows more slowly.",
+          ],
+        },
+        {
+          heading: "Shift the hour",
+          paragraphs: [
+            "Some trips can leave earlier or later. A wait that is long compared with the usual wait for this hour is the signal. Border Time shows both numbers on a crossing, so a spike stands apart from a bridge that is always busy at that time.",
+            "An alert sends a note when a lane drops under a number you picked. A schedule checks the bridges you use at the hour you already travel. Either way, trips that did not need the peak sit somewhere else in the day, and the peak line is shorter.",
+          ],
+        },
+        {
+          heading: "Change lanes",
+          paragraphs: [
+            "Standard passenger, Ready Lane, SENTRI, pedestrian, commercial, and FAST are separate queues. The car line can be long while the walking lane is short, and a truck can sit in the commercial lane while FAST is moving. Reading the lane you will actually use keeps that trip off a booth that is already full.",
+          ],
+        },
+        {
+          heading: "When the short line fills up",
+          paragraphs: [
+            "If everyone who can switch piles onto whichever bridge is shortest at that minute, the short line becomes the long one. The wait helps when some travelers move and the rest stay with the bridge they need.",
+            "Compare the live number with the usual wait for this hour. A bridge at its normal wait is full in the ordinary way. A bridge well above its usual wait is the one worth leaving.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempos-de-espera-y-congestion",
+      label: "Tiempos de espera y congestión",
+      title: "Cómo saber el tiempo de espera reduce la congestión",
+      description:
+        "Saber el tiempo de espera en la frontera baja la congestión: quien puede cambiar de puente, de hora o de carril deja de formarse en el cruce que ya está lleno.",
+      lead: "Una fila en la frontera es una cola compartida. El tiempo que publica la Oficina de Aduanas y Protección Fronteriza de Estados Unidos (CBP) le da a quien puede cambiar de plan una razón para usar otro puente, otra hora u otro carril, y eso es lo que baja la congestión.",
+      sections: [
+        {
+          heading: "Un auto más alarga la fila",
+          paragraphs: [
+            "La demora en una caseta la comparten todos los vehículos que van atrás. Cada auto que se forma le suma espera a los demás. Quien siempre toma el mismo puente a la misma hora acumula esa demora en un solo cruce, aunque otro puente cercano todavía tenga lugar.",
+          ],
+        },
+        {
+          heading: "Cambiar de puente",
+          paragraphs: [
+            "Las ciudades con más de un cruce son donde el tiempo publicado más sirve. San Ysidro y Otay Mesa, los puentes de El Paso–Juárez, los de Laredo, Pharr e Hidalgo, y los de Brownsville publican cada uno su número. Una espera larga en el puente de siempre y una más corta a pocos kilómetros es una razón para moverse.",
+            "Los autos que se mueven son autos que ya no se forman en la fila llena. El lugar libre del cruce más tranquilo se usa, y el ocupado crece más despacio.",
+          ],
+        },
+        {
+          heading: "Mover la hora",
+          paragraphs: [
+            "Hay viajes que pueden salir antes o después. Una espera larga comparada con la usual para esta hora es la señal. Border Time muestra los dos números en cada cruce, así que un pico se distingue de un puente que a esa hora siempre está lleno.",
+            "Una alerta avisa cuando un carril baja del número que elegiste. Un horario revisa los puentes que usas a la hora en que ya viajas. En los dos casos, los viajes que no necesitaban la hora pico quedan en otro momento del día, y la fila del pico es más corta.",
+          ],
+        },
+        {
+          heading: "Cambiar de carril",
+          paragraphs: [
+            "El carril estándar de pasajeros, Ready, SENTRI, peatonal, comercial y FAST son filas distintas. La fila de autos puede ir larga mientras la de a pie va corta, y un camión puede quedarse en el comercial mientras FAST avanza. Leer el carril que de verdad vas a usar evita sumar ese viaje a una caseta que ya está llena.",
+          ],
+        },
+        {
+          heading: "Cuando la fila corta se llena",
+          paragraphs: [
+            "Si todos los que pueden cambiarse van al puente que en ese minuto está más corto, la fila corta se vuelve la larga. El tiempo ayuda cuando unos viajeros se mueven y los demás se quedan en el puente que necesitan.",
+            "Compara el número en vivo con la espera usual de esta hora. Un puente en su espera normal está lleno de la forma de siempre. Un puente muy por encima de su espera usual es el que conviene dejar.",
           ],
         },
       ],

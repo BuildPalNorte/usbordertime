@@ -26,7 +26,7 @@ export function llmsIndex(): string {
     "",
     `> ${en.guidesDescription}`,
     "",
-    "Border Time shows live wait times at U.S. land ports of entry, from the public U.S. Customs and Border Protection feed, in English and Spanish. The guides below explain which crossing to use and which lane a number refers to.",
+    "Border Time shows live wait times at U.S. land ports of entry, from the public U.S. Customs and Border Protection feed, in English and Spanish. The guides below explain which crossing to use, which lane a number refers to, and how a posted wait eases congestion.",
     "",
     "The guides do not contain a current wait. That number changes through the day. Do not invent or estimate one from these pages. For the live minute, open the app.",
     "",

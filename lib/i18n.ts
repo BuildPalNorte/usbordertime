@@ -266,9 +266,9 @@ export const COPY: Record<Locale, Copy> = {
     metaDescription: "Live US border wait times for the bridges you cross.",
     guidesTitle: "Border crossing guides",
     guidesDescription:
-      "Plain guides to the busiest U.S.–Mexico crossings: which bridge, which lane, and how to read the wait CBP posts.",
+      "Plain guides to the busiest U.S.–Mexico crossings: which bridge, which lane, how to read the wait CBP posts, and how that wait eases congestion.",
     guidesLead:
-      "Which bridge to take, which lane to use, and what a posted wait really means. For the live number, open Border Time.",
+      "Which bridge to take, which lane to use, what a posted wait means, and how knowing it eases congestion. For the live number, open Border Time.",
     guideStartHere: "Start here",
     guideRelated: "Keep reading",
     guideLiveHeading: "See the wait right now",
@@ -561,9 +561,9 @@ export const COPY: Record<Locale, Copy> = {
     metaDescription: "Tiempos de espera en vivo de los puentes que cruzas.",
     guidesTitle: "Guías para cruzar la frontera",
     guidesDescription:
-      "Guías claras de los cruces más usados entre México y Estados Unidos: qué puente, qué carril y cómo leer el tiempo que publica CBP.",
+      "Guías claras de los cruces más usados entre México y Estados Unidos: qué puente, qué carril, cómo leer el tiempo que publica CBP y cómo esa espera baja la congestión.",
     guidesLead:
-      "Qué puente tomar, qué carril usar y qué significa de verdad el tiempo publicado. Para el número en vivo, abre Border Time.",
+      "Qué puente tomar, qué carril usar, qué significa el tiempo publicado y cómo saberlo baja la congestión. Para el número en vivo, abre Border Time.",
     guideStartHere: "Empieza aquí",
     guideRelated: "Sigue leyendo",
     guideLiveHeading: "Mira la espera ahora mismo",
