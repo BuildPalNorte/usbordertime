@@ -104,6 +104,11 @@ export function ScheduleSheet({
   }, [step]);
 
   const titles = [copy.scheduleStepBridge, copy.scheduleStepTime, copy.scheduleStepDays];
+  const stepLabels = [
+    copy.scheduleStepBridgeLabel,
+    copy.scheduleStepTimeLabel,
+    copy.scheduleStepDaysLabel,
+  ];
   const last = step === STEPS.length - 1;
 
   const go = (next: number) => {
@@ -287,24 +292,35 @@ export function ScheduleSheet({
         <p className="mt-1 text-center text-[13px] text-muted">
           {schedule ? copy.scheduleEditTitle : copy.scheduleNewTitle}
         </p>
-        <div className="mt-3 flex gap-1.5 px-5">
-          {titles.map((label, index) => {
+        <div className="mt-4 flex gap-3 px-5">
+          {stepLabels.map((label, index) => {
             const open = index <= reached && (index === 0 || ports.length > 0);
             return (
               <button
                 key={label}
                 type="button"
-                aria-label={label}
                 aria-current={index === step ? "step" : undefined}
                 disabled={!open || index === step}
                 onClick={() => go(index)}
-                className="relative h-11 flex-1"
+                className="relative flex min-h-11 flex-1 flex-col justify-end gap-1.5 pb-1"
               >
                 {open && index !== step && <HapticPad />}
                 <span
+                  className={cn(
+                    "text-center text-[13px] leading-none transition-colors duration-200",
+                    index === step
+                      ? "font-semibold text-foreground"
+                      : index <= reached
+                        ? "font-medium text-foreground"
+                        : "font-medium text-muted",
+                  )}
+                >
+                  {label}
+                </span>
+                <span
                   aria-hidden
                   className={cn(
-                    "absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full transition-colors duration-200",
+                    "h-1 rounded-full transition-colors duration-200",
                     index <= reached ? "bg-accent" : "bg-foreground/12",
                   )}
                 />

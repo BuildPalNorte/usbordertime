@@ -144,6 +144,9 @@ export type Copy = {
   scheduleStepBridge: string;
   scheduleStepTime: string;
   scheduleStepDays: string;
+  scheduleStepBridgeLabel: string;
+  scheduleStepTimeLabel: string;
+  scheduleStepDaysLabel: string;
   scheduleNext: string;
   scheduleBack: string;
   scheduleTime: string;
@@ -361,6 +364,9 @@ export const COPY: Record<Locale, Copy> = {
     scheduleStepBridge: "Which bridge?",
     scheduleStepTime: "What time?",
     scheduleStepDays: "Which days?",
+    scheduleStepBridgeLabel: "Bridge",
+    scheduleStepTimeLabel: "Time",
+    scheduleStepDaysLabel: "Days",
     scheduleNext: "Continue",
     scheduleBack: "Back",
     scheduleTime: "Send at",
@@ -603,6 +609,9 @@ export const COPY: Record<Locale, Copy> = {
     scheduleStepBridge: "¿Qué puente?",
     scheduleStepTime: "¿A qué hora?",
     scheduleStepDays: "¿Qué días?",
+    scheduleStepBridgeLabel: "Puente",
+    scheduleStepTimeLabel: "Hora",
+    scheduleStepDaysLabel: "Días",
     scheduleNext: "Continuar",
     scheduleBack: "Atrás",
     scheduleTime: "Enviar a las",
