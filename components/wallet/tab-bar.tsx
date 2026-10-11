@@ -3,10 +3,6 @@
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
 import { notePadTick } from "@/lib/haptics";
-import {
-  QuestionMarkCircleIcon,
-  type QuestionMarkCircleIconHandle,
-} from "@heroicons-animated/react/question-mark-circle";
 import { ClockIcon, type ClockIconHandle } from "@heroicons-animated/react/clock";
 import { MapIcon, type MapIconHandle } from "@heroicons-animated/react/map";
 import { WalletIcon, type WalletIconHandle } from "@heroicons-animated/react/wallet";
@@ -14,6 +10,10 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
+import {
+  QuestionMarkCircleIcon,
+  type QuestionMarkCircleIconHandle,
+} from "./question-mark-circle-icon";
 
 export type Tab = "wallet" | "browse" | "schedules" | "ask";
 

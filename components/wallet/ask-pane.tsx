@@ -3,7 +3,7 @@
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
-import { QuestionMarkCircleIcon } from "@heroicons-animated/react/question-mark-circle";
+import { QuestionMarkCircleIcon } from "@/components/wallet/question-mark-circle-icon";
 import { MicrophoneIcon } from "@heroicons-animated/react/microphone";
 import { PaperAirplaneIcon } from "@heroicons-animated/react/paper-airplane";
 import { StopIcon } from "@heroicons-animated/react/stop";

@@ -14,7 +14,7 @@ import {
   EXPLORE_PATH,
   SCHEDULES_PATH,
 } from "@/lib/routes";
-import { QuestionMarkCircleIcon } from "@heroicons-animated/react/question-mark-circle";
+import { QuestionMarkCircleIcon } from "@/components/wallet/question-mark-circle-icon";
 import { ClockIcon } from "@heroicons-animated/react/clock";
 import { MapIcon } from "@heroicons-animated/react/map";
 import { cn } from "@/lib/cn";
