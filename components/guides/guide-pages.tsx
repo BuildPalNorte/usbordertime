@@ -213,6 +213,39 @@ export function GuideIndex({ locale }: { locale: Locale }) {
   );
 }
 
+/** Shown while the article's slug resolves, so a navigation can paint this shell immediately. */
+export function GuideArticleFallback({ locale }: { locale: Locale }) {
+  return (
+    <div
+      lang={locale}
+      aria-busy="true"
+      className="min-h-[100dvh] pb-[max(3rem,env(safe-area-inset-bottom))]"
+    >
+      <main>
+        <div className="mx-auto w-full max-w-5xl px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5">
+          <div
+            className="relative overflow-hidden rounded-[32px] bg-surface-strong px-4 pt-4 pb-10 ring-1 ring-line sm:rounded-[40px] sm:px-6 sm:pb-20"
+            style={LINES}
+          >
+            <Nav locale={locale} otherHref={guideIndexPath(OTHER[locale])} />
+            <header className="mx-auto mt-10 flex max-w-3xl flex-col items-center sm:mt-20">
+              <div className="h-7 w-28 rounded-full bg-surface ring-1 ring-line" />
+              <div className="mt-5 h-12 w-4/5 max-w-lg rounded-2xl bg-foreground/10 sm:h-16" />
+              <div className="mt-6 h-5 w-2/3 max-w-md rounded-full bg-foreground/10" />
+            </header>
+          </div>
+          <div className="mx-auto mt-10 max-w-2xl px-1 sm:mt-20 sm:px-4">
+            <div className="h-7 w-2/5 rounded-full bg-foreground/10" />
+            <div className="mt-4 h-4 w-full rounded-full bg-foreground/10" />
+            <div className="mt-3 h-4 w-11/12 rounded-full bg-foreground/10" />
+            <div className="mt-3 h-4 w-4/5 rounded-full bg-foreground/10" />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export function GuideArticle({ locale, guide }: { locale: Locale; guide: Guide }) {
   const copy = COPY[locale];
   const text = guide[locale];
