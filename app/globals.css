@@ -196,6 +196,28 @@ body {
   animation-delay: calc(min(var(--i, 0), 10) * 36ms);
 }
 
+/* Usual-day bars rise from the baseline. --i is the hour. */
+.usual-bar {
+  transform-origin: bottom;
+  animation: usual-bar 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 10ms);
+}
+
+@keyframes usual-bar {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usual-bar {
+    animation: none;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;

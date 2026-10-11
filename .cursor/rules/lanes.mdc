@@ -19,7 +19,7 @@ A `Mode` picks one lane. Keep this mapping in `laneFor`. Do not add a second one
 | `truck` | `commercial.standard` |
 | `fast` | `commercial.fast` |
 
-`readLane` is the only place a wait becomes a `Tone`:
+`toneForMinutes` is the only mapping from a wait to a `Tone`. `readLane` uses it:
 
 - Port status that does not match `/open/i` → `closed`
 - Lane status `n/a` → not offered (`available: false`)

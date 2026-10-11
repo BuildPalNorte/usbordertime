@@ -11,6 +11,7 @@ import {
   presentPortStatus,
   waitLabel,
 } from "@/lib/i18n";
+import { hourFromClock } from "@/lib/lane-averages";
 import { cityPinKey } from "@/lib/pin-store";
 import {
   cardBackground,
@@ -28,6 +29,7 @@ import { useCameraStreams } from "./camera-streams";
 import { CrossingCamera } from "./crossing-camera";
 import { HapticPad } from "./haptic-pad";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
+import { UsualDay } from "./usual-day";
 import { haptic } from "@/lib/haptics";
 import { usePublishPaneChrome } from "./pane-header";
 import {
@@ -609,6 +611,18 @@ function CrossingRow({
                 );
               })}
             </div>
+
+            {open && (
+              <UsualDay
+                hours={averages.data?.hours[mode]}
+                high={averages.data?.high?.[mode]}
+                nowHour={hourFromClock(port.time)}
+                lane={modeName(mode, port, copy)}
+                pending={averages.isLoading}
+                failed={averages.isError}
+                inset
+              />
+            )}
 
             {port.constructionNotice && (
               <p className="rounded-xl bg-surface-strong px-3 py-2.5 text-[13px] leading-snug">

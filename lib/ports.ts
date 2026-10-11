@@ -87,8 +87,14 @@ export function readLane(port: PortWaitTime, mode: Mode): Reading {
   }
 
   const minutes = lane.delayMinutes;
-  const tone: Tone = minutes <= 15 ? "clear" : minutes <= 45 ? "busy" : "slow";
-  return { ...base, tone, minutes, available: true, statusKey: "pending" };
+  return { ...base, tone: toneForMinutes(minutes), minutes, available: true, statusKey: "pending" };
+}
+
+/** The only mapping from a wait to a tone. At most 15 is clear, at most 45 is busy, above that is slow. */
+export function toneForMinutes(minutes: number): Tone {
+  if (minutes <= 15) return "clear";
+  if (minutes <= 45) return "busy";
+  return "slow";
 }
 
 /** The lane a newly added crossing should lead with. */

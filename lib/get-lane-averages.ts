@@ -34,11 +34,8 @@ export async function getLaneAverages(portNumber: string): Promise<LaneAverages 
 
   const body: unknown = await response.json();
   const day = Array.isArray(body) ? body[0] : null;
-  return {
-    portNumber,
-    date,
-    hours: isRecord(day) ? hoursFromDay(day) : emptyHours(),
-  };
+  const series = isRecord(day) ? seriesFromDay(day) : emptySeries();
+  return { portNumber, date, ...series };
 }
 
 async function crossingIds(): Promise<Record<string, string>> {
@@ -85,24 +82,41 @@ async function portDate(portNumber: string): Promise<string> {
   return chicagoToday();
 }
 
-function hoursFromDay(day: Record<string, unknown>): LaneAverages["hours"] {
+function seriesFromDay(day: Record<string, unknown>): Pick<LaneAverages, "hours" | "high"> {
   const passenger = slots(day.private_time_slots, "private_slot");
   const pedestrian = slots(day.pedestrain_time_slots, "pedestrain_slot");
   const commercial = slots(day.commercial_time_slots, "commercial_slot");
+  const car = pair(passenger, "standard_lane_average_wait", "standard_lane_max_wait");
+  const ready = pair(passenger, "ready_lane_average_wait", "ready_lane_max_wait");
+  // Passenger SENTRI/NEXUS lives on the private graph's fast lane.
+  const sentri = pair(passenger, "fast_lane_average_wait", "fast_lane_max_wait");
+  const walk = pair(pedestrian, "standard_lane_average_wait", "standard_lane_max_wait");
+  const truck = pair(commercial, "standard_lane_average_wait", "standard_lane_max_wait");
+  const fast = pair(commercial, "fast_lane_average_wait", "fast_lane_max_wait");
 
   return {
-    car: column(passenger, "standard_lane_average_wait"),
-    ready: column(passenger, "ready_lane_average_wait"),
-    // Passenger SENTRI/NEXUS lives on the private graph's fast lane.
-    sentri: column(passenger, "fast_lane_average_wait"),
-    walk: column(pedestrian, "standard_lane_average_wait"),
-    truck: column(commercial, "standard_lane_average_wait"),
-    fast: column(commercial, "fast_lane_average_wait"),
+    hours: {
+      car: car.average,
+      ready: ready.average,
+      sentri: sentri.average,
+      walk: walk.average,
+      truck: truck.average,
+      fast: fast.average,
+    },
+    high: {
+      car: car.high,
+      ready: ready.high,
+      sentri: sentri.high,
+      walk: walk.high,
+      truck: truck.high,
+      fast: fast.high,
+    },
   };
 }
 
-function emptyHours(): LaneAverages["hours"] {
-  return Object.fromEntries(MODE_IDS.map((mode) => [mode, blankDay()])) as LaneAverages["hours"];
+function emptySeries(): Pick<LaneAverages, "hours" | "high"> {
+  const blank = () => Object.fromEntries(MODE_IDS.map((mode) => [mode, blankDay()])) as LaneAverages["hours"];
+  return { hours: blank(), high: blank() };
 }
 
 function slots(group: unknown, key: string): unknown[] {
@@ -111,15 +125,21 @@ function slots(group: unknown, key: string): unknown[] {
   return Array.isArray(list) ? list : [];
 }
 
-function column(list: unknown[], key: string): (number | null)[] {
-  const hours = blankDay();
+function pair(
+  list: unknown[],
+  averageKey: string,
+  highKey: string,
+): { average: (number | null)[]; high: (number | null)[] } {
+  const average = blankDay();
+  const high = blankDay();
   for (const slot of list) {
     if (!isRecord(slot)) continue;
     const hour = Number(readString(slot, "time"));
     if (!Number.isInteger(hour) || hour < 0 || hour > 23) continue;
-    hours[hour] = readCount(slot[key]);
+    average[hour] = readCount(slot[averageKey]);
+    high[hour] = readCount(slot[highKey]);
   }
-  return hours;
+  return { average, high };
 }
 
 function blankDay(): (number | null)[] {

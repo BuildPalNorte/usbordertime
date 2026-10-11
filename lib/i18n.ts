@@ -140,6 +140,20 @@ export type Copy = {
   minuteWait: (count: number) => string;
   averageShort: (count: number) => string;
   averageLabel: (count: number) => string;
+  usualFlat: (count: number) => string;
+  usualQuietAt: (time: string, count: number) => string;
+  usualQuietFrom: (start: string, end: string, count: number) => string;
+  usualNow: (count: number) => string;
+  usualNowUpTo: (count: number, high: number) => string;
+  usualAt: (time: string, count: number) => string;
+  usualAtUpTo: (time: string, count: number, high: number) => string;
+  usualNowNone: string;
+  usualNone: (time: string) => string;
+  usualEmpty: string;
+  usualUnavailable: string;
+  usualLoading: string;
+  usualChart: string;
+  usualTick: (hour: number) => string;
   lanesOpen: (open: number, max: number | null) => string;
   bookmark: (city: string) => string;
   removeBookmark: (city: string) => string;
@@ -464,6 +478,26 @@ export const COPY: Record<Locale, Copy> = {
     averageShort: (count) => `avg ${formatDuration(count, "hr", "min")}`,
     averageLabel: (count) =>
       `Average wait at this hour, ${durationSpoken(count, "hour", "hours", "minute", "minutes")}`,
+    usualFlat: (count) => `About the same all day, ${formatDuration(count, "hr", "min")}`,
+    usualQuietAt: (time, count) => `Quietest at ${time}, ${formatDuration(count, "hr", "min")}`,
+    usualQuietFrom: (start, end, count) =>
+      `Quietest from ${start} to ${end}, ${formatDuration(count, "hr", "min")}`,
+    usualNow: (count) => `Right now, usually ${formatDuration(count, "hr", "min")}`,
+    usualNowUpTo: (count, high) =>
+      `Right now, usually ${formatDuration(count, "hr", "min")}, up to ${formatDuration(high, "hr", "min")}`,
+    usualAt: (time, count) => `${time}, usually ${formatDuration(count, "hr", "min")}`,
+    usualAtUpTo: (time, count, high) =>
+      `${time}, usually ${formatDuration(count, "hr", "min")}, up to ${formatDuration(high, "hr", "min")}`,
+    usualNowNone: "Right now, no usual wait",
+    usualNone: (time) => `${time}, no usual wait`,
+    usualEmpty: "CBP has not published a usual day for this lane.",
+    usualUnavailable: "Usual waits are unavailable right now.",
+    usualLoading: "Loading usual waits",
+    usualChart: "Usual wait by hour",
+    usualTick: (hour) => {
+      const face = hour % 12 || 12;
+      return `${face}${hour < 12 ? "a" : "p"}`;
+    },
     lanesOpen: (open, max) => {
       const base = `${open} ${open === 1 ? "lane" : "lanes"} open`;
       return max ? `${base} of ${max}` : base;
@@ -795,6 +829,23 @@ export const COPY: Record<Locale, Copy> = {
     averageShort: (count) => `promedio ${formatDuration(count, "h", "min")}`,
     averageLabel: (count) =>
       `Espera promedio a esta hora, ${durationSpoken(count, "hora", "horas", "minuto", "minutos")}`,
+    usualFlat: (count) => `Casi igual todo el día, ${formatDuration(count, "h", "min")}`,
+    usualQuietAt: (time, count) => `Más tranquilo a las ${time}, ${formatDuration(count, "h", "min")}`,
+    usualQuietFrom: (start, end, count) =>
+      `Más tranquilo de ${start} a ${end}, ${formatDuration(count, "h", "min")}`,
+    usualNow: (count) => `A esta hora, suele ser ${formatDuration(count, "h", "min")}`,
+    usualNowUpTo: (count, high) =>
+      `A esta hora, suele ser ${formatDuration(count, "h", "min")}, hasta ${formatDuration(high, "h", "min")}`,
+    usualAt: (time, count) => `${time}, suele ser ${formatDuration(count, "h", "min")}`,
+    usualAtUpTo: (time, count, high) =>
+      `${time}, suele ser ${formatDuration(count, "h", "min")}, hasta ${formatDuration(high, "h", "min")}`,
+    usualNowNone: "A esta hora no hay promedio",
+    usualNone: (time) => `${time}, sin promedio`,
+    usualEmpty: "CBP no publicó un día habitual para este carril.",
+    usualUnavailable: "Las esperas habituales no están disponibles.",
+    usualLoading: "Cargando esperas habituales",
+    usualChart: "Espera habitual por hora",
+    usualTick: (hour) => `${hour}h`,
     lanesOpen: (open, max) => {
       const unit = open === 1 ? "carril abierto" : "carriles abiertos";
       const base = `${open} ${unit}`;
