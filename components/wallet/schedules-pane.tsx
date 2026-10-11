@@ -70,6 +70,7 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
     if (!mode || picked.length === 0) return null;
     return { ports: picked.map((item) => item.port.portNumber), mode };
   }, [schedules, items]);
+  const showTest = process.env.NODE_ENV === "development" && sample !== null;
 
   const open = (schedule: Schedule | null) => {
     haptic("selection");
@@ -131,7 +132,7 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
         />
       ) : count === 0 ? (
         <Empty body={copy.scheduleEmptyBody} action={copy.scheduleNew} onAction={() => open(null)}>
-          {sample && <ScheduleTest ports={sample.ports} mode={sample.mode} />}
+          {showTest && sample && <ScheduleTest ports={sample.ports} mode={sample.mode} />}
         </Empty>
       ) : (
         <>
@@ -151,7 +152,7 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse }: Props) {
               </li>
             ))}
           </ul>
-          {sample && <ScheduleTest ports={sample.ports} mode={sample.mode} />}
+          {showTest && sample && <ScheduleTest ports={sample.ports} mode={sample.mode} />}
         </>
       )}
 

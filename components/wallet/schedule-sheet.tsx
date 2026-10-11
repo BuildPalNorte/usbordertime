@@ -23,10 +23,11 @@ import {
 } from "@/lib/schedule";
 import { CheckIcon } from "@heroicons-animated/react/check";
 import { XMarkIcon } from "@heroicons-animated/react/x-mark";
-import { motion, useReducedMotion } from "motion/react";
+import { animate, motion, useMotionTemplate, useMotionValue, useReducedMotion } from "motion/react";
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -582,7 +583,7 @@ export function ScheduleSheet({
 const HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 const MINUTES = Array.from({ length: 60 / SCHEDULE_STEP }, (_, index) => index * SCHEDULE_STEP);
 
-/** The clock is the control. Tapping the hour or the minute opens that dropdown. Minutes land on the 5-minute marks. */
+/** The clock is the control. A swipe rolls a digit; a tap opens its list. Minutes land on the 5-minute marks. */
 function TimePicker({ minute, onChange }: { minute: number; onChange: (minute: number) => void }) {
   const { copy, locale } = useLocale();
   const face = clockFace(minute);
@@ -656,7 +657,20 @@ function TimePicker({ minute, onChange }: { minute: number; onChange: (minute: n
   );
 }
 
-/** One clock digit. The number on screen is the dropdown. */
+const DIGIT_SLOP = 10;
+/** A flick, in pixels per millisecond. Past this, a short swipe still rolls. */
+const DIGIT_FLICK = 0.45;
+
+function stepValue(options: readonly number[], value: number, direction: 1 | -1): number {
+  const index = options.indexOf(value);
+  if (index < 0) return options[0] ?? value;
+  return options[(index + direction + options.length) % options.length] ?? value;
+}
+
+/**
+ * One clock digit. A swipe rolls the next value in from that side. A tap opens the list.
+ * The roll is the gesture itself, so a keyboard step changes the number in place.
+ */
 function TimeDigit({
   label,
   value,
@@ -670,19 +684,151 @@ function TimeDigit({
   format: (value: number) => string;
   onSelect: (value: number) => void;
 }) {
+  const reduce = useReducedMotion();
+  const frameRef = useRef<HTMLSpanElement>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const drag = useMotionValue(0);
+  const transform = useMotionTemplate`translateY(calc(-33.333% + ${drag}px))`;
+  const running = useRef<ReturnType<typeof animate> | null>(null);
+  const roll = useRef(0);
+  const armed = useRef(false);
+  const dragged = useRef(false);
+  const heightRef = useRef(48);
+  const gesture = useRef({ y: 0, origin: 0, lastY: 0, lastT: 0, velocity: 0 });
+
+  const lower = stepValue(options, value, -1);
+  const higher = stepValue(options, value, 1);
+
+  useLayoutEffect(() => {
+    if (!armed.current) return;
+    armed.current = false;
+    drag.jump(0);
+  }, [value, drag]);
+
+  useEffect(() => () => running.current?.stop(), []);
+
+  const height = () => frameRef.current?.getBoundingClientRect().height || 48;
+
+  const settle = (target: number, next: number | null) => {
+    const id = ++roll.current;
+    if (reduce) {
+      drag.jump(0);
+      if (next !== null) onSelect(next);
+      return;
+    }
+    running.current?.stop();
+    running.current = animate(drag, target, {
+      ...SPRING.snap,
+      onComplete: () => {
+        if (id !== roll.current || next === null) return;
+        armed.current = true;
+        onSelect(next);
+      },
+    });
+  };
+
+  const openList = () => {
+    const list = selectRef.current;
+    if (!list) return;
+    try {
+      list.showPicker();
+    } catch {
+      list.focus();
+    }
+  };
+
   return (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(event) => onSelect(Number(event.target.value))}
-      className="[field-sizing:content] cursor-pointer appearance-none rounded-2xl bg-surface px-2.5 py-1 text-center text-[48px] leading-none font-semibold tracking-[-0.045em] text-muted tabular-nums outline-none transition-[background-color,color] duration-150 hover:bg-surface-strong hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-accent active:bg-surface-strong active:text-foreground"
-    >
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {format(option)}
-        </option>
-      ))}
-    </select>
+    <div className="relative">
+      <button
+        type="button"
+        aria-label={`${label}, ${format(value)}`}
+        aria-haspopup="listbox"
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+          event.preventDefault();
+          roll.current += 1;
+          running.current?.stop();
+          drag.jump(0);
+          onSelect(event.key === "ArrowUp" ? higher : lower);
+        }}
+        onPointerDown={(event) => {
+          if (event.button !== 0) return;
+          roll.current += 1;
+          running.current?.stop();
+          heightRef.current = height();
+          dragged.current = false;
+          gesture.current = {
+            y: event.clientY,
+            origin: drag.get(),
+            lastY: event.clientY,
+            lastT: event.timeStamp,
+            velocity: 0,
+          };
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+          const state = gesture.current;
+          const dy = event.clientY - state.y;
+          if (!dragged.current && Math.abs(dy) < DIGIT_SLOP) return;
+          dragged.current = true;
+          const span = heightRef.current;
+          drag.set(Math.max(-span, Math.min(span, state.origin + dy)));
+          const dt = event.timeStamp - state.lastT;
+          if (dt > 0) state.velocity = (event.clientY - state.lastY) / dt;
+          state.lastY = event.clientY;
+          state.lastT = event.timeStamp;
+        }}
+        onPointerUp={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+          if (!dragged.current) {
+            if (drag.get() !== 0) settle(0, null);
+            return;
+          }
+          const span = heightRef.current;
+          const y = drag.get();
+          const velocity = gesture.current.velocity;
+          const up = y < -span * 0.4 || (velocity < -DIGIT_FLICK && y < 0);
+          const down = y > span * 0.4 || (velocity > DIGIT_FLICK && y > 0);
+          if (up) settle(-span, higher);
+          else if (down) settle(span, lower);
+          else settle(0, null);
+        }}
+        onPointerCancel={() => settle(0, null)}
+        onClick={() => {
+          if (dragged.current) {
+            dragged.current = false;
+            return;
+          }
+          openList();
+        }}
+        className="relative cursor-pointer touch-none rounded-2xl bg-surface px-2.5 py-1 text-[48px] leading-none font-semibold tracking-[-0.045em] text-muted tabular-nums outline-none select-none transition-[background-color,color] duration-150 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-accent active:bg-surface-strong active:text-foreground [@media(hover:hover)_and_(pointer:fine)]:hover:bg-surface-strong [@media(hover:hover)_and_(pointer:fine)]:hover:text-foreground"
+      >
+        <span ref={frameRef} className="block h-[1em] w-[2.4ch] overflow-hidden">
+          <motion.span style={{ transform }} className="flex flex-col">
+            <span className="block h-[1em] text-center">{format(lower)}</span>
+            <span className="block h-[1em] text-center">{format(value)}</span>
+            <span className="block h-[1em] text-center">{format(higher)}</span>
+          </motion.span>
+        </span>
+      </button>
+      <select
+        ref={selectRef}
+        tabIndex={-1}
+        aria-hidden
+        value={value}
+        onChange={(event) => onSelect(Number(event.target.value))}
+        className="pointer-events-none absolute inset-0 opacity-0"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {format(option)}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 

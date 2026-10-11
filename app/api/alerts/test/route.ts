@@ -14,6 +14,10 @@ import { badRequest, NO_STORE, serverError, sessionUserId, unauthorized } from "
  * `ports` opens those bridges as full cards. A single `portNumber` opens that card.
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV !== "development") {
+    return new Response(null, { status: 404 });
+  }
+
   const userId = await sessionUserId();
   if (!userId) return unauthorized();
 
