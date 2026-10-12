@@ -27,6 +27,7 @@ import { AverageWait } from "./average-wait";
 import { WaitDuration } from "./wait-duration";
 import { useCameraStreams } from "./camera-streams";
 import { CrossingCamera } from "./crossing-camera";
+import { CrossingFeeds } from "./crossing-feeds";
 import { HapticPad } from "./haptic-pad";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { UsualDay } from "./usual-day";
@@ -584,8 +585,14 @@ function CrossingRow({
         <div className="overflow-hidden" inert={!open}>
           <div className="space-y-2.5 px-3 pb-3 select-none [-webkit-touch-callout:none] [-webkit-user-select:none]">
             {open && stream && (
-              <CrossingCamera src={stream.src} alias={stream.alias} name={row.title} />
+              <CrossingCamera
+                src={stream.src}
+                alias={stream.alias}
+                name={row.title}
+                info={stream.source}
+              />
             )}
+            {open && !stream && <CrossingFeeds port={port} name={row.title} />}
             <div className="grid grid-cols-2 gap-2">
               {lanes.map((id) => {
                 const lane = readLane(port, id);

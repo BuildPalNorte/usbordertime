@@ -74,20 +74,50 @@ export function readLane(port: PortWaitTime, mode: Mode): Reading {
   };
 
   if (port.portStatus && !/open/i.test(port.portStatus)) {
-    return { ...base, tone: "closed", minutes: null, available: true, statusKey: "closed" };
+    return {
+      ...base,
+      tone: "closed",
+      minutes: null,
+      available: true,
+      statusKey: "closed",
+    };
   }
   if (status === "n/a") {
-    return { ...base, tone: "unknown", minutes: null, available: false, statusKey: "notOffered" };
+    return {
+      ...base,
+      tone: "unknown",
+      minutes: null,
+      available: false,
+      statusKey: "notOffered",
+    };
   }
   if (status === "lanes closed") {
-    return { ...base, tone: "closed", minutes: null, available: true, statusKey: "lanesClosed" };
+    return {
+      ...base,
+      tone: "closed",
+      minutes: null,
+      available: true,
+      statusKey: "lanesClosed",
+    };
   }
   if (lane.delayMinutes === null) {
-    return { ...base, tone: "unknown", minutes: null, available: true, statusKey: "pending" };
+    return {
+      ...base,
+      tone: "unknown",
+      minutes: null,
+      available: true,
+      statusKey: "pending",
+    };
   }
 
   const minutes = lane.delayMinutes;
-  return { ...base, tone: toneForMinutes(minutes), minutes, available: true, statusKey: "pending" };
+  return {
+    ...base,
+    tone: toneForMinutes(minutes),
+    minutes,
+    available: true,
+    statusKey: "pending",
+  };
 }
 
 /** The only mapping from a wait to a tone. At most 15 is clear, at most 45 is busy, above that is slow. */
@@ -137,11 +167,27 @@ const LOCAL_CROSSING: Record<string, string> = {
   "brownsville|gateway": "Nuevo",
 };
 
+/** Who runs a camera, shown under its picture. */
+export type FeedSource = {
+  provider: string;
+  /** The public page the camera comes from. */
+  page: string;
+  official: boolean;
+};
+
 export type CrossingStream = {
   /** Last playlist that played. IPCamLive may replace this. */
   src: string;
   /** Stable camera id. A 404 playlist is resolved through this. */
   alias: string;
+  source: FeedSource;
+};
+
+/** Both Brownsville cameras are shared on Comtodo's public camera page. */
+const COMTODO: FeedSource = {
+  provider: "Comtodo",
+  page: "https://comtodo.com/en/cameras/",
+  official: false,
 };
 
 /** Live HLS cameras, keyed the same way as LOCAL_CROSSING. `src` is the fallback. */
@@ -149,10 +195,12 @@ const CROSSING_STREAM: Record<string, CrossingStream> = {
   "brownsville|gateway": {
     src: "https://s81.ipcamlive.com/streams/51bcyg8u6laxau7hi/stream.m3u8",
     alias: "61af904e45b24",
+    source: COMTODO,
   },
   "brownsville|b&m": {
     src: "https://s40.ipcamlive.com/streams/28jy1ltckvk0nadxq/stream.m3u8",
     alias: "5df59f3827371",
+    source: COMTODO,
   },
 };
 
@@ -164,7 +212,11 @@ export function fallbackCameraStreams(): Record<string, string> {
 }
 
 /** Nuevo and Viejo, with the playlist this file ships before a saved row replaces it. */
-export function listedCameras(): { name: string; alias: string; src: string }[] {
+export function listedCameras(): {
+  name: string;
+  alias: string;
+  src: string;
+}[] {
   return Object.entries(CROSSING_STREAM).map(([key, entry]) => ({
     name: LOCAL_CROSSING[key] ?? key,
     alias: entry.alias,
@@ -186,7 +238,7 @@ export function crossingStream(
   const entry = CROSSING_STREAM[`${city.toLowerCase()}|${crossing.toLowerCase()}`];
   if (!entry) return null;
   const saved = streams?.[entry.alias];
-  return { alias: entry.alias, src: saved || entry.src };
+  return { alias: entry.alias, src: saved || entry.src, source: entry.source };
 }
 
 function localCrossing(city: string, crossing: string): string {
@@ -213,7 +265,14 @@ export function portName(port: PortWaitTime): PortName {
     ? "Canadian border"
     : "Mexican border";
 
-  if (!crossing) return { city, crossing, title: city, subtitle: region, subtitleIsRegion: true };
+  if (!crossing)
+    return {
+      city,
+      crossing,
+      title: city,
+      subtitle: region,
+      subtitleIsRegion: true,
+    };
   if (GENERIC_CROSSINGS.has(crossing.toLowerCase())) {
     return { city, crossing, title: `${city} ${crossing}`, subtitle: region, subtitleIsRegion: true };
   }

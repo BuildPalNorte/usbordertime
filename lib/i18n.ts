@@ -79,6 +79,15 @@ export type Copy = {
   live: string;
   cameraLabel: (name: string) => string;
   cameraUnavailable: string;
+  cameraViews: string;
+  cameraRetry: string;
+  cameraLoading: string;
+  cameraUpdated: (ago: string) => string;
+  cameraStale: (ago: string) => string;
+  cameraOffline: string;
+  cameraSource: string;
+  cameraOfficial: string;
+  cameraThirdParty: string;
   hourUnit: string;
   minuteUnit: string;
   notPublished: string;
@@ -442,6 +451,15 @@ export const COPY: Record<Locale, Copy> = {
     live: "Live",
     cameraLabel: (name) => `Live camera at ${name}`,
     cameraUnavailable: "Camera unavailable",
+    cameraViews: "Camera views",
+    cameraRetry: "Try again",
+    cameraLoading: "Connecting…",
+    cameraUpdated: (ago) => `Updated ${ago}`,
+    cameraStale: (ago) => `No new picture since ${ago}`,
+    cameraOffline: "Offline",
+    cameraSource: "Camera source",
+    cameraOfficial: "Official camera",
+    cameraThirdParty: "Third-party camera",
     hourUnit: "hr",
     minuteUnit: "min",
     notPublished: "Not published here",
@@ -926,6 +944,15 @@ export const COPY: Record<Locale, Copy> = {
     live: "En vivo",
     cameraLabel: (name) => `Cámara en vivo de ${name}`,
     cameraUnavailable: "Cámara no disponible",
+    cameraViews: "Vistas de la cámara",
+    cameraRetry: "Reintentar",
+    cameraLoading: "Conectando…",
+    cameraUpdated: (ago) => `Actualizada ${ago}`,
+    cameraStale: (ago) => `Sin imagen nueva desde ${ago}`,
+    cameraOffline: "Sin señal",
+    cameraSource: "Origen de la cámara",
+    cameraOfficial: "Cámara oficial",
+    cameraThirdParty: "Cámara de terceros",
     hourUnit: "h",
     minuteUnit: "min",
     notPublished: "Aquí no se publica",

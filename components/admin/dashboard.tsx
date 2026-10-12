@@ -1,7 +1,7 @@
 import { AccountList } from "@/components/admin/account-list";
 import { SignOutButton } from "@/components/admin/sign-out-button";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
-import type { AdminData, AdminViewer } from "@/lib/admin.server";
+import type { AdminCamera, AdminData, AdminFeedGroup, AdminViewer } from "@/lib/admin.server";
 import { USAGE_KINDS, USAGE_LABEL } from "@/lib/usage";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
@@ -45,6 +45,63 @@ function Rows({ as: Tag = "ul", children }: { as?: "ul" | "ol"; children: ReactN
 }
 
 const LINE = "flex w-full items-baseline justify-between gap-4 whitespace-nowrap";
+
+const FEED_KIND = { hls: "Live", image: "Snapshot", embed: "Embed" } as const;
+
+function CameraList({
+  name,
+  detail,
+  cameras,
+}: {
+  name: string;
+  detail: string;
+  cameras: { key: string; label: string; kind: string | null; src: string; source: "saved" | "fallback" }[];
+}) {
+  return (
+    <div>
+      <div className="mb-2">
+        <p className="text-[15px] font-medium">{name}</p>
+        <p className="text-[13px] text-muted">{detail}</p>
+      </div>
+      <Rows>
+        {cameras.map((camera) => (
+          <li key={camera.key} className="px-4 py-3">
+            <div className={LINE}>
+              <p className="text-[15px] font-medium">{camera.label}</p>
+              <p className="shrink-0 text-[13px] text-muted">
+                {camera.kind ? `${camera.kind} · ` : ""}
+                {camera.source === "saved" ? "Saved" : "Built in"}
+              </p>
+            </div>
+            <p className="mt-1 font-mono text-[12px] whitespace-nowrap text-muted" title={camera.src}>
+              {camera.src}
+            </p>
+          </li>
+        ))}
+      </Rows>
+    </div>
+  );
+}
+
+function brownsvilleCameras(cameras: AdminCamera[]) {
+  return cameras.map((camera) => ({
+    key: camera.alias,
+    label: camera.name,
+    kind: "Live",
+    src: camera.src,
+    source: camera.source,
+  }));
+}
+
+function groupCameras(group: AdminFeedGroup) {
+  return group.feeds.map((feed) => ({
+    key: feed.id,
+    label: feed.label,
+    kind: feed.kind ? FEED_KIND[feed.kind] : null,
+    src: feed.src,
+    source: feed.source,
+  }));
+}
 
 function Funnel({ steps }: { steps: AdminData["insights"]["funnel"] }) {
   return (
@@ -270,24 +327,6 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
             )}
           </Section>
 
-          <Section title="Cameras">
-            <Rows>
-              {data.cameras.map((camera) => (
-                <li key={camera.alias} className="px-4 py-3">
-                  <div className={LINE}>
-                    <p className="text-[15px] font-medium">{camera.name}</p>
-                    <p className="shrink-0 text-[13px] text-muted">
-                      {camera.source === "saved" ? "Saved" : "Built in"}
-                    </p>
-                  </div>
-                  <p className="mt-1 font-mono text-[12px] whitespace-nowrap text-muted" title={camera.src}>
-                    {camera.src}
-                  </p>
-                </li>
-              ))}
-            </Rows>
-          </Section>
-
           <Section title="Wait times">
             <div className="rounded-3xl border border-line bg-surface px-4 py-4">
               {data.feed ? (
@@ -303,6 +342,20 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
             </div>
           </Section>
         </div>
+      </div>
+
+      <div className="mt-10 min-w-0">
+        <Section
+          title="Cameras"
+          hint="Nuevo and Viejo, then every other crossing. Saved means that address is in the database."
+        >
+          <div className="flex flex-col gap-6">
+            <CameraList name="Brownsville" detail="Comtodo" cameras={brownsvilleCameras(data.cameras)} />
+            {data.feedGroups.map((group) => (
+              <CameraList key={group.id} name={group.name} detail={group.detail} cameras={groupCameras(group)} />
+            ))}
+          </div>
+        </Section>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { getAuth } from "@/lib/auth/server";
 import { buildInsights, type Insights, type RawFacts } from "@/lib/admin-insights";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
+import { FEED_GROUPS, type FeedKind } from "@/lib/camera-feeds";
 import { defaultMode, laneFor, listedCameras, portName } from "@/lib/ports";
 import { ensureProfile, ensureProfileColumns } from "@/lib/profile";
 import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
@@ -42,6 +43,22 @@ export type AdminCamera = {
   source: "saved" | "fallback";
 };
 
+/** One public camera from `camera_feed`, or the address in `lib/camera-feeds.ts` when no row exists. */
+export type AdminFeed = {
+  id: string;
+  label: string;
+  kind: FeedKind | null;
+  src: string;
+  source: "saved" | "fallback";
+};
+
+export type AdminFeedGroup = {
+  id: string;
+  name: string;
+  detail: string;
+  feeds: AdminFeed[];
+};
+
 export type AdminUsageTotals = { active: number; byKind: Record<UsageKind, number> };
 
 /** A crossing with who is watching it, joined with what the feed says right now. */
@@ -63,6 +80,7 @@ export type AdminData = {
   accountTotal: number;
   usage: AdminUsageTotals;
   cameras: AdminCamera[];
+  feedGroups: AdminFeedGroup[];
   feed: { fetchedAt: string; ports: number } | null;
   problem: boolean;
 };
@@ -145,6 +163,7 @@ async function readDashboard(): Promise<AdminData> {
     from schedule
   `;
   const camerasQuery = sql`select alias, src from camera_stream`;
+  const feedsQuery = sql`select id, src from camera_feed`;
   const feedQuery = getBorderWaitTimes().then(
     (snapshot) => ({ fetchedAt: snapshot.fetchedAt, ports: snapshot.ports }),
     () => null,
@@ -157,7 +176,7 @@ async function readDashboard(): Promise<AdminData> {
 
   const factsQuery = readFacts(mark);
 
-  const [facts, accounts, alertTotals, devices, schedules, cameras, feed, usageRows] =
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, usageRows] =
     await Promise.all([
     factsQuery,
     accountsQuery.then(
@@ -195,6 +214,13 @@ async function readDashboard(): Promise<AdminData> {
     ),
     camerasQuery.then(
       (rows) => rows as { alias: string; src: string }[],
+      (error: unknown) => {
+        mark(error, true);
+        return [];
+      },
+    ),
+    feedsQuery.then(
+      (rows) => rows as { id: string; src: string }[],
       (error: unknown) => {
         mark(error, true);
         return [];
@@ -248,6 +274,7 @@ async function readDashboard(): Promise<AdminData> {
     usage: usageTotals(usageRows),
     accountTotal: accounts,
     cameras: camerasFrom(cameras),
+    feedGroups: feedGroupsFrom(feeds),
     feed: feed ? { fetchedAt: feed.fetchedAt, ports: feed.ports.length } : null,
     problem,
   };
@@ -284,6 +311,44 @@ function camerasFrom(rows: { alias: string; src: string }[]): AdminCamera[] {
       source: "saved" as const,
     }));
   return [...listed, ...extra];
+}
+
+function feedGroupsFrom(rows: { id: string; src: string }[]): AdminFeedGroup[] {
+  const saved = new Map(rows.map((row) => [row.id, row.src]));
+  const known = new Set<string>();
+  const groups: AdminFeedGroup[] = FEED_GROUPS.map((group) => ({
+    id: group.id,
+    name: group.name,
+    detail: `${group.border} · ${group.provider}`,
+    feeds: group.feeds.map((feed) => {
+      known.add(feed.id);
+      const src = saved.get(feed.id);
+      return {
+        id: feed.id,
+        label: feed.label,
+        kind: feed.kind,
+        src: src || feed.src,
+        source: src ? ("saved" as const) : ("fallback" as const),
+      };
+    }),
+  }));
+  const extra = rows.filter((row) => row.id && !known.has(row.id));
+  if (extra.length === 0) return groups;
+  return [
+    ...groups,
+    {
+      id: "other",
+      name: "Other",
+      detail: "Saved in the database",
+      feeds: extra.map((row) => ({
+        id: row.id,
+        label: row.id,
+        kind: null,
+        src: row.src,
+        source: "saved" as const,
+      })),
+    },
+  ];
 }
 
 function jsonList(value: unknown): unknown[] {

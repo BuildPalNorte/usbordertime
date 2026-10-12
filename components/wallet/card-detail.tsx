@@ -17,6 +17,7 @@ import { AverageWait } from "./average-wait";
 import { UsualDay } from "./usual-day";
 import { useCameraStreams } from "./camera-streams";
 import { CrossingCamera } from "./crossing-camera";
+import { CrossingFeeds } from "./crossing-feeds";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
 import { TrashIcon } from "@heroicons-animated/react/trash";
@@ -40,7 +41,10 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
   const { locale, copy } = useLocale();
   const reduce = useReducedMotion();
   const bookmark = useRef<BookmarkIconHandle>(null);
-  const trash = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
+  const trash = useRef<{
+    startAnimation: () => void;
+    stopAnimation: () => void;
+  }>(null);
   const { streams } = useCameraStreams();
   const name = portName(port);
   const city = name.city;
@@ -52,10 +56,17 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
 
   return (
     <div className="space-y-3 pt-1 select-none [-webkit-touch-callout:none] [-webkit-user-select:none]">
-      {stream && (
+      {stream ? (
         <div data-tour="detail-camera">
-          <CrossingCamera src={stream.src} alias={stream.alias} name={name.title} />
+          <CrossingCamera
+            src={stream.src}
+            alias={stream.alias}
+            name={name.title}
+            info={stream.source}
+          />
         </div>
+      ) : (
+        <CrossingFeeds port={port} name={name.title} />
       )}
       <div
         role="radiogroup"
@@ -80,7 +91,10 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
               }}
               initial={reduce ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ ...SPRING.move, delay: reduce ? 0 : 0.05 + index * 0.04 }}
+              transition={{
+                ...SPRING.move,
+                delay: reduce ? 0 : 0.05 + index * 0.04,
+              }}
               className="relative touch-pan-y rounded-2xl bg-surface px-3.5 py-3 text-left select-none"
             >
               {!active && <HapticPad />}
