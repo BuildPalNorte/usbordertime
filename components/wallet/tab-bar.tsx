@@ -4,7 +4,6 @@ import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
 import { notePadTick } from "@/lib/haptics";
 import { ClockIcon, type ClockIconHandle } from "@heroicons-animated/react/clock";
-import { MapIcon, type MapIconHandle } from "@heroicons-animated/react/map";
 import { WalletIcon, type WalletIconHandle } from "@heroicons-animated/react/wallet";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
@@ -24,26 +23,18 @@ type Props = {
 
 /**
  * Floating translucent tab bar. Mobile only; desktop shows both panes.
- * Four labels would not fit a phone, so only the tab you are on shows its name.
+ * Explore is not a tab; the wallet's floating add button opens it. Only the tab you are on shows its name.
  */
 export function TabBar({ tab, onChange }: Props) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
   const wallet = useRef<WalletIconHandle>(null);
-  const map = useRef<MapIconHandle>(null);
   const clock = useRef<ClockIconHandle>(null);
   const question = useRef<QuestionMarkCircleIconHandle>(null);
 
   function select(next: Tab) {
     if (!reduce && next !== tab) {
-      (next === "wallet"
-        ? wallet
-        : next === "browse"
-          ? map
-          : next === "schedules"
-            ? clock
-            : question
-      ).current?.startAnimation();
+      (next === "wallet" ? wallet : next === "schedules" ? clock : question).current?.startAnimation();
     }
     onChange(next);
   }
@@ -54,13 +45,10 @@ export function TabBar({ tab, onChange }: Props) {
       className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-4 lg:hidden"
       style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="pointer-events-auto relative flex cursor-pointer gap-1 rounded-full p-1.5">
+      <div className="pointer-events-auto relative flex cursor-pointer items-center gap-1 rounded-full p-1.5">
         <div aria-hidden className="glass pointer-events-none absolute inset-0 rounded-full" />
         <TabButton active={tab === "wallet"} label={copy.wallet} onClick={() => select("wallet")}>
           <WalletIcon ref={wallet} size={22} aria-hidden />
-        </TabButton>
-        <TabButton active={tab === "browse"} label={copy.browse} onClick={() => select("browse")}>
-          <MapIcon ref={map} size={22} aria-hidden className="[perspective:48px]" />
         </TabButton>
         <TabButton
           active={tab === "schedules"}

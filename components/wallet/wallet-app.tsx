@@ -609,7 +609,7 @@ export function WalletApp({
           ? copy.ask
           : copy.wallet;
   const headerAction: PaneAction =
-    tab === "wallet" && (expandedId !== null || routesRow !== null || routesMissing) ? "done" : tab === "wallet" ? "refresh" : "none";
+    tab === "wallet" && (expandedId !== null || routesRow !== null || routesMissing) ? "done" : tab === "wallet" ? "refresh" : tab === "browse" ? "done" : "none";
 
   return (
     <PaneChromeProvider
@@ -630,7 +630,7 @@ export function WalletApp({
       <div
         ref={scrollerRef}
         className={cn(
-          "relative mx-auto w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6 max-lg:flex max-lg:h-full max-lg:flex-col max-lg:overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain lg:max-w-6xl lg:pb-16",
+          "relative mx-auto w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6 max-lg:pt-0 max-lg:flex max-lg:h-full max-lg:flex-col max-lg:overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain lg:max-w-6xl lg:pb-16",
           // Ask docks its composer on the tab bar. Other tabs keep room to scroll the last row clear of it.
           tab === "ask" ? "pb-[var(--tab-clearance)]" : "pb-32",
         )}
@@ -707,6 +707,7 @@ export function WalletApp({
                   else if (performance.now() - started > 280) haptic("success");
                 });
               }}
+              onDone={() => changeTab("wallet")}
               ownsHeader={tab === "browse"}
             />
           </section>

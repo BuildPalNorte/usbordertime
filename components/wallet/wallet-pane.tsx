@@ -90,7 +90,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
       if (open) onCollapse();
       else onDismissRoutes();
     },
-    onAdd: () => {},
+    onAdd: onBrowse,
   });
 
   return (
@@ -111,7 +111,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
               if (open) onCollapse();
               else onDismissRoutes();
             }}
-            onAdd={() => {}}
+            onAdd={onBrowse}
           />
           <StreakChip />
           <AccountButton />

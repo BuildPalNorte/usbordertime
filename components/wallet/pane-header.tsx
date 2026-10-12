@@ -111,7 +111,7 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
   const { chrome, run } = usePaneChrome();
 
   return (
-    <header className="flex min-h-[4.5rem] shrink-0 items-end justify-between gap-4 pb-5 lg:hidden">
+    <header className="sticky top-0 z-20 -mx-4 flex min-h-[calc(4rem+max(1.25rem,env(safe-area-inset-top)))] shrink-0 items-end justify-between gap-4 bg-background/80 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:hidden">
       <div className="grid min-w-0">
         {reduce ? (
           <Heading title={title} subtitle={chrome.subtitle} />
@@ -181,7 +181,10 @@ export function HeaderActions({
   const { copy } = useLocale();
   const reduce = useReducedMotion();
   const refreshIcon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
+  const addIcon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
   const appear = reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" };
+  // Leave faster than arriving, so the old button is gone before the new one settles.
+  const gone = { ...appear, transition: { duration: 0.12, ease: [0.4, 0, 1, 1] as const } };
 
   return (
     <AnimatePresence mode="popLayout" initial={false}>
@@ -195,7 +198,8 @@ export function HeaderActions({
           }}
           initial={appear}
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          exit={appear}
+          exit={gone}
+          layout="position"
           transition={SPRING.snap}
           whileTap={reduce ? undefined : { scale: 0.94 }}
           className="relative h-11 rounded-full bg-accent px-6 text-[15px] font-semibold text-accent-ink"
@@ -204,29 +208,53 @@ export function HeaderActions({
           {copy.done}
         </motion.button>
       ) : action === "refresh" ? (
-        <motion.button
-          key="refresh"
-          type="button"
-          onClick={onRefresh}
-          aria-label={copy.refresh}
-          aria-busy={checking}
-          onPointerEnter={() => refreshIcon.current?.startAnimation()}
-          onPointerLeave={() => refreshIcon.current?.stopAnimation()}
-          initial={appear}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          exit={appear}
-          transition={SPRING.snap}
-          whileTap={reduce ? undefined : { scale: 0.92 }}
-          className="relative grid size-11 place-items-center rounded-full bg-surface text-foreground"
-        >
-          <HapticPad />
-          <span
-            className="grid place-items-center"
-            style={refreshing ? { animation: "spin 0.9s linear infinite" } : undefined}
+        [
+          <motion.button
+            key="refresh"
+            type="button"
+            onClick={onRefresh}
+            aria-label={copy.refresh}
+            aria-busy={checking}
+            onPointerEnter={() => refreshIcon.current?.startAnimation()}
+            onPointerLeave={() => refreshIcon.current?.stopAnimation()}
+            initial={appear}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={gone}
+            layout="position"
+            transition={SPRING.snap}
+            whileTap={reduce ? undefined : { scale: 0.92 }}
+            className="relative grid size-11 place-items-center rounded-full bg-surface text-foreground"
           >
-            <ArrowPathIcon ref={refreshIcon} size={20} aria-hidden />
-          </span>
-        </motion.button>
+            <HapticPad />
+            <span
+              className="grid place-items-center"
+              style={refreshing ? { animation: "spin 0.9s linear infinite" } : undefined}
+            >
+              <ArrowPathIcon ref={refreshIcon} size={20} aria-hidden />
+            </span>
+          </motion.button>,
+          <motion.button
+            key="add-crossing"
+            type="button"
+            aria-label={copy.addCrossing}
+            onClick={() => {
+              haptic("light");
+              onAdd();
+            }}
+            onPointerEnter={() => addIcon.current?.startAnimation()}
+            onPointerLeave={() => addIcon.current?.stopAnimation()}
+            initial={appear}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={gone}
+            layout="position"
+            transition={SPRING.snap}
+            whileTap={reduce ? undefined : { scale: 0.92 }}
+            className="relative grid size-11 place-items-center rounded-full bg-accent text-accent-ink lg:hidden"
+          >
+            <HapticPad />
+            <PlusIcon ref={addIcon} size={20} aria-hidden />
+          </motion.button>,
+        ]
       ) : action === "add" ? (
         <motion.button
           key="add"
@@ -235,7 +263,8 @@ export function HeaderActions({
           onClick={onAdd}
           initial={appear}
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          exit={appear}
+          exit={gone}
+          layout="position"
           transition={SPRING.snap}
           whileTap={reduce ? undefined : { scale: 0.92 }}
           className="relative grid size-11 place-items-center rounded-full bg-accent text-accent-ink"

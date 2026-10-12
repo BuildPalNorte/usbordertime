@@ -40,6 +40,7 @@ export type Copy = {
   emptyTitle: string;
   emptyBody: string;
   browseCrossings: string;
+  addCrossing: string;
   startWithBrownsville: string;
   loading: string;
   searchLabel: string;
@@ -331,6 +332,7 @@ export const COPY: Record<Locale, Copy> = {
     emptyTitle: "No bridges saved",
     emptyBody: "Add the bridges you cross and see their live wait times in one stack.",
     browseCrossings: "Browse crossings",
+    addCrossing: "Add bridge",
     startWithBrownsville: "Start with Brownsville",
     loading: "Loading live data",
     searchLabel: "Search crossings",
@@ -678,6 +680,7 @@ export const COPY: Record<Locale, Copy> = {
     emptyTitle: "Aún no hay puentes",
     emptyBody: "Agrega los puentes que cruzas y mira la espera en vivo, en un solo montón.",
     browseCrossings: "Ver cruces",
+    addCrossing: "Agregar puente",
     startWithBrownsville: "Empezar con Brownsville",
     loading: "Cargando datos en vivo",
     searchLabel: "Buscar cruces",

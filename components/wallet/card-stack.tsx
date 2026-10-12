@@ -497,6 +497,7 @@ function StackCard({
     }
     if (!canReorder) return;
     cardWidth.current = event.currentTarget.offsetWidth || cardWidth.current;
+    const cardEl = event.currentTarget;
     const startX = event.clientX;
     const startY = event.clientY;
     const pointerId = event.pointerId;
@@ -545,7 +546,15 @@ function StackCard({
         }, HOLD_MS);
 
     function beginManualScroll(startEvent: PointerEvent) {
-      const scroller = document.scrollingElement ?? document.documentElement;
+      // On a phone the app shell scrolls, not the document. Find the nearest ancestor that does.
+      let scroller: Element = document.scrollingElement ?? document.documentElement;
+      for (let node = cardEl.parentElement; node; node = node.parentElement) {
+        const overflowY = getComputedStyle(node).overflowY;
+        if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight) {
+          scroller = node;
+          break;
+        }
+      }
       let lastY = startEvent.clientY;
       function onScrollMove(event: PointerEvent) {
         if (event.pointerId !== pointerId) return;

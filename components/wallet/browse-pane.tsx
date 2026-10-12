@@ -65,6 +65,8 @@ type Props = {
   onToggle: (port: PortWaitTime) => void;
   onPin: (border: string, city: string) => void;
   onRetry: () => void;
+  /** Back to the wallet. The phone header shows it as Done. */
+  onDone: () => void;
   /** This tab owns the phone header, which stays put while the body slides. */
   ownsHeader: boolean;
 };
@@ -94,6 +96,7 @@ export function BrowsePane({
   onToggle,
   onPin,
   onRetry,
+  onDone,
   ownsHeader,
 }: Props) {
   const { copy } = useLocale();
@@ -193,8 +196,8 @@ export function BrowsePane({
   const subtitle = loading ? copy.loading : copy.reportedCount(counts.all);
   usePublishPaneChrome(
     ownsHeader,
-    { subtitle, action: "none", checking: false, refreshing: false },
-    { onRefresh: () => {}, onDone: () => {}, onAdd: () => {} },
+    { subtitle, action: "done", checking: false, refreshing: false },
+    { onRefresh: () => {}, onDone, onAdd: () => {} },
   );
 
   let rowIndex = 0;
