@@ -111,7 +111,10 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
   const { chrome, run } = usePaneChrome();
 
   return (
-    <header className="sticky top-0 z-20 -mx-4 flex min-h-[calc(4rem+max(1.25rem,env(safe-area-inset-top)))] shrink-0 items-end justify-between gap-4 bg-background/80 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:hidden">
+    <header className="sticky top-0 z-20 -mx-4 flex min-h-[calc(4rem+max(1.25rem,env(safe-area-inset-top)))] shrink-0 items-end justify-between gap-4 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 sm:-mx-6 sm:px-6 lg:hidden">
+      {/* The blur sits on its own layer: a backdrop-filter on the header itself would make it the
+          backdrop root and stop the glass menus inside from blurring the page behind them. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-background/80 backdrop-blur-xl" />
       <div className="grid min-w-0">
         {reduce ? (
           <Heading title={title} subtitle={chrome.subtitle} />

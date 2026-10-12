@@ -67,6 +67,42 @@ export function useIconLoop(level: number, replay: unknown) {
   return handle;
 }
 
+/** Streak results already celebrated, so a remount does not replay them. Both header chips share it. */
+const celebrated = new WeakMap<object, number>();
+const DOTS = [0, 60, 120, 180, 240, 300];
+
+/** A soft ring and a few dots that drift outward once. Reduced motion gets only the ring fading. */
+function Celebration({ color, reduce, burst }: { color: string; reduce: boolean; burst: number }) {
+  return (
+    <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
+      <motion.span
+        key={`ring-${burst}`}
+        initial={{ opacity: 0.55, scale: 0.9 }}
+        animate={{ opacity: 0, scale: reduce ? 1.1 : 1.7 }}
+        transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+        style={{ borderColor: color }}
+        className="absolute inset-0 rounded-full border-2"
+      />
+      {!reduce &&
+        DOTS.map((angle) => (
+          <motion.span
+            key={`${burst}-${angle}`}
+            initial={{ opacity: 0.9, x: 0, y: 0, scale: 1 }}
+            animate={{
+              opacity: 0,
+              x: Math.cos((angle * Math.PI) / 180) * 26,
+              y: Math.sin((angle * Math.PI) / 180) * 26,
+              scale: 0.3,
+            }}
+            transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
+            style={{ backgroundColor: color }}
+            className="absolute size-1.5 rounded-full"
+          />
+        ))}
+    </span>
+  );
+}
+
 /** Header button: the level icon in its color. A tap opens the day count. Hidden until a streak exists. */
 export function StreakChip({ className }: { className?: string }) {
   const { copy } = useLocale();
@@ -82,6 +118,25 @@ export function StreakChip({ className }: { className?: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+  const [burst, setBurst] = useState(0);
+
+  // Celebrate each time a visit moves the streak forward (the dev picker does too).
+  useEffect(() => {
+    if (!streak?.advanced || streak.current < 1) return;
+    const seen = celebrated.get(streak);
+    const now = Date.now();
+    if (seen !== undefined && now - seen > 1500) return;
+    celebrated.set(streak, seen ?? now);
+    const start = window.setTimeout(() => {
+      haptic("success");
+      setBurst((value) => value + 1);
+    }, 400);
+    const end = window.setTimeout(() => setBurst(0), 1400);
+    return () => {
+      window.clearTimeout(start);
+      window.clearTimeout(end);
+    };
+  }, [streak]);
 
   useEffect(() => {
     if (!open) return;
@@ -144,6 +199,7 @@ export function StreakChip({ className }: { className?: string }) {
               <LevelIcon size={20} level={level} handle={handle} />
             </motion.span>
           </motion.button>
+          {burst > 0 && <Celebration color={color} reduce={!!reduce} burst={burst} />}
 
           <AnimatePresence>
             {open && (
