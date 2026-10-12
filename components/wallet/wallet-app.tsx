@@ -449,6 +449,8 @@ export function WalletApp({
   const shareCrossing = useCallback(async (port: PortWaitTime, mode: Mode) => {
     if (sharing.current) return;
     sharing.current = true;
+    // Before the sheet. A tick after it returns is outside the tap, so the phone drops it.
+    haptic("medium");
     const message = shareMessage(port, mode, copy);
     const url = new URL(
       crossingSharePath(port.portNumber, mode, locale),
