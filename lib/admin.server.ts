@@ -1,8 +1,8 @@
 import { getAuth } from "@/lib/auth/server";
+import { buildInsights, type Insights, type RawFacts } from "@/lib/admin-insights";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
-import { listedCameras, portName } from "@/lib/ports";
+import { defaultMode, laneFor, listedCameras, portName } from "@/lib/ports";
 import { ensureProfile, ensureProfileColumns } from "@/lib/profile";
-import { isReferral, REFERRAL_LABEL, REFERRALS, type Referral } from "@/lib/referral";
 import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
 import { readUsageTotals, type UsageTotals } from "@/lib/usage.server";
 import { database } from "@/lib/db.server";
@@ -21,18 +21,8 @@ function adminEmails(): string[] {
   });
 }
 
-const PEOPLE_LIMIT = 20;
-const ALERT_LIMIT = 12;
-const INVITE_LIMIT = 12;
-
-const LANE_LABEL: Record<string, string> = {
-  car: "Car",
-  ready: "Ready lane",
-  sentri: "SENTRI",
-  walk: "Walking",
-  truck: "Truck",
-  fast: "FAST truck",
-};
+const ACCOUNT_LIMIT = 500;
+const CROSSING_LIMIT = 15;
 
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
@@ -45,28 +35,6 @@ export type AdminViewer = { name: string; email: string };
 
 export type AdminStat = { label: string; value: number; detail: string };
 
-export type AdminAccount = {
-  name: string;
-  email: string;
-  updatedAt: string;
-  referral: string | null;
-  invitedBy: string | null;
-  usage: AdminUsage;
-};
-
-/** One account's activity. `byKind` is zero for kinds it never used. */
-export type AdminUsage = {
-  total: number;
-  lastActive: string | null;
-  byKind: Record<UsageKind, number>;
-};
-
-export type AdminReferral = { source: Referral; label: string; count: number };
-
-export type AdminInvite = { name: string; email: string; count: number };
-
-export type AdminAlertGroup = { portNumber: string; label: string; lane: string; count: number };
-
 export type AdminCamera = {
   name: string;
   alias: string;
@@ -76,15 +44,24 @@ export type AdminCamera = {
 
 export type AdminUsageTotals = { active: number; byKind: Record<UsageKind, number> };
 
+/** A crossing with who is watching it, joined with what the feed says right now. */
+export type AdminCrossing = {
+  portNumber: string;
+  label: string;
+  saved: number;
+  alerts: number;
+  alarms: number;
+  people: number;
+  /** Current wait in minutes for the crossing's main lane, or null when the feed has none. */
+  waitMinutes: number | null;
+};
+
 export type AdminData = {
+  insights: Insights;
+  crossings: AdminCrossing[];
   stats: AdminStat[];
-  people: AdminAccount[];
   accountTotal: number;
   usage: AdminUsageTotals;
-  referrals: AdminReferral[];
-  referralPending: number;
-  invites: AdminInvite[];
-  alerts: AdminAlertGroup[];
   cameras: AdminCamera[];
   feed: { fetchedAt: string; ports: number } | null;
   problem: boolean;
@@ -154,45 +131,11 @@ async function readDashboard(): Promise<AdminData> {
   });
 
   const accountsQuery = sql`select count(*)::int as count from profile`;
-  const peopleQuery = sql`
-    select p.id, p.name, p.email, p.updated_at, p.referral,
-           r.name as referrer_name, r.email as referrer_email
-    from profile p
-    left join profile r on r.id = p.referred_by
-    order by p.updated_at desc
-    limit ${PEOPLE_LIMIT}
-  `;
-  const referralsQuery = sql`
-    select referral, count(*)::int as count
-    from profile
-    where referral is not null
-    group by referral
-  `;
-  const referralPendingQuery = sql`
-    select count(*)::int as count
-    from profile
-    where referral_pending
-  `;
-  const invitesQuery = sql`
-    select r.name, r.email, count(*)::int as count
-    from profile p
-    join profile r on r.id = p.referred_by
-    group by r.id, r.name, r.email
-    order by count desc, r.name
-    limit ${INVITE_LIMIT}
-  `;
   const alertTotalsQuery = sql`
     select
       count(*)::int as alerts,
       count(*) filter (where below)::int as below
     from wait_alert
-  `;
-  const alertGroupsQuery = sql`
-    select port_number, mode, count(*)::int as count
-    from wait_alert
-    group by port_number, mode
-    order by count desc, port_number
-    limit ${ALERT_LIMIT}
   `;
   const devicesQuery = sql`select count(*)::int as count from push_subscription`;
   const schedulesQuery = sql`
@@ -212,39 +155,12 @@ async function readDashboard(): Promise<AdminData> {
     return [];
   });
 
-  const [accounts, people, referralRows, referralPending, alertTotals, alertGroups, devices, schedules, cameras, feed, usageRows, inviteRows] =
+  const factsQuery = readFacts(mark);
+
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feed, usageRows] =
     await Promise.all([
+    factsQuery,
     accountsQuery.then(
-      (rows) => asCount((rows[0] as { count?: unknown } | undefined)?.count),
-      (error: unknown) => {
-        mark(error, false);
-        return 0;
-      },
-    ),
-    peopleQuery.then(
-      (rows) =>
-        rows as {
-          id: string;
-          name: string | null;
-          email: string;
-          updated_at: unknown;
-          referral: unknown;
-          referrer_name: string | null;
-          referrer_email: string | null;
-        }[],
-      (error: unknown) => {
-        mark(error, false);
-        return [];
-      },
-    ),
-    referralsQuery.then(
-      (rows) => rows as { referral: unknown; count: unknown }[],
-      (error: unknown) => {
-        mark(error, false);
-        return [];
-      },
-    ),
-    referralPendingQuery.then(
       (rows) => asCount((rows[0] as { count?: unknown } | undefined)?.count),
       (error: unknown) => {
         mark(error, false);
@@ -260,13 +176,6 @@ async function readDashboard(): Promise<AdminData> {
       (error: unknown) => {
         mark(error, true);
         return { alerts: 0, below: 0 };
-      },
-    ),
-    alertGroupsQuery.then(
-      (rows) => rows as { port_number: string; mode: string; count: unknown }[],
-      (error: unknown) => {
-        mark(error, true);
-        return [];
       },
     ),
     devicesQuery.then(
@@ -293,16 +202,17 @@ async function readDashboard(): Promise<AdminData> {
     ),
     feedQuery,
     usageQuery,
-    invitesQuery.then(
-      (rows) => rows as { name: string | null; email: string; count: unknown }[],
-      (error: unknown) => {
-        mark(error, false);
-        return [];
-      },
-    ),
   ]);
 
-  const usageByUser = new Map(usageRows.map((row) => [row.userId, row]));
+  const insights = buildInsights({
+    ...facts,
+    usage: usageRows.map((row) => ({
+      userId: row.userId,
+      total: row.total,
+      lastActive: row.lastActive,
+      byKind: row.byKind as Record<string, number>,
+    })),
+  });
   const byNumber = new Map((feed?.ports ?? []).map((port) => [port.portNumber, port]));
   const alertCount = asCount(alertTotals.alerts);
   const below = asCount(alertTotals.below);
@@ -310,6 +220,17 @@ async function readDashboard(): Promise<AdminData> {
   const scheduleOn = asCount(schedules.enabled);
 
   return {
+    insights,
+    crossings: insights.crossings.slice(0, CROSSING_LIMIT).map((row) => {
+      const port = byNumber.get(row.portNumber);
+      const name = port ? portName(port) : null;
+      const label =
+        name && !name.subtitleIsRegion && name.subtitle !== name.title
+          ? `${name.title} · ${name.subtitle}`
+          : (name?.title ?? row.portNumber);
+      const minutes = port ? laneFor(port, defaultMode(port)).delayMinutes : null;
+      return { ...row, label, waitMinutes: typeof minutes === "number" ? minutes : null };
+    }),
     stats: [
       { label: "Accounts", value: accounts, detail: "Profiles" },
       {
@@ -324,62 +245,12 @@ async function readDashboard(): Promise<AdminData> {
         detail: scheduleOn === 1 ? "1 turned on" : `${scheduleOn} turned on`,
       },
     ],
-    people: people.flatMap((row) => {
-      const updatedAt = iso(row.updated_at);
-      if (!row.email || !updatedAt) return [];
-      return [
-        {
-          name: row.name?.trim() || row.email,
-          email: row.email,
-          updatedAt,
-          referral: isReferral(row.referral) ? REFERRAL_LABEL[row.referral] : null,
-          invitedBy: personName(row.referrer_name, row.referrer_email),
-          usage: usageFor(usageByUser.get(row.id)),
-        },
-      ];
-    }),
     usage: usageTotals(usageRows),
     accountTotal: accounts,
-    referrals: referralCounts(referralRows),
-    referralPending,
-    invites: inviteRows.flatMap((row) => {
-      const name = personName(row.name, row.email);
-      const count = asCount(row.count);
-      if (!name || !row.email || count < 1) return [];
-      return [{ name, email: row.email, count }];
-    }),
-    alerts: alertGroups.map((row) => {
-      const port = byNumber.get(row.port_number);
-      const name = port ? portName(port) : null;
-      const label =
-        name && !name.subtitleIsRegion && name.subtitle !== name.title
-          ? `${name.title} · ${name.subtitle}`
-          : (name?.title ?? row.port_number);
-      return {
-        portNumber: row.port_number,
-        label,
-        lane: LANE_LABEL[row.mode] ?? row.mode,
-        count: asCount(row.count),
-      };
-    }),
     cameras: camerasFrom(cameras),
     feed: feed ? { fetchedAt: feed.fetchedAt, ports: feed.ports.length } : null,
     problem,
   };
-}
-
-function personName(name: string | null | undefined, email: string | null | undefined): string | null {
-  if (typeof name === "string" && name.trim()) return name.trim();
-  if (typeof email === "string" && email.trim()) return email.trim();
-  return null;
-}
-
-function usageFor(entry: UsageTotals | undefined): AdminUsage {
-  const byKind = Object.fromEntries(USAGE_KINDS.map((kind) => [kind, entry?.byKind[kind] ?? 0])) as Record<
-    UsageKind,
-    number
-  >;
-  return { total: entry?.total ?? 0, lastActive: entry?.lastActive ?? null, byKind };
 }
 
 /** Across every account: how many people used each feature, and how many were active at all. */
@@ -389,19 +260,6 @@ function usageTotals(rows: UsageTotals[]): AdminUsageTotals {
     for (const kind of USAGE_KINDS) byKind[kind] += row.byKind[kind] ?? 0;
   }
   return { active: rows.length, byKind };
-}
-
-function referralCounts(rows: { referral: unknown; count: unknown }[]): AdminReferral[] {
-  const counts = new Map<Referral, number>();
-  for (const row of rows) {
-    if (!isReferral(row.referral)) continue;
-    counts.set(row.referral, asCount(row.count));
-  }
-  return REFERRALS.flatMap((source) => {
-    const count = counts.get(source) ?? 0;
-    if (count === 0) return [];
-    return [{ source, label: REFERRAL_LABEL[source], count }];
-  }).sort((a, b) => b.count - a.count || REFERRALS.indexOf(a.source) - REFERRALS.indexOf(b.source));
 }
 
 function camerasFrom(rows: { alias: string; src: string }[]): AdminCamera[] {
@@ -426,4 +284,114 @@ function camerasFrom(rows: { alias: string; src: string }[]): AdminCamera[] {
       source: "saved" as const,
     }));
   return [...listed, ...extra];
+}
+
+function jsonList(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
+ * One cheap read per table, joined in memory by account id. A table that does not exist yet counts
+ * as empty, so a fresh database still renders.
+ */
+async function readFacts(mark: (error: unknown, quietWhenMissing: boolean) => void): Promise<Omit<RawFacts, "usage">> {
+  const sql = database();
+  const safe = <T,>(query: PromiseLike<unknown>, quiet: boolean): Promise<T[]> =>
+    Promise.resolve(query).then(
+      (rows) => rows as T[],
+      (error: unknown) => {
+        mark(error, quiet);
+        return [];
+      },
+    );
+
+  const [profiles, streaks, preferences, alerts, schedules, devices] = await Promise.all([
+    safe<{
+      id: string;
+      name: string | null;
+      email: string;
+      created_at: unknown;
+      updated_at: unknown;
+      referral: string | null;
+      referral_pending: unknown;
+      referred_by: string | null;
+    }>(
+      sql`
+        select id, name, email, created_at, updated_at, referral, referral_pending, referred_by
+        from profile
+        order by created_at desc
+        limit ${ACCOUNT_LIMIT}
+      `,
+      false,
+    ),
+    safe<{ user_id: string; current_run: unknown; longest_run: unknown; total_days: unknown; last_day: string | null }>(
+      sql`select user_id, current_run, longest_run, total_days, last_day from streak`,
+      true,
+    ),
+    safe<{ user_id: string; locale: string | null; wallet: unknown; pins: unknown }>(
+      sql`select user_id, locale, wallet, pins from preference`,
+      true,
+    ),
+    safe<{ user_id: string; port_number: string }>(sql`select user_id, port_number from wait_alert`, true),
+    safe<{ user_id: string; ports: unknown; enabled: boolean }>(
+      sql`select user_id, ports, enabled from schedule`,
+      true,
+    ),
+    safe<{ user_id: string; count: unknown }>(
+      sql`select user_id, count(*)::int as count from push_subscription group by user_id`,
+      true,
+    ),
+  ]);
+
+  return {
+    profiles: profiles.flatMap((row) => {
+      const createdAt = iso(row.created_at);
+      if (!row.email || !createdAt) return [];
+      return [
+        {
+          id: row.id,
+          name: row.name ?? "",
+          email: row.email,
+          createdAt,
+          updatedAt: iso(row.updated_at) ?? createdAt,
+          referral: row.referral,
+          referralPending: row.referral_pending === true || row.referral_pending === "t",
+          referredBy: row.referred_by,
+        },
+      ];
+    }),
+    streaks: streaks.map((row) => ({
+      userId: row.user_id,
+      current: asCount(row.current_run),
+      longest: asCount(row.longest_run),
+      totalDays: asCount(row.total_days),
+      lastDay: row.last_day,
+    })),
+    preferences: preferences.map((row) => ({
+      userId: row.user_id,
+      locale: row.locale,
+      wallet: jsonList(row.wallet).flatMap((entry) =>
+        entry && typeof entry === "object" && "portNumber" in entry && typeof entry.portNumber === "string"
+          ? [{ portNumber: entry.portNumber }]
+          : [],
+      ),
+      pins: jsonList(row.pins).length,
+    })),
+    alerts: alerts.map((row) => ({ userId: row.user_id, portNumber: row.port_number })),
+    schedules: schedules.map((row) => ({
+      userId: row.user_id,
+      ports: jsonList(row.ports).filter((port): port is string => typeof port === "string"),
+      enabled: row.enabled,
+    })),
+    devices: devices.map((row) => ({ userId: row.user_id, count: asCount(row.count) })),
+  };
 }

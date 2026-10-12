@@ -19,7 +19,7 @@ export function SignOutButton() {
           await signOutAndReload();
         })();
       }}
-      className="text-[15px] font-medium text-muted disabled:opacity-50"
+      className="inline-flex min-h-11 items-center text-[15px] font-medium text-muted disabled:opacity-50"
     >
       Sign out
     </button>

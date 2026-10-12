@@ -1,9 +1,12 @@
+import { AccountList } from "@/components/admin/account-list";
 import { SignOutButton } from "@/components/admin/sign-out-button";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
-import type { AdminData, AdminUsage, AdminViewer } from "@/lib/admin.server";
-import { USAGE_KINDS, USAGE_LABEL, type UsageKind } from "@/lib/usage";
+import type { AdminData, AdminViewer } from "@/lib/admin.server";
+import { USAGE_KINDS, USAGE_LABEL } from "@/lib/usage";
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
+
+const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" });
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -11,39 +14,93 @@ const WHEN = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
   timeZone: "America/Chicago",
-  timeZoneName: "short",
 });
 
 function formatWhen(value: string): string {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return WHEN.format(date);
+  return Number.isNaN(date.getTime()) ? "—" : WHEN.format(date);
 }
 
-/** The kinds an account actually used, in the order the dashboard lists them. */
-function usedKinds(usage: AdminUsage): UsageKind[] {
-  return USAGE_KINDS.filter((kind) => usage.byKind[kind] > 0);
+function percent(share: number): string {
+  return `${Math.round(share * 100)}%`;
 }
 
-function UsageSummary({ usage }: { usage: AdminUsage }) {
-  if (usage.total === 0) return <p className="text-[13px] text-muted">No activity yet.</p>;
+function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <p className="text-[13px] text-muted">
-      {usedKinds(usage)
-        .map((kind) => `${usage.byKind[kind].toLocaleString("en-US")} ${USAGE_LABEL[kind].toLowerCase()}`)
-        .join(" · ")}
-    </p>
+    <section className="min-w-0">
+      <h2 className="text-[17px] font-semibold tracking-[-0.02em]">{title}</h2>
+      {hint && <p className="mt-1 text-[13px] text-muted">{hint}</p>}
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+/** The card is the sideways scroller. The list inside is as wide as its widest row, so nothing wraps away. */
+function Rows({ as: Tag = "ul", children }: { as?: "ul" | "ol"; children: ReactNode }) {
+  return (
+    <div className="@container overflow-x-auto overscroll-x-contain rounded-3xl border border-line bg-surface">
+      <Tag className="w-max min-w-full divide-y divide-line">{children}</Tag>
+    </div>
+  );
+}
+
+const LINE = "flex w-full items-baseline justify-between gap-4 whitespace-nowrap";
+
+function Funnel({ steps }: { steps: AdminData["insights"]["funnel"] }) {
+  return (
+    <Rows as="ol">
+      {steps.map((step) => (
+        <li key={step.key} className="px-4 py-3">
+          <div className={LINE}>
+            <p className="text-[15px] font-medium">{step.label}</p>
+            <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+              {step.count.toLocaleString("en-US")}
+              <span className="ml-2 text-[13px] font-normal text-muted">{percent(step.share)}</span>
+            </p>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-strong">
+            <div className="h-full rounded-full bg-foreground" style={{ width: percent(step.share) }} />
+          </div>
+        </li>
+      ))}
+    </Rows>
+  );
+}
+
+function Growth({ days }: { days: AdminData["insights"]["growth"] }) {
+  const peak = Math.max(1, ...days.map((entry) => entry.count));
+  const total = days.reduce((sum, entry) => sum + entry.count, 0);
+  return (
+    <div className="rounded-3xl border border-line bg-surface px-4 py-4">
+      <p className="text-[13px] text-muted">
+        {total.toLocaleString("en-US")} new in the last {days.length} days
+      </p>
+      <ul className="mt-3 flex h-20 items-end gap-1" aria-label="New accounts per day">
+        {days.map((entry) => (
+          <li
+            key={entry.day}
+            title={`${DAY.format(new Date(`${entry.day}T12:00:00`))}: ${entry.count}`}
+            className="min-w-0 flex-1 rounded-t-sm bg-foreground"
+            style={{ height: `${Math.max(entry.count === 0 ? 3 : 8, (entry.count / peak) * 100)}%`, opacity: entry.count === 0 ? 0.15 : 1 }}
+          />
+        ))}
+      </ul>
+      <div className="mt-2 flex justify-between text-[12px] text-muted">
+        <span>{DAY.format(new Date(`${days[0]?.day}T12:00:00`))}</span>
+        <span>Today</span>
+      </div>
+    </div>
   );
 }
 
 export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: AdminData }) {
-  const showing = data.people.length;
-  const rest = data.accountTotal - showing;
+  const { insights } = data;
+  const now = Date.parse(insights.generatedAt);
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-6">
+    <div className="mx-auto flex min-h-[100dvh] w-full min-w-0 max-w-5xl flex-col overflow-x-clip px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-6">
       <header className="flex items-center justify-between gap-3">
-        <Link href="/" className="text-[15px] font-medium text-muted">
+        <Link href="/" className="inline-flex min-h-11 items-center text-[15px] font-medium text-muted">
           Back
         </Link>
         <div className="flex items-center gap-4">
@@ -52,7 +109,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         </div>
       </header>
 
-      <div className="rise mt-10" style={{ "--i": 0 } as CSSProperties}>
+      <div className="rise mt-10 min-w-0" style={{ "--i": 0 } as CSSProperties}>
         <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.04em]">Admin</h1>
         <p className="mt-2 truncate text-[15px] text-muted">{viewer.email}</p>
       </div>
@@ -79,167 +136,160 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         ))}
       </dl>
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-2 lg:gap-14">
+      <p className="mt-4 text-[14px] text-muted">
+        {insights.recent.toLocaleString("en-US")} of {data.accountTotal.toLocaleString("en-US")} accounts were active in
+        the last 7 days. {insights.idle.toLocaleString("en-US")} have not done anything beyond signing in.
+      </p>
+
+      <div className="mt-10 grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+        <Section title="Journey" hint="How far accounts get, from sign-in to asking a question.">
+          <Funnel steps={insights.funnel} />
+        </Section>
+
         <div className="flex flex-col gap-10">
-          <section>
-            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Accounts</h2>
-            {data.people.length === 0 ? (
-              <p className="mt-3 text-[15px] text-muted">No accounts yet.</p>
+          <Section title="Growth">
+            <Growth days={insights.growth} />
+          </Section>
+
+          <Section title="Where they came from" hint="Each source with how many came back and set something up.">
+            {insights.sources.length === 0 ? (
+              <p className="text-[15px] text-muted">No accounts yet.</p>
             ) : (
-              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
-                {data.people.map((person) => (
-                  <li key={person.email} className="flex items-baseline justify-between gap-4 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-[15px] font-medium">{person.name}</p>
-                      <p className="truncate text-[13px] text-muted">{person.email}</p>
-                      {person.referral && <p className="truncate text-[13px] text-muted">{person.referral}</p>}
-                      {person.invitedBy && (
-                        <p className="truncate text-[13px] text-muted">Invited by {person.invitedBy}</p>
-                      )}
-                      <UsageSummary usage={person.usage} />
+              <Rows>
+                {insights.sources.map((source) => (
+                  <li key={source.key} className="px-4 py-3">
+                    <div className={LINE}>
+                      <p className="text-[15px] font-medium">{source.label}</p>
+                      <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                        {source.accounts.toLocaleString("en-US")}
+                      </p>
+                    </div>
+                    <p className="mt-1 flex gap-x-2 text-[13px] whitespace-nowrap text-muted">
+                      <span>{source.returned} came back</span>
+                      <span>{source.activated} set up crossings</span>
+                      <span>{source.avgDays} days on average</span>
+                    </p>
+                  </li>
+                ))}
+              </Rows>
+            )}
+          </Section>
+        </div>
+      </div>
+
+      <div className="mt-10 min-w-0">
+        <Section title="Accounts" hint="Open one to see everything it has done, and follow invites between people.">
+          {insights.accounts.length === 0 ? (
+            <p className="text-[15px] text-muted">No accounts yet.</p>
+          ) : (
+            <AccountList accounts={insights.accounts} now={now} />
+          )}
+          {data.accountTotal > insights.accounts.length && (
+            <p className="mt-3 text-[13px] text-muted">
+              Showing the latest {insights.accounts.length.toLocaleString("en-US")} of{" "}
+              {data.accountTotal.toLocaleString("en-US")}.
+            </p>
+          )}
+        </Section>
+      </div>
+
+      <div className="mt-10 grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+        <div className="flex flex-col gap-10">
+          <Section title="Crossings" hint="Who saved, watches, or schedules each crossing, next to its wait right now.">
+            {data.crossings.length === 0 ? (
+              <p className="text-[15px] text-muted">No one has saved or watched a crossing.</p>
+            ) : (
+              <Rows>
+                {data.crossings.map((crossing) => (
+                  <li key={crossing.portNumber} className={`${LINE} px-4 py-3`}>
+                    <div>
+                      <p className="text-[15px] font-medium">{crossing.label}</p>
+                      <p className="text-[13px] text-muted">
+                        {crossing.saved} saved · {crossing.alerts} alerts · {crossing.alarms} alarms
+                      </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <time className="text-[13px] text-muted" dateTime={person.updatedAt}>
-                        {formatWhen(person.updatedAt)}
-                      </time>
-                      {person.usage.lastActive && (
-                        <p className="mt-1 text-[13px] text-muted">
-                          Active{" "}
-                          <time dateTime={person.usage.lastActive}>{formatWhen(person.usage.lastActive)}</time>
-                        </p>
-                      )}
+                      <p className="text-[15px] font-semibold tabular-nums">
+                        {crossing.people.toLocaleString("en-US")} {crossing.people === 1 ? "person" : "people"}
+                      </p>
+                      <p className="text-[13px] text-muted tabular-nums">
+                        {crossing.waitMinutes === null ? "No wait data" : `${crossing.waitMinutes} min now`}
+                      </p>
                     </div>
                   </li>
                 ))}
-              </ul>
+              </Rows>
             )}
-            {rest > 0 && (
-              <p className="mt-3 text-[13px] text-muted">
-                Showing the latest {showing.toLocaleString("en-US")}.
-              </p>
-            )}
-          </section>
+          </Section>
 
-          <section>
-            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Usage</h2>
+          <Section title="Usage">
             {data.usage.active === 0 ? (
-              <p className="mt-3 text-[15px] text-muted">No activity yet.</p>
+              <p className="text-[15px] text-muted">No activity yet.</p>
             ) : (
-              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
-                <li className="flex items-baseline justify-between gap-4 px-4 py-3">
-                  <p className="truncate text-[15px] font-medium">Active accounts</p>
+              <Rows>
+                <li className={`${LINE} px-4 py-3`}>
+                  <p className="text-[15px] font-medium">Active accounts</p>
                   <p className="shrink-0 text-[15px] font-semibold tabular-nums">
                     {data.usage.active.toLocaleString("en-US")}
                   </p>
                 </li>
                 {USAGE_KINDS.map((kind) => (
-                  <li key={kind} className="flex items-baseline justify-between gap-4 px-4 py-3">
-                    <p className="truncate text-[15px] font-medium">{USAGE_LABEL[kind]}</p>
+                  <li key={kind} className={`${LINE} px-4 py-3`}>
+                    <p className="text-[15px] font-medium">{USAGE_LABEL[kind]}</p>
                     <p className="shrink-0 text-[15px] font-semibold tabular-nums">
                       {data.usage.byKind[kind].toLocaleString("en-US")}
                     </p>
                   </li>
                 ))}
-              </ul>
+              </Rows>
             )}
-          </section>
-
-          <section>
-            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Wait alerts</h2>
-            {data.alerts.length === 0 ? (
-              <p className="mt-3 text-[15px] text-muted">No wait alerts.</p>
-            ) : (
-              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
-                {data.alerts.map((group) => (
-                  <li
-                    key={`${group.portNumber}:${group.lane}`}
-                    className="flex items-baseline justify-between gap-4 px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-[15px] font-medium">{group.label}</p>
-                      <p className="text-[13px] text-muted">{group.lane}</p>
-                    </div>
-                    <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                      {group.count.toLocaleString("en-US")}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          </Section>
         </div>
 
         <div className="flex flex-col gap-10">
-          <section>
-            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">How they found us</h2>
-            {data.referrals.length === 0 ? (
-              <p className="mt-3 text-[15px] text-muted">No answers yet.</p>
+          <Section title="Invites" hint="Who brought people in, and how many of them did something.">
+            {insights.inviters.length === 0 ? (
+              <p className="text-[15px] text-muted">No one has brought someone in yet.</p>
             ) : (
-              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
-                {data.referrals.map((source) => (
-                  <li key={source.source} className="flex items-baseline justify-between gap-4 px-4 py-3">
-                    <p className="truncate text-[15px] font-medium">{source.label}</p>
-                    <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                      {source.count.toLocaleString("en-US")}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {data.referralPending > 0 && (
-              <p className="mt-3 text-[13px] text-muted">
-                {data.referralPending === 1
-                  ? "1 still choosing."
-                  : `${data.referralPending.toLocaleString("en-US")} still choosing.`}
-              </p>
-            )}
-          </section>
-
-          <section>
-            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Invites</h2>
-            {data.invites.length === 0 ? (
-              <p className="mt-3 text-[15px] text-muted">No one has brought someone in yet.</p>
-            ) : (
-              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
-                {data.invites.map((invite) => (
-                  <li key={invite.email} className="flex items-baseline justify-between gap-4 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-[15px] font-medium">{invite.name}</p>
-                      {invite.name !== invite.email && (
-                        <p className="truncate text-[13px] text-muted">{invite.email}</p>
-                      )}
+              <Rows>
+                {insights.inviters.map((inviter) => (
+                  <li key={inviter.id} className="px-4 py-3">
+                    <div className={LINE}>
+                      <p className="text-[15px] font-medium">{inviter.name}</p>
+                      <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                        {inviter.invited.length.toLocaleString("en-US")}
+                      </p>
                     </div>
-                    <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                      {invite.count.toLocaleString("en-US")}
+                    <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
+                      {inviter.activated} of {inviter.invited.length} set up crossings:{" "}
+                      {inviter.invited.map((child) => child.name).join(", ")}
                     </p>
                   </li>
                 ))}
-              </ul>
+              </Rows>
             )}
-          </section>
+          </Section>
 
-          <section>
-            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Cameras</h2>
-            <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
+          <Section title="Cameras">
+            <Rows>
               {data.cameras.map((camera) => (
                 <li key={camera.alias} className="px-4 py-3">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <p className="truncate text-[15px] font-medium">{camera.name}</p>
+                  <div className={LINE}>
+                    <p className="text-[15px] font-medium">{camera.name}</p>
                     <p className="shrink-0 text-[13px] text-muted">
                       {camera.source === "saved" ? "Saved" : "Built in"}
                     </p>
                   </div>
-                  <p className="mt-1 truncate font-mono text-[12px] text-muted" title={camera.src}>
+                  <p className="mt-1 font-mono text-[12px] whitespace-nowrap text-muted" title={camera.src}>
                     {camera.src}
                   </p>
                 </li>
               ))}
-            </ul>
-          </section>
+            </Rows>
+          </Section>
 
-          <section>
-            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Wait times</h2>
-            <div className="mt-3 rounded-3xl border border-line bg-surface px-4 py-4">
+          <Section title="Wait times">
+            <div className="rounded-3xl border border-line bg-surface px-4 py-4">
               {data.feed ? (
                 <>
                   <p className="text-[15px] font-medium">{formatWhen(data.feed.fetchedAt)}</p>
@@ -251,7 +301,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                 <p className="text-[15px] text-muted">The CBP feed did not answer.</p>
               )}
             </div>
-          </section>
+          </Section>
         </div>
       </div>
     </div>
