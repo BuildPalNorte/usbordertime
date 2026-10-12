@@ -53,9 +53,16 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
   return (
     <div className="space-y-3 pt-1 select-none [-webkit-touch-callout:none] [-webkit-user-select:none]">
       {stream && (
-        <CrossingCamera src={stream.src} alias={stream.alias} name={name.title} />
+        <div data-tour="detail-camera">
+          <CrossingCamera src={stream.src} alias={stream.alias} name={name.title} />
+        </div>
       )}
-      <div role="radiogroup" aria-label={copy.laneType} className="grid grid-cols-2 gap-2.5">
+      <div
+        role="radiogroup"
+        aria-label={copy.laneType}
+        data-tour="detail-lanes"
+        className="grid grid-cols-2 gap-2.5"
+      >
         {lanes.map((id, index) => {
           const reading = readLane(port, id);
           const average = shownAverage(averages.data, id, port.time, reading.available);
@@ -113,14 +120,16 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
         })}
       </div>
 
-      <UsualDay
-        hours={averages.data?.hours[mode]}
-        high={averages.data?.high?.[mode]}
-        nowHour={hourFromClock(port.time)}
-        lane={modeName(mode, port, copy)}
-        pending={averages.isLoading}
-        failed={averages.isError}
-      />
+      <div data-tour="detail-usual">
+        <UsualDay
+          hours={averages.data?.hours[mode]}
+          high={averages.data?.high?.[mode]}
+          nowHour={hourFromClock(port.time)}
+          lane={modeName(mode, port, copy)}
+          pending={averages.isLoading}
+          failed={averages.isError}
+        />
+      </div>
 
       {port.constructionNotice && (
         <div className="rounded-2xl bg-surface px-4 py-3">

@@ -17,6 +17,8 @@ import {
 import { QuestionMarkCircleIcon } from "@/components/wallet/question-mark-circle-icon";
 import { ClockIcon } from "@heroicons-animated/react/clock";
 import { MapIcon } from "@heroicons-animated/react/map";
+import { tourSignal } from "@/lib/tour-signal";
+import { SparklesIcon } from "@heroicons-animated/react/sparkles";
 import { cn } from "@/lib/cn";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
@@ -120,7 +122,7 @@ export function AccountButton({ className }: { className?: string }) {
   const photo = user?.image && !imageFailed ? user.image : null;
 
   return (
-    <div ref={rootRef} className={cn("relative", className)}>
+    <div ref={rootRef} data-tour="account-button" className={cn("relative", className)}>
       <motion.button
         ref={buttonRef}
         type="button"
@@ -218,6 +220,20 @@ export function AccountButton({ className }: { className?: string }) {
                   </div>
                 )}
                 {process.env.NODE_ENV === "development" && <DevStreakPicker />}
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    haptic("light");
+                    setOpen(false);
+                    tourSignal.request();
+                  }}
+                  className="relative flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium"
+                >
+                  <HapticPad />
+                  <SparklesIcon size={20} aria-hidden className="shrink-0" />
+                  {copy.tourReplay}
+                </button>
                 <LanguageSwitch variant="menu" />
                 <ThemeSwitch variant="menu" />
                 <div role="separator" className="mx-2 my-1 h-px bg-foreground/10" />

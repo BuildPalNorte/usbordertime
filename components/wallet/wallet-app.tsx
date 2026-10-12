@@ -42,6 +42,7 @@ import { RoutesFocusSync } from "./route-row";
 import { SchedulesPane } from "./schedules-pane";
 import { TabBar, type Tab } from "./tab-bar";
 import { Toast, type ToastState } from "./toast";
+import { Tour } from "./tour";
 import { MobilePaneHeader, PaneChromeProvider, type PaneAction } from "./pane-header";
 import { WalletPane } from "./wallet-pane";
 
@@ -743,6 +744,14 @@ export function WalletApp({
 
       <TabBar tab={tab} onChange={changeTab} />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
+      <Tour
+        hydrated={hydrated}
+        canAutoStart={tab === "wallet" && expandedId === null && !focus}
+        tab={tab}
+        expandedId={expandedId}
+        savedCount={items.length}
+        onGoHome={() => go("/")}
+      />
     </div>
     </CameraStreamProvider>
     </PaneChromeProvider>

@@ -195,6 +195,7 @@ export function HeaderActions({
         <motion.button
           key="done"
           type="button"
+          data-tour="header-done"
           onClick={() => {
             haptic("soft");
             onDone();
@@ -240,6 +241,7 @@ export function HeaderActions({
             key="add-crossing"
             type="button"
             aria-label={copy.addCrossing}
+            data-tour="header-add"
             onClick={() => {
               haptic("light");
               onAdd();

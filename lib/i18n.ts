@@ -262,6 +262,36 @@ export type Copy = {
   installStepsIos: readonly string[];
   installStepsOther: readonly string[];
   installDone: string;
+  tourReplay: string;
+  tourSkip: string;
+  tourBack: string;
+  tourNext: string;
+  tourDone: string;
+  tourProgress: (step: number, total: number) => string;
+  tourWelcomeTitle: string;
+  tourWelcomeBody: string;
+  tourFindTitle: string;
+  tourFindBody: string;
+  tourPickTitle: string;
+  tourPickBody: string;
+  tourOpenTitle: string;
+  tourOpenBody: string;
+  tourCameraTitle: string;
+  tourCameraBody: string;
+  tourLanesTitle: string;
+  tourLanesBody: string;
+  tourUsualTitle: string;
+  tourUsualBody: string;
+  tourCloseTitle: string;
+  tourCloseBody: string;
+  tourSchedulesTitle: string;
+  tourSchedulesBody: string;
+  tourAskTitle: string;
+  tourAskBody: string;
+  tourAccountTitle: string;
+  tourAccountBody: string;
+  tourDoneTitle: string;
+  tourDoneBody: string;
   mode: ModeCopy;
   tone: Record<Tone, string>;
   laneStatus: Record<StatusKey, string>;
@@ -630,6 +660,36 @@ export const COPY: Record<Locale, Copy> = {
       "Confirm. Border Time opens from your Home Screen.",
     ],
     installDone: "Got it",
+    tourReplay: "Take the tour",
+    tourSkip: "Skip",
+    tourBack: "Back",
+    tourNext: "Next",
+    tourDone: "Done",
+    tourProgress: (step, total) => `${step} of ${total}`,
+    tourWelcomeTitle: "Welcome to Border Time",
+    tourWelcomeBody: "Let's add Puente Viejo and learn to read it. Takes about twenty seconds.",
+    tourFindTitle: "Find a bridge",
+    tourFindBody: "Tap + to find Puente Viejo, the bridge with the live camera.",
+    tourPickTitle: "Add Puente Viejo",
+    tourPickBody: "Tap the plus next to it to save it to your wallet.",
+    tourOpenTitle: "This is your card",
+    tourOpenBody: "Tap it to see the camera, the lane, and the usual wait.",
+    tourCameraTitle: "Watch it live",
+    tourCameraBody: "Puente Viejo and Puente Nuevo both carry a live camera, right at the top of the card.",
+    tourLanesTitle: "Live, by lane",
+    tourLanesBody: "Each lane shows its own wait. Tap one to switch.",
+    tourUsualTitle: "What's normal",
+    tourUsualBody: "The usual wait by hour, so a bad one stands out from a normal one.",
+    tourCloseTitle: "Head back",
+    tourCloseBody: "Tap Done to close the card.",
+    tourSchedulesTitle: "Alarmas",
+    tourSchedulesBody: "Set a time and day, and Border Time sends the wait for your bridge before you need to leave.",
+    tourAskTitle: "Ask",
+    tourAskBody: "Ask about hours, construction, or which lane is moving. It answers with the live wait in hand.",
+    tourAccountTitle: "Your account",
+    tourAccountBody: "Switch language or appearance, and find sign out here.",
+    tourDoneTitle: "That's it",
+    tourDoneBody: "Safe travels. You can replay this tour anytime from the account menu.",
     mode: {
       car: "Car",
       ready: "Ready lane",
@@ -980,6 +1040,36 @@ export const COPY: Record<Locale, Copy> = {
       "Confirma. Border Time se abre desde tu pantalla de inicio.",
     ],
     installDone: "Entendido",
+    tourReplay: "Hacer el recorrido",
+    tourSkip: "Omitir",
+    tourBack: "Atrás",
+    tourNext: "Siguiente",
+    tourDone: "Listo",
+    tourProgress: (step, total) => `${step} de ${total}`,
+    tourWelcomeTitle: "Bienvenido a Border Time",
+    tourWelcomeBody: "Agreguemos Puente Viejo y aprendamos a leerlo. Toma unos veinte segundos.",
+    tourFindTitle: "Encuentra un puente",
+    tourFindBody: "Toca + para encontrar Puente Viejo, el puente con cámara en vivo.",
+    tourPickTitle: "Agrega Puente Viejo",
+    tourPickBody: "Toca el más junto a él para guardarlo en tus puentes.",
+    tourOpenTitle: "Esta es tu tarjeta",
+    tourOpenBody: "Tócala para ver la cámara, el carril y la espera habitual.",
+    tourCameraTitle: "Míralo en vivo",
+    tourCameraBody: "Puente Viejo y Puente Nuevo tienen cámara en vivo, justo arriba de la tarjeta.",
+    tourLanesTitle: "En vivo, por carril",
+    tourLanesBody: "Cada carril muestra su propia espera. Toca uno para cambiar.",
+    tourUsualTitle: "Lo normal",
+    tourUsualBody: "La espera habitual por hora, para que una mala espera resalte frente a una normal.",
+    tourCloseTitle: "Regresa",
+    tourCloseBody: "Toca Listo para cerrar la tarjeta.",
+    tourSchedulesTitle: "Alarmas",
+    tourSchedulesBody: "Elige una hora y días, y Border Time te manda la espera de tu puente antes de que tengas que salir.",
+    tourAskTitle: "Preguntar",
+    tourAskBody: "Pregunta sobre horarios, construcción o qué carril avanza. Responde con la espera en vivo a la mano.",
+    tourAccountTitle: "Tu cuenta",
+    tourAccountBody: "Cambia el idioma o la apariencia, y encuentra cerrar sesión aquí.",
+    tourDoneTitle: "Eso es todo",
+    tourDoneBody: "Buen viaje. Puedes repetir este recorrido cuando quieras desde el menú de la cuenta.",
     mode: {
       car: "Auto",
       ready: "Carril Ready",

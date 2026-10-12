@@ -125,6 +125,13 @@ export function BrowsePane({
     [ports],
   );
 
+  // The tour walks someone to a specific bridge — Puente Viejo, because it carries a
+  // live camera worth seeing. A feed without it falls back to whatever lists first.
+  const tourTargetPort = useMemo(
+    () => rows.find((row) => row.title === "Viejo")?.port.portNumber ?? rows[0]?.port.portNumber ?? null,
+    [rows],
+  );
+
   const counts = useMemo(
     () => ({
       mexican: rows.filter((r) => r.port.border.toLowerCase().includes("mexic"))
@@ -291,6 +298,7 @@ export function BrowsePane({
                 saved={saved}
                 onToggle={onToggle}
                 onPin={onPin}
+                tourTargetPort={tourTargetPort}
               />
             );
           })
@@ -307,12 +315,15 @@ function CityBlock({
   saved,
   onToggle,
   onPin,
+  tourTargetPort,
 }: {
   block: Block;
   start: number;
   saved: ReadonlySet<string>;
   onToggle: (port: PortWaitTime) => void;
   onPin: (border: string, city: string) => void;
+  /** The crossing the tour's "add a bridge" step points at — Puente Viejo, when it's listed. */
+  tourTargetPort: string | null;
 }) {
   const reduce = useReducedMotion();
 
@@ -355,6 +366,7 @@ function CityBlock({
                   ? () => onPin(row.port.border, row.city)
                   : undefined
               }
+              tourTarget={row.port.portNumber === tourTargetPort}
             />
           </li>
         ))}
@@ -465,12 +477,15 @@ function CrossingRow({
   added,
   onToggle,
   onPin,
+  tourTarget,
 }: {
   row: Row;
   added: boolean;
   onToggle: () => void;
   /** Present when this row is the whole city, so the pin lives on the row. */
   onPin?: () => void;
+  /** The crossing the tour's "add a bridge" step points at. */
+  tourTarget?: boolean;
 }) {
   const { copy } = useLocale();
   const { port } = row;
@@ -551,7 +566,12 @@ function CrossingRow({
         </button>
 
         {onPin && <PinButton pinned={false} label={row.city} onClick={onPin} />}
-        <AddButton added={added} label={row.title} onToggle={onToggle} />
+        <AddButton
+          added={added}
+          label={row.title}
+          onToggle={onToggle}
+          dataTour={tourTarget ? "browse-pick-toggle" : undefined}
+        />
       </div>
 
       <div
@@ -671,10 +691,12 @@ function AddButton({
   added,
   label,
   onToggle,
+  dataTour,
 }: {
   added: boolean;
   label: string;
   onToggle: () => void;
+  dataTour?: string;
 }) {
   const { copy } = useLocale();
   const reduce = useReducedMotion();
@@ -695,6 +717,7 @@ function AddButton({
         added ? copy.removeFromWalletNamed(label) : copy.addToWallet(label)
       }
       onClick={onToggle}
+      data-tour={dataTour}
       onPointerEnter={() => (added ? check : plus).current?.startAnimation()}
       onPointerLeave={() => (added ? check : plus).current?.stopAnimation()}
       whileTap={reduce ? undefined : { scale: 0.93 }}

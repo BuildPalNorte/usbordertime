@@ -54,10 +54,16 @@ export function TabBar({ tab, onChange }: Props) {
           active={tab === "schedules"}
           label={copy.schedules}
           onClick={() => select("schedules")}
+          data-tour="tab-schedules"
         >
           <ClockIcon ref={clock} size={22} aria-hidden />
         </TabButton>
-        <TabButton active={tab === "ask"} label={copy.ask} onClick={() => select("ask")}>
+        <TabButton
+          active={tab === "ask"}
+          label={copy.ask}
+          onClick={() => select("ask")}
+          data-tour="tab-ask"
+        >
           <QuestionMarkCircleIcon ref={question} size={22} aria-hidden />
         </TabButton>
       </div>
@@ -70,11 +76,13 @@ function TabButton({
   label,
   onClick,
   children,
+  "data-tour": dataTour,
 }: {
   active: boolean;
   label: string;
   onClick: () => void;
   children: React.ReactNode;
+  "data-tour"?: string;
 }) {
   const reduce = useReducedMotion();
   const origin = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -122,6 +130,7 @@ function TabButton({
       type="button"
       aria-current={active ? "page" : undefined}
       aria-label={label}
+      data-tour={dataTour}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerCancel={() => {

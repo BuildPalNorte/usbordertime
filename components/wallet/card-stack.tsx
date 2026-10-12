@@ -143,6 +143,7 @@ export function CardStack({
               item={item}
               index={index}
               count={items.length}
+              dataTour={index === items.length - 1 ? "first-card" : undefined}
               targetY={targetY}
               slot={slot}
               isOpen={isOpen}
@@ -210,6 +211,7 @@ function StackCard({
   item,
   index,
   count,
+  dataTour,
   targetY,
   slot,
   isOpen,
@@ -237,6 +239,7 @@ function StackCard({
   item: StackItem;
   index: number;
   count: number;
+  dataTour?: string;
   targetY: number;
   slot: number;
   isOpen: boolean;
@@ -495,7 +498,9 @@ function StackCard({
       swipeFade.set(1);
       if (swiping) setSwiping(false);
     }
-    if (!canReorder) return;
+    // A card that cannot reorder — a single-card wallet, or any card while one
+    // is open — still needs these listeners so a plain tap opens it. Only the
+    // hold-to-pick-up transition below is skipped for it.
     cardWidth.current = event.currentTarget.offsetWidth || cardWidth.current;
     const cardEl = event.currentTarget;
     const startX = event.clientX;
@@ -527,6 +532,7 @@ function StackCard({
       ? 0
       : window.setTimeout(() => {
           if (phase.current !== "pending") return;
+          if (!canReorder) return;
           phase.current = "dragging";
           // Stop the slot spring now. Waiting for the effect would let it fight the finger.
           flight.current?.stop();
@@ -798,6 +804,7 @@ function StackCard({
       <motion.div
         role="button"
         tabIndex={isOpen ? -1 : 0}
+        data-tour={dataTour}
         aria-label={
           canReorder ? `${label}. ${isFront ? `${copy.sendBackHint}. ` : ""}${copy.reorderHint}` : label
         }
