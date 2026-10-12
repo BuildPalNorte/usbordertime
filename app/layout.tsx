@@ -2,10 +2,10 @@ import { Providers } from "@/components/providers";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { COPY, LOCALE_COOKIE } from "@/lib/i18n";
 import { resolveLocale } from "@/lib/locale.server";
+import { siteOrigin } from "@/lib/site";
 import { THEME_COLOR } from "@/lib/theme";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { headers } from "next/headers";
 import { Suspense, type ReactNode } from "react";
 import "./globals.css";
 
@@ -19,45 +19,31 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-function metadataBaseFrom(headerList: Headers): URL {
-  const raw = headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "";
-  const host = raw.split(",")[0]?.trim();
-  if (host) {
-    const forwarded = headerList.get("x-forwarded-proto")?.split(",")[0]?.trim();
-    const proto =
-      forwarded ||
-      (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
-    return new URL(`${proto}://${host}`);
-  }
-  if (process.env.VERCEL_URL) return new URL(`https://${process.env.VERCEL_URL}`);
-  return new URL("http://localhost:3000");
-}
-
-export async function generateMetadata(): Promise<Metadata> {
-  const description = COPY.en.metaDescription;
-  return {
-    metadataBase: metadataBaseFrom(await headers()),
+// No headers() here: reading the request would make this dynamic, and Next.js streams
+// dynamic metadata into <body> instead of <head>. Bots that don't run JavaScript — and
+// Lighthouse's SEO audit, which only looks in <head> — would then see no description.
+export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
+  title: "Border Time",
+  description: COPY.en.metaDescription,
+  applicationName: "Border Time",
+  appleWebApp: {
+    capable: true,
     title: "Border Time",
-    description,
-    applicationName: "Border Time",
-    appleWebApp: {
-      capable: true,
-      title: "Border Time",
-      statusBarStyle: "default",
-    },
-    openGraph: {
-      title: "Border Time",
-      description,
-      siteName: "Border Time",
-      type: "website",
-    },
-    twitter: {
-      card: "summary",
-      title: "Border Time",
-      description,
-    },
-  };
-}
+    statusBarStyle: "default",
+  },
+  openGraph: {
+    title: "Border Time",
+    description: COPY.en.metaDescription,
+    siteName: "Border Time",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Border Time",
+    description: COPY.en.metaDescription,
+  },
+};
 
 export const viewport: Viewport = {
   width: "device-width",
