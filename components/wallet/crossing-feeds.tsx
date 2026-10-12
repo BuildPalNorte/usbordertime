@@ -8,9 +8,11 @@ import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { reportCameraExpanded, videoIsExpanded } from "@/lib/screen-orientation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { CameraBar } from "./camera-bar";
 import { HapticPad } from "./haptic-pad";
+import { SPRING } from "./motion";
 
 type Status = "loading" | "live" | "failed";
 
@@ -63,15 +65,19 @@ function FeedViewer({ feeds, name }: { feeds: CrossingFeed[]; name: string }) {
     feeds.findIndex((item) => item.id === activeId),
   );
   const feed = feeds[index];
-  // Which way the new view arrives from, so it slides in from where the finger went.
-  const [enter, setEnter] = useState<1 | -1 | 0>(0);
+  // Which way the new view arrives from, and how fast it was already moving when the
+  // swipe handed off — so it keeps travelling at the same speed instead of restarting cold.
+  const [enter, setEnter] = useState<{ dir: 1 | -1 | 0; velocity: number }>({
+    dir: 0,
+    velocity: 0,
+  });
 
   const show = useCallback(
-    (to: number, opts?: { silent?: boolean }) => {
+    (to: number, opts?: { silent?: boolean; velocity?: number }) => {
       const next = feeds[to];
       if (!next || to === index) return;
       if (!opts?.silent) haptic("selection");
-      setEnter(to > index ? 1 : -1);
+      setEnter({ dir: to > index ? 1 : -1, velocity: opts?.velocity ?? 0 });
       setActiveId(next.id);
     },
     [feeds, index],
@@ -148,13 +154,12 @@ function FeedViewer({ feeds, name }: { feeds: CrossingFeed[]; name: string }) {
       enter={enter}
       // The swipe already ticked its own haptic as it crossed the commit line (or on
       // release, if a fast flick never crossed it) — don't tick a second time here.
-      onStep={(dir) => show(index + dir, { silent: true })}
+      onStep={(dir, velocity) => show(index + dir, { silent: true, velocity })}
       canStep={{ prev: index > 0, next: index < feeds.length - 1 }}
     />
   );
 }
 
-const SETTLE = "cubic-bezier(0.22, 1, 0.36, 1)";
 /** How far a view travels as it leaves or arrives, as a share of the width. Short keeps it tight. */
 const HOP = 0.28;
 
@@ -172,22 +177,28 @@ const ARM_HYSTERESIS = 0.08;
 
 /**
  * Drag the picture sideways to move to the next or previous view. It follows the finger 1:1,
- * resists at the ends, and decides from where the flick is heading, not where it let go. The old
- * view leaves at the speed it was moving, the new one settles in from the same side, and a
- * grab during the settle picks the picture up from where it is. The bottom strip is left alone
- * so the player's own scrubber still works.
+ * resists at the ends, and decides from where the flick is heading, not where it let go. This
+ * is the same spring the wallet cards use (`SPRING.release`), handed the finger's own velocity,
+ * so a slow drag settles gently and a flick throws it, instead of every release playing the same
+ * fixed-length animation. The old view leaves at that speed, the new one arrives carrying it, and
+ * a grab mid-flight — settling home, or still arriving — picks the picture up from where it is,
+ * because the spring is a motion value, not a fire-and-forget keyframe. The bottom strip is left
+ * alone so the player's own scrubber still works.
  *
  * The drag ticks once it has travelled far enough that letting go now would switch views, ticks
  * again if it comes back out of that zone, and ticks softer when it bumps the resisted edge.
  * A flick that commits without ever crossing the line still ticks, at release.
  */
 function useSwipe(
-  onStep: (dir: 1 | -1) => void,
+  onStep: (dir: 1 | -1, velocity: number) => void,
   canStep: { prev: boolean; next: boolean },
-  enter: 1 | -1 | 0,
+  enter: { dir: 1 | -1 | 0; velocity: number },
 ) {
   const ref = useRef<HTMLDivElement>(null);
-  const settling = useRef<Animation | null>(null);
+  const reduce = useReducedMotion();
+  const x = useMotionValue(0);
+  const opacity = useMotionValue(1);
+  const flight = useRef<{ stop: () => void } | null>(null);
   const leaving = useRef(false);
   const drag = useRef<{
     id: number;
@@ -203,46 +214,97 @@ function useSwipe(
     bumped: boolean;
   } | null>(null);
 
-  const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node || enter === 0 || reduced()) return;
-    settling.current = node.animate(
-      [
-        { transform: `translateX(${enter * HOP * 100}%)`, opacity: 0 },
-        { transform: "translateX(0)", opacity: 1 },
-      ],
-      { duration: 240, easing: SETTLE },
+  // Runs before paint, so the view's first visible frame is already the arrival position —
+  // never a flash of the rest position it is about to leave again.
+  useLayoutEffect(() => {
+    if (enter.dir === 0) return;
+    const width = ref.current?.offsetWidth ?? 0;
+    if (reduce || width === 0) {
+      x.set(0);
+      opacity.set(1);
+      return;
+    }
+    x.set(enter.dir * width * HOP);
+    opacity.set(0);
+    const move = animate(
+      x,
+      0,
+      enter.velocity ? { ...SPRING.release, velocity: enter.velocity } : SPRING.move,
     );
-  }, [enter]);
+    const fade = animate(opacity, 1, { duration: 0.2, ease: [0.23, 1, 0.32, 1] });
+    flight.current = {
+      stop() {
+        move.stop();
+        fade.stop();
+      },
+    };
+    return () => {
+      move.stop();
+      fade.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enter.dir, enter.velocity, reduce]);
 
-  function settleBack(node: HTMLElement, from: number, velocity: number) {
-    node.style.transform = "";
-    if (reduced() || Math.abs(from) < 1) return;
-    // A light drag eases home at a steady pace; a hand moving fast when it let go
-    // carries that speed into the spring back, so release and settle read as one motion.
-    const duration = Math.min(340, Math.max(180, Math.abs(from) / Math.max(Math.abs(velocity), 0.9)));
-    settling.current = node.animate(
-      [{ transform: `translateX(${from}px)` }, { transform: "translateX(0)" }],
-      { duration, easing: SETTLE },
+  function settleHome(velocity: number) {
+    flight.current?.stop();
+    if (reduce) {
+      x.set(0);
+      flight.current = null;
+      return;
+    }
+    const controls = animate(x, 0, { ...SPRING.release, velocity });
+    flight.current = controls;
+    void controls.finished.then(
+      () => {
+        if (flight.current === controls) flight.current = null;
+      },
+      () => {},
     );
+  }
+
+  function leaveTo(dir: 1 | -1, width: number, velocity: number) {
+    if (reduce) {
+      x.set(0);
+      opacity.set(1);
+      onStep(dir, velocity);
+      return;
+    }
+    leaving.current = true;
+    const dest = -dir * width * HOP;
+    // Hand off once the view is most of the way through its hop, so the switch lands with
+    // the motion instead of waiting out the spring's last, barely-visible settle.
+    const threshold = Math.abs(dest) * 0.85;
+    const move = animate(x, dest, { ...SPRING.release, velocity });
+    const fade = animate(opacity, 0, { duration: 0.16, ease: [0.4, 0, 1, 1] });
+    let sent = false;
+    const unwatch = x.on("change", (latest) => {
+      if (Math.abs(latest) >= threshold) send();
+    });
+    function send() {
+      if (sent) return;
+      sent = true;
+      unwatch();
+      move.stop();
+      fade.stop();
+      leaving.current = false;
+      if (flight.current === move) flight.current = null;
+      onStep(dir, velocity);
+    }
+    flight.current = move;
+    void move.finished.then(send, () => {});
   }
 
   const handlers = {
     onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-      const node = ref.current;
-      if (!node || leaving.current) return;
+      if (leaving.current) return;
       if (event.pointerType === "mouse" && event.button !== 0) return;
       const box = event.currentTarget.getBoundingClientRect();
       if (event.clientY > box.bottom - 56) return;
-      // Grabbing a picture that is still settling: start from where it is on screen.
-      let base = 0;
-      if (settling.current && settling.current.playState === "running") {
-        base = new DOMMatrix(getComputedStyle(node).transform).m41;
-        settling.current.cancel();
-        settling.current = null;
-      }
+      // Grabbing a picture that is still settling or arriving: pick it up from where it is.
+      flight.current?.stop();
+      flight.current = null;
+      if (opacity.get() < 1) void animate(opacity, 1, { duration: 0.12 });
+      const base = x.get();
       drag.current = {
         id: event.pointerId,
         x: event.clientX,
@@ -256,15 +318,11 @@ function useSwipe(
         armed: false,
         bumped: false,
       };
-      if (base !== 0) {
-        node.style.transform = `translateX(${base}px)`;
-        event.currentTarget.setPointerCapture(event.pointerId);
-      }
+      if (base !== 0) event.currentTarget.setPointerCapture(event.pointerId);
     },
     onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
       const state = drag.current;
-      const node = ref.current;
-      if (!state || state.id !== event.pointerId || !node) return;
+      if (!state || state.id !== event.pointerId) return;
       const dx = event.clientX - state.x;
       const dy = event.clientY - state.y;
       if (!state.live) {
@@ -281,7 +339,7 @@ function useSwipe(
       const width = event.currentTarget.clientWidth;
       const blocked = total > 0 ? !canStep.prev : !canStep.next;
       state.shown = blocked ? rubberBand(total, width) : total;
-      node.style.transform = `translateX(${state.shown}px)`;
+      x.set(state.shown);
 
       if (blocked) {
         state.armed = false;
@@ -303,52 +361,32 @@ function useSwipe(
     },
     onPointerUp(event: React.PointerEvent<HTMLDivElement>) {
       const state = drag.current;
-      const node = ref.current;
       drag.current = null;
-      if (!state || !state.live || !node) return;
+      if (!state || !state.live) return;
       const width = event.currentTarget.clientWidth;
+      // Motion's springs take velocity in units/second; the drag tracked px/ms.
+      const velocity = state.vx * 1000;
       // Where the flick would come to rest if it kept coasting.
       const projected = state.shown + state.vx * 99;
       const dir: 1 | -1 = projected < 0 ? 1 : -1;
       const allowed = dir === 1 ? canStep.next : canStep.prev;
       if (!allowed || Math.abs(projected) < width * 0.35) {
-        settleBack(node, state.shown, state.vx);
+        settleHome(velocity);
         return;
       }
       // The drag already ticked when it crossed the line. A quick flick that commits
       // without ever crossing it still needs a tick, right as it commits.
       if (!state.armed) haptic("medium");
-      if (reduced()) {
-        node.style.transform = "";
-        onStep(dir);
-        return;
-      }
-      leaving.current = true;
-      const target = -dir * width * HOP;
-      const remaining = Math.max(0, Math.abs(target - state.shown));
-      const duration = Math.min(150, Math.max(80, remaining / Math.max(Math.abs(state.vx), 1.2)));
-      node.style.transform = "";
-      const out = node.animate(
-        [
-          { transform: `translateX(${state.shown}px)`, opacity: 1 },
-          { transform: `translateX(${target}px)`, opacity: 0 },
-        ],
-        { duration, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" },
-      );
-      out.onfinish = () => {
-        leaving.current = false;
-        onStep(dir);
-      };
+      leaveTo(dir, width, velocity);
     },
     onPointerCancel() {
       const state = drag.current;
-      const node = ref.current;
       drag.current = null;
-      if (state && node) settleBack(node, state.shown, state.vx);
+      if (state) settleHome(state.vx * 1000);
     },
   };
 
-  return { ref, handlers };
+  return { ref, handlers, x, opacity };
 }
 
 function useNow(everyMs: number) {
@@ -390,12 +428,17 @@ function FeedStage({
   name: string;
   replace: (id: string, src: string) => void;
   picker: ReactNode;
-  enter: 1 | -1 | 0;
-  onStep: (dir: 1 | -1) => void;
+  enter: { dir: 1 | -1 | 0; velocity: number };
+  onStep: (dir: 1 | -1, velocity: number) => void;
   canStep: { prev: boolean; next: boolean };
 }) {
   const { locale, copy } = useLocale();
-  const { ref: swipeRef, handlers: swipeHandlers } = useSwipe(onStep, canStep, enter);
+  const {
+    ref: swipeRef,
+    handlers: swipeHandlers,
+    x: swipeX,
+    opacity: swipeOpacity,
+  } = useSwipe(onStep, canStep, enter);
   const [status, setStatus] = useState<Status>("loading");
   const [attempt, setAttempt] = useState(0);
   const [health, setHealth] = useState<SnapshotHealth | null>(null);
@@ -452,7 +495,11 @@ function FeedStage({
         {...swipeHandlers}
         className="relative aspect-video touch-pan-y overflow-hidden bg-[#10131a]"
       >
-        <div ref={swipeRef} className="absolute inset-0 will-change-transform">
+        <motion.div
+          ref={swipeRef}
+          style={{ x: swipeX, opacity: swipeOpacity }}
+          className="absolute inset-0 will-change-transform"
+        >
           {status !== "failed" &&
             (feed.kind === "hls" ? (
               <FeedVideo
@@ -538,7 +585,7 @@ function FeedStage({
               </button>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {picker}
