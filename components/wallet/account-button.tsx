@@ -19,6 +19,7 @@ import { ClockIcon } from "@heroicons-animated/react/clock";
 import { MapIcon } from "@heroicons-animated/react/map";
 import { cn } from "@/lib/cn";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
@@ -145,11 +146,14 @@ export function AccountButton({ className }: { className?: string }) {
         <HapticPad />
         {user ? (
           photo ? (
-            // Google hosts the profile photo. next/image would need that host allowlisted.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            // Served through the Next image proxy (lh3.googleusercontent.com is allowlisted),
+            // so the browser sends no third-party cookies and gets a right-sized WebP.
+            <Image
               src={photo}
               alt=""
+              width={20}
+              height={20}
+              sizes="20px"
               referrerPolicy="no-referrer"
               onError={() => setImageFailed(true)}
               className="size-5 rounded-full object-cover"

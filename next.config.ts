@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  images: {
+    // Google profile photos shown in the account button.
+    remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" }],
+  },
   partialPrefetching: true,
   turbopack: {
     rules: {

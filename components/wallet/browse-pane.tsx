@@ -712,13 +712,13 @@ function AddButton({
           initial={
             reduce
               ? { opacity: 0 }
-              : { opacity: 0, scale: 0.7, filter: "blur(4px)" }
+              : { opacity: 0, scale: 0.7 }
           }
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          animate={{ opacity: 1, scale: 1 }}
           exit={
             reduce
               ? { opacity: 0 }
-              : { opacity: 0, scale: 0.7, filter: "blur(4px)" }
+              : { opacity: 0, scale: 0.7 }
           }
           transition={SPRING.pop}
         >

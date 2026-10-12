@@ -182,7 +182,7 @@ export function HeaderActions({
   const reduce = useReducedMotion();
   const refreshIcon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
   const addIcon = useRef<{ startAnimation: () => void; stopAnimation: () => void }>(null);
-  const appear = reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, filter: "blur(4px)" };
+  const appear = reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8 };
   // Leave faster than arriving, so the old button is gone before the new one settles.
   const gone = { ...appear, transition: { duration: 0.12, ease: [0.4, 0, 1, 1] as const } };
 
@@ -197,7 +197,7 @@ export function HeaderActions({
             onDone();
           }}
           initial={appear}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          animate={{ opacity: 1, scale: 1 }}
           exit={gone}
           layout="position"
           transition={SPRING.snap}
@@ -218,7 +218,7 @@ export function HeaderActions({
             onPointerEnter={() => refreshIcon.current?.startAnimation()}
             onPointerLeave={() => refreshIcon.current?.stopAnimation()}
             initial={appear}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={gone}
             layout="position"
             transition={SPRING.snap}
@@ -244,7 +244,7 @@ export function HeaderActions({
             onPointerEnter={() => addIcon.current?.startAnimation()}
             onPointerLeave={() => addIcon.current?.stopAnimation()}
             initial={appear}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={gone}
             layout="position"
             transition={SPRING.snap}
@@ -262,7 +262,7 @@ export function HeaderActions({
           aria-label={copy.scheduleNew}
           onClick={onAdd}
           initial={appear}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          animate={{ opacity: 1, scale: 1 }}
           exit={gone}
           layout="position"
           transition={SPRING.snap}

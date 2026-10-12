@@ -24,9 +24,9 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
         {toast && (
           <motion.div
             key={toast.id}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.94, filter: "blur(6px)" }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.96, filter: "blur(4px)" }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.96 }}
             transition={reduce ? { duration: 0.16 } : SPRING.pop}
             className="glass pointer-events-auto flex max-w-full items-center gap-1 rounded-full py-1.5 pr-1.5 pl-5"
           >
