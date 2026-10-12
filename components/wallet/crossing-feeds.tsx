@@ -197,7 +197,6 @@ function useSwipe(
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const x = useMotionValue(0);
-  const opacity = useMotionValue(1);
   const flight = useRef<{ stop: () => void } | null>(null);
   const leaving = useRef(false);
   const drag = useRef<{
@@ -215,33 +214,24 @@ function useSwipe(
   } | null>(null);
 
   // Runs before paint, so the view's first visible frame is already the arrival position —
-  // never a flash of the rest position it is about to leave again.
+  // never a flash of the rest position it is about to leave again. Position only: the picture
+  // itself stays fully visible through the hop, so an already-loaded frame is never hidden
+  // behind a fade.
   useLayoutEffect(() => {
     if (enter.dir === 0) return;
     const width = ref.current?.offsetWidth ?? 0;
     if (reduce || width === 0) {
       x.set(0);
-      opacity.set(1);
       return;
     }
     x.set(enter.dir * width * HOP);
-    opacity.set(0);
     const move = animate(
       x,
       0,
       enter.velocity ? { ...SPRING.release, velocity: enter.velocity } : SPRING.move,
     );
-    const fade = animate(opacity, 1, { duration: 0.2, ease: [0.23, 1, 0.32, 1] });
-    flight.current = {
-      stop() {
-        move.stop();
-        fade.stop();
-      },
-    };
-    return () => {
-      move.stop();
-      fade.stop();
-    };
+    flight.current = move;
+    return () => move.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enter.dir, enter.velocity, reduce]);
 
@@ -265,7 +255,6 @@ function useSwipe(
   function leaveTo(dir: 1 | -1, width: number, velocity: number) {
     if (reduce) {
       x.set(0);
-      opacity.set(1);
       onStep(dir, velocity);
       return;
     }
@@ -275,7 +264,6 @@ function useSwipe(
     // the motion instead of waiting out the spring's last, barely-visible settle.
     const threshold = Math.abs(dest) * 0.85;
     const move = animate(x, dest, { ...SPRING.release, velocity });
-    const fade = animate(opacity, 0, { duration: 0.16, ease: [0.4, 0, 1, 1] });
     let sent = false;
     const unwatch = x.on("change", (latest) => {
       if (Math.abs(latest) >= threshold) send();
@@ -285,7 +273,6 @@ function useSwipe(
       sent = true;
       unwatch();
       move.stop();
-      fade.stop();
       leaving.current = false;
       if (flight.current === move) flight.current = null;
       onStep(dir, velocity);
@@ -303,7 +290,6 @@ function useSwipe(
       // Grabbing a picture that is still settling or arriving: pick it up from where it is.
       flight.current?.stop();
       flight.current = null;
-      if (opacity.get() < 1) void animate(opacity, 1, { duration: 0.12 });
       const base = x.get();
       drag.current = {
         id: event.pointerId,
@@ -386,7 +372,7 @@ function useSwipe(
     },
   };
 
-  return { ref, handlers, x, opacity };
+  return { ref, handlers, x };
 }
 
 function useNow(everyMs: number) {
@@ -433,12 +419,7 @@ function FeedStage({
   canStep: { prev: boolean; next: boolean };
 }) {
   const { locale, copy } = useLocale();
-  const {
-    ref: swipeRef,
-    handlers: swipeHandlers,
-    x: swipeX,
-    opacity: swipeOpacity,
-  } = useSwipe(onStep, canStep, enter);
+  const { ref: swipeRef, handlers: swipeHandlers, x: swipeX } = useSwipe(onStep, canStep, enter);
   const [status, setStatus] = useState<Status>("loading");
   const [attempt, setAttempt] = useState(0);
   const [health, setHealth] = useState<SnapshotHealth | null>(null);
@@ -497,7 +478,7 @@ function FeedStage({
       >
         <motion.div
           ref={swipeRef}
-          style={{ x: swipeX, opacity: swipeOpacity }}
+          style={{ x: swipeX }}
           className="absolute inset-0 will-change-transform"
         >
           {status !== "failed" &&
