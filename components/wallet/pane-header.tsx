@@ -85,7 +85,9 @@ export function PaneChromeProvider({
 export function usePublishPaneChrome(live: boolean, chrome: PaneChrome, handlers: Handlers) {
   const ctx = useContext(ChromeContext);
   const latest = useRef(handlers);
-  latest.current = handlers;
+  useLayoutEffect(() => {
+    latest.current = handlers;
+  });
   const { subtitle, action, checking, refreshing } = chrome;
   const publish = ctx?.publish;
   const bind = ctx?.bind;

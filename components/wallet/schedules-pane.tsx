@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useLocale } from "@/components/locale-provider";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import { cn } from "@/lib/cn";
@@ -24,8 +25,13 @@ import { HeaderActions, usePublishPaneChrome, type PaneAction } from "./pane-hea
 import { HapticPad } from "./haptic-pad";
 import { REDUCED, SPRING } from "./motion";
 import { scheduleTourSignal } from "@/lib/schedule-tour-signal";
-import { ScheduleSheet } from "./schedule-sheet";
-import { ScheduleTour } from "./schedule-tour";
+// The sheet and the tour load when they are first needed, not with the Alarmas tab.
+const ScheduleSheet = dynamic(() => import("./schedule-sheet").then((m) => m.ScheduleSheet), {
+  ssr: false,
+});
+const ScheduleTour = dynamic(() => import("./schedule-tour").then((m) => m.ScheduleTour), {
+  ssr: false,
+});
 import type { StackItem } from "./card-stack";
 import { useSchedules } from "./use-schedules";
 

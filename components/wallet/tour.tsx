@@ -253,6 +253,8 @@ export function Tour({
     if (!active || !stepId) return;
     if (stepId === "find-bridge" && tab === "browse") {
       haptic("selection");
+      // The tour advances when the real app reaches the state a step is waiting for.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStepIndex((i) => i + 1);
     } else if (stepId === "pick-bridge" && savedCount > 0) {
       haptic("success");

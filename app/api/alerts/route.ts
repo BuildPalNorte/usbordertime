@@ -17,8 +17,8 @@ export async function GET() {
 
   try {
     return Response.json(await listAlerts(userId), { headers: NO_STORE });
-  } catch {
-    return serverError("Could not load alerts.");
+  } catch (error) {
+    return serverError("Could not load alerts.", error);
   }
 }
 
@@ -58,8 +58,8 @@ export async function PUT(request: Request) {
     }
     await recordUsage(userId, "alert");
     return Response.json(alert, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not save the alert.");
+  } catch (error) {
+    return serverError("Could not save the alert.", error);
   }
 }
 
@@ -75,7 +75,7 @@ export async function DELETE(request: Request) {
   try {
     await deleteAlert(userId, port, mode);
     return Response.json({ ok: true }, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not remove the alert.");
+  } catch (error) {
+    return serverError("Could not remove the alert.", error);
   }
 }

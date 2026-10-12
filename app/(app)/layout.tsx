@@ -40,20 +40,22 @@ async function GatedHome({ children }: { children: ReactNode }) {
   const user = session?.user;
   if (!user?.id || !user.email) return <SignInScreen />;
 
-  let referralPending = false;
-  try {
-    const profile = await ensureProfile({
+  // The profile and the preference do not depend on each other, so read them together.
+  const [profileResult, preferenceResult] = await Promise.allSettled([
+    ensureProfile({
       id: user.id,
       email: user.email,
       name: user.name || user.email,
       image: user.image ?? null,
-    });
-    referralPending = profile.referralPending;
-  } catch {
+    }),
+    getPreference(user.id),
+  ]);
+  if (profileResult.status === "rejected") {
+    console.error("profile", profileResult.reason);
     return <SignInScreen problem="profile" />;
   }
 
-  if (referralPending) {
+  if (profileResult.value.referralPending) {
     return (
       <SessionGate>
         <ReferralPrompt />
@@ -61,14 +63,9 @@ async function GatedHome({ children }: { children: ReactNode }) {
     );
   }
 
-  let preference: PreferenceRecord | null = null;
-  let preferenceReady = false;
-  try {
-    preference = await getPreference(user.id);
-    preferenceReady = true;
-  } catch {
-    preferenceReady = false;
-  }
+  const preferenceReady = preferenceResult.status === "fulfilled";
+  const preference: PreferenceRecord | null = preferenceReady ? preferenceResult.value : null;
+  if (!preferenceReady) console.error("preference", preferenceResult.reason);
 
   return (
     <AdminAccess allowed={isAdminEmail(user.email)}>
@@ -84,18 +81,9 @@ async function GatedHome({ children }: { children: ReactNode }) {
 
 /** Fetches the cached CBP snapshot on the server. If CBP is down, the client retries on its own. */
 async function LiveWallet({ children }: { children: ReactNode }) {
-  let initial: BorderWaitTimes | null = null;
-  try {
-    initial = await getBorderWaitTimes();
-  } catch {
-    initial = null;
-  }
-  let streams = fallbackCameraStreams();
-  try {
-    streams = await getCameraStreams();
-  } catch {
-    streams = fallbackCameraStreams();
-  }
+  const [snapshot, cameras] = await Promise.allSettled([getBorderWaitTimes(), getCameraStreams()]);
+  const initial: BorderWaitTimes | null = snapshot.status === "fulfilled" ? snapshot.value : null;
+  const streams = cameras.status === "fulfilled" ? cameras.value : fallbackCameraStreams();
   return (
     <>
       <Suspense fallback={<ShellSkeleton wordless />}>

@@ -7,13 +7,8 @@ import {
   type StreakRecord,
   type StreakView,
 } from "@/lib/streak";
-import { neon } from "@neondatabase/serverless";
+import { database } from "@/lib/db.server";
 
-function database() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("Missing DATABASE_URL");
-  return neon(url);
-}
 
 let ensuring: Promise<void> | null = null;
 

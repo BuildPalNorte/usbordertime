@@ -7,7 +7,7 @@ import {
   sessionUserId,
   unauthorized,
 } from "@/lib/session.server";
-import { recordUsage } from "@/lib/usage.server";
+import { claimAsk } from "@/lib/usage.server";
 
 /** A signed-in rider asks a question. The reply uses the live CBP snapshot and the hourly averages. */
 export async function POST(request: Request) {
@@ -24,7 +24,10 @@ export async function POST(request: Request) {
   const messages = parseMessages(raw);
   if (!messages) return badRequest("Expected a question.");
 
-  if (!allow(userId, 12)) {
+  const ASK_LIMIT = 12;
+  // The shared count when the database answers; this instance's own count when it does not.
+  const claimed = await claimAsk(userId, ASK_LIMIT);
+  if (claimed === false || (claimed === null && !allow(userId, ASK_LIMIT))) {
     return Response.json(
       { error: "Too many questions. Wait a minute." },
       { status: 429, headers: NO_STORE },
@@ -33,9 +36,8 @@ export async function POST(request: Request) {
 
   try {
     const reply = await answer(messages, isLocale(locale) ? locale : "en");
-    await recordUsage(userId, "ask");
     return Response.json({ reply }, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not answer right now.");
+  } catch (error) {
+    return serverError("Could not answer right now.", error);
   }
 }

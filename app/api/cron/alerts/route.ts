@@ -22,6 +22,8 @@ export async function GET(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
   }
   const [alerts, schedules] = await Promise.allSettled([runAlertCheck(), runScheduleCheck()]);
+  if (alerts.status === "rejected") console.error("alert check", alerts.reason);
+  if (schedules.status === "rejected") console.error("schedule check", schedules.reason);
   if (alerts.status === "rejected" && schedules.status === "rejected") {
     return Response.json({ error: "Alert check failed." }, { status: 502, headers: NO_STORE });
   }

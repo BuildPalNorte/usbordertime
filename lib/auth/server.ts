@@ -41,7 +41,11 @@ function createAuth() {
     globalForAuth.authPool ??
     new Pool({
       connectionString: databaseUrl(),
-      max: 5,
+      // Each serverless instance holds its own pool, so keep it small and let idle sockets go.
+      // For many instances, point DATABASE_URL at Neon's pooled (`-pooler`) host.
+      max: 3,
+      idleTimeoutMillis: 10_000,
+      connectionTimeoutMillis: 10_000,
     });
 
   if (process.env.NODE_ENV !== "production") globalForAuth.authPool = pool;

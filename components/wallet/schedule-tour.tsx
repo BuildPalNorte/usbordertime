@@ -232,6 +232,8 @@ export function ScheduleTour({
     sheetWasOpen.current = false;
     if (scheduleCount > 0) {
       haptic("success");
+      // The tour advances when the sheet closes with a saved schedule.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStepIndex((i) => i + 1);
     } else {
       end(true);
@@ -287,6 +289,8 @@ export function ScheduleTour({
   const [sheetHint, setSheetHint] = useState<{ rect: Rect; phase: SheetPhase } | null>(null);
   useEffect(() => {
     if (!open || stepId !== "open-sheet" || !editing) {
+      // Clears the hint when the sheet is not the step. The updater keeps a null as it is.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSheetHint((prev) => (prev === null ? prev : null));
       return;
     }

@@ -1,10 +1,9 @@
 "use client";
 
 import { useLocale } from "@/components/locale-provider";
-import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
-import { disablePush } from "@/lib/push-client";
+import { signOutAndReload } from "@/lib/sign-out";
 import { REFERRALS, type Referral } from "@/lib/referral";
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -48,9 +47,7 @@ export function ReferralPrompt() {
     haptic("light");
     setBusy(true);
     void (async () => {
-      await disablePush();
-      await authClient.signOut();
-      window.location.assign("/");
+      await signOutAndReload();
     })();
   };
 

@@ -14,6 +14,6 @@ Voice uses the browser's speech recognition (`SpeechRecognition`, with the `webk
 
 Answers are markdown. `AskMarkdown` renders paragraphs, bold, italics, lists, and http(s) links as elements. It does not insert HTML. The prompt asks for that shape: short paragraphs, bold for a port, a lane, or a time, and a bullet list for a comparison. User messages stay plain text.
 
-`POST /api/ask` needs a signed-in session and is rate limited per account (12 a minute, best effort per server instance). `OPENAI_API_KEY` is server-only. Do not import `lib/ask.server.ts` from client code.
+`POST /api/ask` needs a signed-in session and is rate limited per account (12 a minute, counted in `usage_event` by `claimAsk` so it holds across instances; if the database is down it falls back to a per-instance count). `OPENAI_API_KEY` is server-only. Do not import `lib/ask.server.ts` from client code.
 
 CBP waits are northbound and do not include the drive to the bridge. The prompt says so; keep it that way. When the customs reference changes, keep it hedged and point to CBP or Aduana. Do not state a rule as settled when it changes often.

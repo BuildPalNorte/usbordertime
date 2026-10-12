@@ -10,14 +10,9 @@ import {
   type Schedule,
   type ScheduleInput,
 } from "@/lib/schedule";
-import { neon } from "@neondatabase/serverless";
+import { database } from "@/lib/db.server";
 import { randomUUID } from "node:crypto";
 
-function database() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("Missing DATABASE_URL");
-  return neon(url);
-}
 
 let ensuring: Promise<void> | null = null;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { isIPhone, notePadTick } from "@/lib/haptics";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
 /**
  * Covers a button on iPhone. The finger has to land on a real switch —
@@ -11,12 +11,10 @@ import { useLayoutEffect, useRef, useState } from "react";
  * the pane, so a moved finger does not click, and if the browser did not pan
  * we move the scroller ourselves.
  */
-export function HapticPad() {
-  const [phone, setPhone] = useState(false);
+const noSubscribe = () => () => {};
 
-  useLayoutEffect(() => {
-    setPhone(isIPhone());
-  }, []);
+export function HapticPad() {
+  const phone = useSyncExternalStore(noSubscribe, isIPhone, () => false);
 
   if (!phone) return null;
   return <Pad />;

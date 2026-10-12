@@ -71,8 +71,8 @@ export async function POST(request: Request) {
     if (result === "gone") await forgetPushDevice(device.endpoint);
     if (result !== "sent") return serverError("The test did not go out.");
     return Response.json({ ok: true }, { headers: NO_STORE });
-  } catch {
-    return serverError("The test did not go out.");
+  } catch (error) {
+    return serverError("The test did not go out.", error);
   }
 }
 

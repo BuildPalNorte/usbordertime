@@ -1,5 +1,5 @@
 import { parsePreference, type Preference, type PreferenceRecord } from "@/lib/preference";
-import { neon } from "@neondatabase/serverless";
+import { database } from "@/lib/db.server";
 
 type PreferenceRow = {
   locale: string | null;
@@ -24,11 +24,6 @@ function savedAtFrom(value: Date | string): string {
   return date.toISOString();
 }
 
-function database() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("Missing DATABASE_URL");
-  return neon(url);
-}
 
 let ensuring: Promise<void> | null = null;
 

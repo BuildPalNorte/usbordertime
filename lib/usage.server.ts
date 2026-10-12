@@ -1,13 +1,8 @@
 import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
-import { neon } from "@neondatabase/serverless";
+import { database } from "@/lib/db.server";
 
 /** Recording is best effort: a failed write must never fail the request that caused it. */
 
-function database() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("Missing DATABASE_URL");
-  return neon(url);
-}
 
 let ensuring: Promise<void> | null = null;
 
@@ -44,6 +39,32 @@ export async function recordUsage(userId: string, kind: UsageKind): Promise<void
     await sql`insert into usage_event (user_id, kind) values (${userId}, ${kind})`;
   } catch (error) {
     console.error("usage record", kind, error);
+  }
+}
+
+/**
+ * Logs one `ask` and reports whether the account is still under `limit` asks in the last minute.
+ * The count lives in the database, so it holds across serverless instances. Counting the attempt
+ * itself first means two requests that arrive together cannot both slip under the limit. If the
+ * database is down the caller falls back to its per-instance limit.
+ */
+export async function claimAsk(userId: string, limit: number): Promise<boolean | null> {
+  try {
+    await ensureUsageTable();
+    const sql = database();
+    const rows = (await sql`
+      with logged as (
+        insert into usage_event (user_id, kind) values (${userId}, 'ask') returning id
+      )
+      select count(*)::int as count
+      from usage_event
+      where user_id = ${userId} and kind = 'ask' and created_at > now() - interval '1 minute'
+        and id <> (select id from logged)
+    `) as { count: number }[];
+    return Number(rows[0]?.count ?? 0) < limit;
+  } catch (error) {
+    console.error("ask limit", error);
+    return null;
   }
 }
 

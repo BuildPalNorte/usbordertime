@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useLocale } from "@/components/locale-provider";
 import { NotFoundScreen } from "@/components/not-found-screen";
 import type { BorderWaitTimes, PortWaitTime } from "@/lib/border-wait-times";
@@ -49,7 +50,8 @@ import { RoutesFocusSync } from "./route-row";
 import { SchedulesPane } from "./schedules-pane";
 import { TabBar, type Tab } from "./tab-bar";
 import { Toast, type ToastState } from "./toast";
-import { Tour } from "./tour";
+// Only a first-time rider needs the tour, so it stays out of the main bundle.
+const Tour = dynamic(() => import("./tour").then((m) => m.Tour), { ssr: false });
 import {
   MobilePaneHeader,
   PaneChromeProvider,

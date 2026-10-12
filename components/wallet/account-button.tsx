@@ -6,7 +6,7 @@ import { authClient } from "@/lib/auth/client";
 import { haptic } from "@/lib/haptics";
 import { installStore } from "@/lib/install-store";
 import { nextMilestone, streakLevel } from "@/lib/streak";
-import { disablePush } from "@/lib/push-client";
+import { signOutAndReload } from "@/lib/sign-out";
 import {
   ADMIN_PATH,
   ASK_PATH,
@@ -73,6 +73,8 @@ export function AccountButton({ className }: { className?: string }) {
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("sign-in") !== "failed") return;
+    // The sign-in redirect lands with this query. It exists only in the browser, after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFailed(true);
     url.searchParams.delete("sign-in");
     const next = `${url.pathname}${url.search}${url.hash}`;
@@ -121,10 +123,7 @@ export function AccountButton({ className }: { className?: string }) {
     haptic("light");
     setOpen(false);
     setBusy(true);
-    // While still signed in, so the server accepts it. This phone stops getting the account's alerts.
-    await disablePush();
-    await authClient.signOut();
-    window.location.assign("/");
+    await signOutAndReload();
   };
 
   const label = user

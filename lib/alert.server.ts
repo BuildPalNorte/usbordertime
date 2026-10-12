@@ -3,13 +3,8 @@ import type { Locale } from "@/lib/i18n";
 import { isLocale } from "@/lib/i18n";
 import { ensurePreferenceTable } from "@/lib/preference.server";
 import { isMode } from "@/lib/ports";
-import { neon } from "@neondatabase/serverless";
+import { database } from "@/lib/db.server";
 
-function database() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("Missing DATABASE_URL");
-  return neon(url);
-}
 
 let ensuring: Promise<void> | null = null;
 

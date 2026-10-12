@@ -26,8 +26,8 @@ export async function PUT(request: Request) {
   try {
     await savePushDevice(userId, device, deviceKey);
     return Response.json({ ok: true }, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not save this device.");
+  } catch (error) {
+    return serverError("Could not save this device.", error);
   }
 }
 
@@ -48,7 +48,7 @@ export async function DELETE(request: Request) {
   try {
     await deletePushDevice(userId, endpoint);
     return Response.json({ ok: true }, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not remove this device.");
+  } catch (error) {
+    return serverError("Could not remove this device.", error);
   }
 }

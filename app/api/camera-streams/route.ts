@@ -6,7 +6,8 @@ const NO_STORE = { "Cache-Control": "no-store" };
 export async function GET() {
   try {
     return Response.json(await getCameraStreams(), { headers: NO_STORE });
-  } catch {
+  } catch (error) {
+    console.error("camera streams", error);
     return Response.json(fallbackCameraStreams(), { headers: NO_STORE });
   }
 }
@@ -30,7 +31,8 @@ export async function POST(request: Request) {
     const src = await refreshCameraStream(alias, current);
     if (!src) return Response.json({ error: "Camera lookup failed." }, { status: 502 });
     return Response.json({ alias, src });
-  } catch {
+  } catch (error) {
+    console.error("camera lookup", error);
     return Response.json({ error: "Camera lookup failed." }, { status: 502 });
   }
 }

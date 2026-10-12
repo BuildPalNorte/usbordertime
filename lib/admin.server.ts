@@ -5,7 +5,7 @@ import { ensureProfile, ensureProfileColumns } from "@/lib/profile";
 import { isReferral, REFERRAL_LABEL, REFERRALS, type Referral } from "@/lib/referral";
 import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
 import { readUsageTotals, type UsageTotals } from "@/lib/usage.server";
-import { neon } from "@neondatabase/serverless";
+import { database } from "@/lib/db.server";
 import { headers } from "next/headers";
 
 /**
@@ -90,11 +90,6 @@ export type AdminOpen =
   | { kind: "denied" }
   | { kind: "ready"; viewer: AdminViewer; data: AdminData };
 
-function database() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("Missing DATABASE_URL");
-  return neon(url);
-}
 
 function asCount(value: unknown): number {
   const count = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;

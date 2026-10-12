@@ -1,8 +1,7 @@
 "use client";
 
-import { authClient } from "@/lib/auth/client";
 import { haptic } from "@/lib/haptics";
-import { disablePush } from "@/lib/push-client";
+import { signOutAndReload } from "@/lib/sign-out";
 import { useState } from "react";
 
 export function SignOutButton() {
@@ -17,9 +16,7 @@ export function SignOutButton() {
         setBusy(true);
         haptic("light");
         void (async () => {
-          await disablePush();
-          await authClient.signOut();
-          window.location.assign("/");
+          await signOutAndReload();
         })();
       }}
       className="text-[15px] font-medium text-muted disabled:opacity-50"

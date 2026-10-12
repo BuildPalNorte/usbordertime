@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const saved = await saveReferral(userId, source);
     if (!saved) return badRequest("Expected a source.");
     return Response.json({ source }, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not save that answer.");
+  } catch (error) {
+    return serverError("Could not save that answer.", error);
   }
 }

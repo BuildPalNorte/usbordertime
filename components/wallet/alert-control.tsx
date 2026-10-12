@@ -71,6 +71,8 @@ export function AlertButton({
 
   useLayoutEffect(() => {
     if (!open) {
+      // Forget the last spot so the next open measures again.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPlace(null);
       return;
     }
@@ -90,6 +92,7 @@ export function AlertButton({
     const top = up
       ? Math.max(margin, anchor.top - gap - height)
       : Math.min(anchor.bottom + gap, window.innerHeight - height - margin);
+    // Measured from the laid-out panel, so it can only be known after layout.
     setPlace({ top, left, up });
   }, [open, shown, current, waits.length, busy]);
 

@@ -13,6 +13,8 @@ import {
 } from "@/lib/schedule.server";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 
+const BATCH = 10;
+
 export type ScheduleCheck = { checked: number; sent: number };
 
 /**
@@ -28,20 +30,32 @@ export async function runScheduleCheck(): Promise<ScheduleCheck> {
   const snapshot = await getBorderWaitTimes();
   const byNumber = new Map(snapshot.ports.map((port) => [port.portNumber, port]));
 
-  let sent = 0;
-  for (const schedule of due) {
+  const send = async (schedule: DueCandidate): Promise<boolean> => {
     const today = localMoment(schedule.timeZone, now).date;
     // Of two overlapping runs, only one wins the claim.
-    if (!(await claimSend(schedule.id, today))) continue;
+    if (!(await claimSend(schedule.id, today))) return false;
 
     const ports = schedule.ports.flatMap((number) => byNumber.get(number) ?? []);
     // Nothing to report: the bridges left the feed. Today stays claimed, so it does not retry.
-    if (ports.length === 0) continue;
+    if (ports.length === 0) return false;
 
     const delivered = await deliver(schedule, ports, today);
-    if (delivered) sent += 1;
     // Nobody could be reached. Try again next minute instead of losing the morning.
-    else await releaseSend(schedule.id);
+    if (!delivered) await releaseSend(schedule.id);
+    return delivered;
+  };
+
+  let sent = 0;
+  // Schedules are independent, so send them in small batches. One failing does not stop the rest.
+  for (let i = 0; i < due.length; i += BATCH) {
+    const results = await Promise.allSettled(due.slice(i, i + BATCH).map(send));
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        if (result.value) sent += 1;
+      } else {
+        console.error("schedule send", result.reason);
+      }
+    }
   }
 
   return { checked: schedules.length, sent };

@@ -32,8 +32,13 @@ export function CrossingCamera({
     ? playing.replace(/stream\.m3u8$/, "snapshot.jpg")
     : undefined;
 
-  useEffect(() => {
+  const [source, setSource] = useState({ src, alias });
+  if (source.src !== src || source.alias !== alias) {
+    setSource({ src, alias });
     setPlaying(src);
+  }
+
+  useEffect(() => {
     tried.current = new Set();
   }, [src, alias]);
 

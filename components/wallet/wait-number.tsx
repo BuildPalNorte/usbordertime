@@ -35,14 +35,19 @@ function reelFrames(height: number): Keyframe[] {
 function DigitReel({ digit, active, place }: { digit: number; active: boolean; place: number }) {
   const strip = useRef<HTMLSpanElement>(null);
   const digitRef = useRef(digit);
-  digitRef.current = digit;
+  useLayoutEffect(() => {
+    digitRef.current = digit;
+  }, [digit]);
   const [spinning, setSpinning] = useState(active);
+  const [wasActive, setWasActive] = useState(active);
+  // Starting is immediate. Stopping waits its turn below, so the ones place lands first.
+  if (active !== wasActive) {
+    setWasActive(active);
+    if (active) setSpinning(true);
+  }
 
   useEffect(() => {
-    if (active) {
-      setSpinning(true);
-      return;
-    }
+    if (active) return;
     const id = window.setTimeout(() => setSpinning(false), place * REEL_STAGGER_MS);
     return () => window.clearTimeout(id);
   }, [active, place]);
@@ -139,19 +144,14 @@ export function WaitNumber({
   const reduce = useReducedMotion();
   const spring = useSpring(reduce ? value : 0, { stiffness: 150, damping: 22, mass: 0.9 });
   const text = useTransform(spring, (v) => Math.max(0, Math.round(v)).toString());
-  const [phase, setPhase] = useState<"idle" | "spin" | "land">("idle");
-
-  useEffect(() => {
-    if (reduce) {
-      setPhase("idle");
-      return;
-    }
-    if (checking) {
-      setPhase("spin");
-      return;
-    }
-    setPhase((current) => (current === "spin" ? "land" : current));
-  }, [checking, reduce]);
+  const [phase, setPhase] = useState<"idle" | "spin" | "land">(
+    !reduce && checking ? "spin" : "idle",
+  );
+  const [seen, setSeen] = useState({ checking, reduce });
+  if (seen.checking !== checking || seen.reduce !== reduce) {
+    setSeen({ checking, reduce });
+    setPhase(reduce ? "idle" : checking ? "spin" : phase === "spin" ? "land" : phase);
+  }
 
   useEffect(() => {
     if (phase !== "land") return;

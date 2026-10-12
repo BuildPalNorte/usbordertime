@@ -15,8 +15,8 @@ export async function GET() {
 
   try {
     return Response.json(await listSchedules(userId), { headers: NO_STORE });
-  } catch {
-    return serverError("Could not load schedules.");
+  } catch (error) {
+    return serverError("Could not load schedules.", error);
   }
 }
 
@@ -46,8 +46,8 @@ export async function PUT(request: Request) {
     }
     await recordUsage(userId, "alarm");
     return Response.json(result.schedule, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not save the schedule.");
+  } catch (error) {
+    return serverError("Could not save the schedule.", error);
   }
 }
 
@@ -61,7 +61,7 @@ export async function DELETE(request: Request) {
   try {
     await deleteSchedule(userId, id);
     return Response.json({ ok: true }, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not remove the schedule.");
+  } catch (error) {
+    return serverError("Could not remove the schedule.", error);
   }
 }

@@ -1,5 +1,5 @@
 import { isReferral, type Referral } from "@/lib/referral";
-import { neon } from "@neondatabase/serverless";
+import { database } from "@/lib/db.server";
 
 export type ProfileIdentity = {
   id: string;
@@ -8,11 +8,6 @@ export type ProfileIdentity = {
   image: string | null;
 };
 
-function database() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("Missing DATABASE_URL");
-  return neon(url);
-}
 
 let ensuring: Promise<void> | null = null;
 
@@ -38,10 +33,25 @@ function pendingFrom(value: unknown): boolean {
   return value === true || value === "t" || value === "true" || value === 1;
 }
 
-/** Creates the profile on first sign-in and refreshes name, email, and photo after that. */
+/**
+ * Creates the profile on first sign-in and refreshes name, email, and photo when they change.
+ * A returning visit with nothing new is a read, not a write.
+ */
 export async function ensureProfile(identity: ProfileIdentity): Promise<{ referralPending: boolean }> {
   await ensureProfileColumns();
   const sql = database();
+  const existing = (await sql`
+    select email, name, image, referral_pending from profile where id = ${identity.id} limit 1
+  `) as { email: string; name: string; image: string | null; referral_pending?: unknown }[];
+  const row = existing[0];
+  if (
+    row &&
+    row.email === identity.email &&
+    row.name === identity.name &&
+    (row.image ?? null) === identity.image
+  ) {
+    return { referralPending: pendingFrom(row.referral_pending) };
+  }
   const rows = await sql`
     insert into profile (id, email, name, image, referral_pending)
     values (${identity.id}, ${identity.email}, ${identity.name}, ${identity.image}, true)

@@ -17,6 +17,8 @@ export function badRequest(message: string): Response {
   return Response.json({ error: message }, { status: 400, headers: NO_STORE });
 }
 
-export function serverError(message: string): Response {
+/** A 500. Pass the caught error so the real cause reaches the server log, not the rider. */
+export function serverError(message: string, cause?: unknown): Response {
+  if (cause !== undefined) console.error(message, cause);
   return Response.json({ error: message }, { status: 500, headers: NO_STORE });
 }

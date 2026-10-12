@@ -1,6 +1,6 @@
 import { lookupCameraStream } from "@/lib/camera-stream";
 import { fallbackCameraStreams, isCameraAlias } from "@/lib/ports";
-import { neon } from "@neondatabase/serverless";
+import { database } from "@/lib/db.server";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 
 const CAMERA_STREAMS_TAG = "camera-streams";
@@ -10,11 +10,6 @@ type CameraRow = {
   src: string;
 };
 
-function database() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("Missing DATABASE_URL");
-  return neon(url);
-}
 
 async function ensureCameraStreamTable() {
   const sql = database();

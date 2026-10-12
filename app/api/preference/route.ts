@@ -1,49 +1,47 @@
-import { getAuth } from "@/lib/auth/server";
 import { parsePreference } from "@/lib/preference";
 import { getPreference, savePreference } from "@/lib/preference.server";
+import {
+  badRequest,
+  NO_STORE,
+  serverError,
+  sessionUserId,
+  unauthorized,
+} from "@/lib/session.server";
 import { recordUsage } from "@/lib/usage.server";
-import { headers } from "next/headers";
-
-const NO_STORE = { "Cache-Control": "private, no-store" };
-
-async function sessionUserId(): Promise<string | null> {
-  const session = await getAuth().api.getSession({ headers: await headers() });
-  return session?.user?.id ?? null;
-}
 
 export async function GET() {
   const userId = await sessionUserId();
-  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
+  if (!userId) return unauthorized();
 
   try {
     const preference = await getPreference(userId);
     return Response.json(preference, { headers: NO_STORE });
-  } catch {
-    return Response.json({ error: "Could not load preferences." }, { status: 500, headers: NO_STORE });
+  } catch (error) {
+    return serverError("Could not load preferences.", error);
   }
 }
 
 export async function PUT(request: Request) {
   const userId = await sessionUserId();
-  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
+  if (!userId) return unauthorized();
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Expected preferences." }, { status: 400, headers: NO_STORE });
+    return badRequest("Expected preferences.");
   }
 
   const preference = parsePreference(body);
   if (!preference) {
-    return Response.json({ error: "Expected preferences." }, { status: 400, headers: NO_STORE });
+    return badRequest("Expected preferences.");
   }
 
   try {
     const savedAt = await savePreference(userId, preference);
     await recordUsage(userId, "sync");
     return Response.json({ ...preference, savedAt }, { headers: NO_STORE });
-  } catch {
-    return Response.json({ error: "Could not save preferences." }, { status: 500, headers: NO_STORE });
+  } catch (error) {
+    return serverError("Could not save preferences.", error);
   }
 }

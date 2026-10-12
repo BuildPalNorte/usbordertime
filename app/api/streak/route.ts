@@ -19,8 +19,8 @@ export async function GET(request: Request) {
 
   try {
     return Response.json(await getStreak(userId, timeZone), { headers: NO_STORE });
-  } catch {
-    return serverError("Could not load the streak.");
+  } catch (error) {
+    return serverError("Could not load the streak.", error);
   }
 }
 
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     // Only the first call of a day counts as a visit. Repeat opens the same day change nothing.
     if (streak.advanced) await recordUsage(userId, "visit");
     return Response.json(streak, { headers: NO_STORE });
-  } catch {
-    return serverError("Could not save the visit.");
+  } catch (error) {
+    return serverError("Could not save the visit.", error);
   }
 }

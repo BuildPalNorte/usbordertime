@@ -40,6 +40,8 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("sign-in") !== "failed") return;
+    // The sign-in redirect lands with this query. It exists only in the browser, after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFailed(true);
     url.searchParams.delete("sign-in");
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);

@@ -1,4 +1,4 @@
-import { REARM_SLACK } from "@/lib/alert";
+import { REARM_SLACK, type PushDevice } from "@/lib/alert";
 import {
   claimBelow,
   forgetPushDevice,
@@ -14,6 +14,8 @@ import { sendPush } from "@/lib/push.server";
 import { crossingSharePath } from "@/lib/routes";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 
+const BATCH = 10;
+
 export type AlertCheck = { checked: number; notified: number };
 
 /**
@@ -28,10 +30,20 @@ export async function runAlertCheck(): Promise<AlertCheck> {
   const byNumber = new Map(snapshot.ports.map((port) => [port.portNumber, port]));
   const alerts = await listArmedAlerts();
 
-  let notified = 0;
-  for (const alert of alerts) {
+  // A phone is looked up once per account per run, however many of its alerts fire.
+  const devicesByUser = new Map<string, ReturnType<typeof listPushDevices>>();
+  const devicesFor = (userId: string) => {
+    let pending = devicesByUser.get(userId);
+    if (!pending) {
+      pending = listPushDevices(userId);
+      devicesByUser.set(userId, pending);
+    }
+    return pending;
+  };
+
+  const check = async (alert: ArmedAlert): Promise<boolean> => {
     const port = byNumber.get(alert.portNumber);
-    if (!port) continue;
+    if (!port) return false;
 
     const reading = readLane(port, alert.mode);
     const minutes = reading.minutes;
@@ -40,29 +52,47 @@ export async function runAlertCheck(): Promise<AlertCheck> {
       // A closed lane is not "short". Re-arm it so the reopening can notify.
       // An update that is merely pending says nothing, so leave the state alone.
       if (alert.below && reading.tone === "closed") await setBelow(alert, false);
-      continue;
+      return false;
     }
 
     if (minutes < alert.threshold) {
-      if (alert.below) continue;
+      if (alert.below) return false;
       // Of two overlapping runs, only one wins the claim.
-      if (!(await claimBelow(alert))) continue;
-      const delivered = await notify(alert, port, minutes);
-      if (delivered) notified += 1;
+      if (!(await claimBelow(alert))) return false;
+      const delivered = await notify(alert, port, minutes, await devicesFor(alert.userId));
       // Nobody could be reached. Try again next minute instead of losing the drop.
-      else await setBelow(alert, false);
-      continue;
+      if (!delivered) await setBelow(alert, false);
+      return delivered;
     }
 
     if (alert.below && minutes >= alert.threshold + REARM_SLACK) {
       await setBelow(alert, false);
+    }
+    return false;
+  };
+
+  let notified = 0;
+  // Alerts are independent, so check them in small batches. One failing does not stop the rest.
+  for (let i = 0; i < alerts.length; i += BATCH) {
+    const results = await Promise.allSettled(alerts.slice(i, i + BATCH).map(check));
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        if (result.value) notified += 1;
+      } else {
+        console.error("alert check", result.reason);
+      }
     }
   }
 
   return { checked: alerts.length, notified };
 }
 
-async function notify(alert: ArmedAlert, port: PortWaitTime, minutes: number): Promise<boolean> {
+async function notify(
+  alert: ArmedAlert,
+  port: PortWaitTime,
+  minutes: number,
+  devices: PushDevice[],
+): Promise<boolean> {
   const copy = COPY[alert.locale];
   const lane = modeName(alert.mode, port, copy);
   const payload = {
@@ -72,7 +102,6 @@ async function notify(alert: ArmedAlert, port: PortWaitTime, minutes: number): P
     tag: `${alert.portNumber}:${alert.mode}`,
   };
 
-  const devices = await listPushDevices(alert.userId);
   const results = await Promise.all(
     devices.map(async (device) => {
       const result = await sendPush(device, payload);
