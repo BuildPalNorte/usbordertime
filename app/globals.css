@@ -128,6 +128,23 @@ body {
   }
 }
 
+/*
+  Low-end devices (little memory, few cores, or data saver on, from the boot script in
+  app/layout.tsx): skip every blur layer. Compositing a blurred surface during scroll is
+  one of the most expensive things a weak GPU does, so these fall back to a solid fill.
+*/
+:root[data-perf="low"] .glass {
+  background: var(--surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-perf="low"] .backdrop-blur-xl,
+:root[data-perf="low"] .backdrop-blur-md {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 @media (prefers-contrast: more) {
   .glass {
     background: var(--surface);
@@ -580,6 +597,18 @@ body {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+}
+
+:root[data-perf="low"] .sign-in-card {
+  background: var(--surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-perf="low"] .sign-in-handoff {
+  background: var(--background);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 @keyframes fade-only {

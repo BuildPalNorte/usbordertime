@@ -55,7 +55,7 @@ export const viewport: Viewport = {
   ],
 };
 
-const bootScript = `try{var l=document.cookie.match(/(?:^|; )${LOCALE_COOKIE.replaceAll(".", "\\.")}=(en|es)/);if(l)document.documentElement.lang=l[1];var dark=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=dark?"dark":"light";var c=dark?"${THEME_COLOR.dark}":"${THEME_COLOR.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c)})}catch(e){}`;
+const bootScript = `try{var l=document.cookie.match(/(?:^|; )${LOCALE_COOKIE.replaceAll(".", "\\.")}=(en|es)/);if(l)document.documentElement.lang=l[1];var dark=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=dark?"dark":"light";var c=dark?"${THEME_COLOR.dark}":"${THEME_COLOR.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c)});var mem=navigator.deviceMemory;var cores=navigator.hardwareConcurrency;var save=navigator.connection&&navigator.connection.saveData;if((mem&&mem<=4)||(cores&&cores<=4)||save)document.documentElement.dataset.perf="low"}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
