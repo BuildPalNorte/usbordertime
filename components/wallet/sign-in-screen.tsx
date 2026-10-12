@@ -168,9 +168,10 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
             {copy.signInWithGoogle}
           </motion.button>
 
-          <Link href="/privacy" className="mt-4 inline-block text-[13px] font-medium text-muted">
-            {copy.privacyPolicy}
-          </Link>
+          <p className="mt-4 flex items-center justify-center gap-3 text-[13px] font-medium text-muted">
+            <Link href="/privacy">{copy.privacyPolicy}</Link>
+            <Link href="/terms">{copy.termsOfUse}</Link>
+          </p>
 
           {error && (
             <p className="mx-auto mt-4 max-w-[18rem] text-[13px] leading-snug text-danger" role="status">

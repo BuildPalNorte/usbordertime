@@ -16,7 +16,7 @@ const AI_CRAWLERS = [
   "Meta-ExternalAgent",
 ];
 
-const PUBLIC = ["/", "/guides", "/es/guias", "/privacy", "/llms.txt", "/llms-full.txt"];
+const PUBLIC = ["/", "/guides", "/es/guias", "/privacy", "/terms", "/llms.txt", "/llms-full.txt"];
 const PRIVATE = ["/api/", "/og/", "/admin"];
 
 export default function robots(): MetadataRoute.Robots {

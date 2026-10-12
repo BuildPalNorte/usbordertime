@@ -8,6 +8,7 @@ import { MicrophoneIcon } from "@heroicons-animated/react/microphone";
 import { PaperAirplaneIcon } from "@heroicons-animated/react/paper-airplane";
 import { StopIcon } from "@heroicons-animated/react/stop";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -458,7 +459,10 @@ export function AskPane({ ownsHeader }: Props) {
         )}
 
         <p className="mt-2 px-3 text-center text-[12px] leading-snug text-muted">
-          {copy.askNote}
+          {copy.askNote}{" "}
+          <Link href="/terms" className="underline">
+            {copy.termsOfUse}
+          </Link>
         </p>
         <div className="relative rounded-[28px] p-1.5">
           <div

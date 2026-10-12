@@ -364,6 +364,14 @@ export function AccountButton({ className }: { className?: string }) {
                 >
                   {copy.privacyPolicy}
                 </Link>
+                <Link
+                  href="/terms"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex h-10 w-full items-center rounded-xl px-3 text-left text-[14px] font-medium"
+                >
+                  {copy.termsOfUse}
+                </Link>
                 <button
                   type="button"
                   role="menuitem"

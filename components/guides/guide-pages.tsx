@@ -74,6 +74,36 @@ function GuideTile({
   );
 }
 
+function GuideLegal({
+  locale,
+  className,
+  centered,
+}: {
+  locale: Locale;
+  className?: string;
+  centered?: boolean;
+}) {
+  const copy = COPY[locale];
+  return (
+    <div className={className}>
+      <p className="text-[13px] leading-relaxed text-muted">{copy.guideSourceNote}</p>
+      <p
+        className={cn(
+          "mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-medium",
+          centered && "justify-center",
+        )}
+      >
+        <Link href="/privacy" className="text-muted">
+          {copy.privacyPolicy}
+        </Link>
+        <Link href="/terms" className="text-muted">
+          {copy.termsOfUse}
+        </Link>
+      </p>
+    </div>
+  );
+}
+
 function Wordmark() {
   return (
     <Link href="/" className="flex shrink-0 items-center">
@@ -204,9 +234,7 @@ export function GuideIndex({ locale }: { locale: Locale }) {
               </li>
             ))}
           </ul>
-          <p className="mx-auto mt-10 max-w-xl px-4 text-center text-[13px] leading-relaxed text-muted">
-            {copy.guideSourceNote}
-          </p>
+          <GuideLegal locale={locale} centered className="mx-auto mt-10 max-w-xl px-4 text-center" />
         </Stage>
       </main>
     </div>
@@ -296,7 +324,7 @@ export function GuideArticle({ locale, guide }: { locale: Locale; guide: Guide }
               </nav>
             )}
 
-            <p className="mt-12 text-[13px] leading-relaxed text-muted">{copy.guideSourceNote}</p>
+            <GuideLegal locale={locale} className="mt-12" />
           </article>
         </Stage>
       </main>
