@@ -42,7 +42,7 @@ Haptics are `haptic()` in `lib/haptics.ts`. A control ticks only when its value 
 
 A tap that switches tabs plays that tab's icon animation. Reduced motion skips it.
 
-On a phone the header stays mounted across tabs. The title and subtitle crossfade, and a header button that appears or leaves pops. The streak and the account button stay still. The pane body slides in from the side you moved toward.
+On a phone the header stays mounted across tabs. The title and subtitle crossfade, and a header button that appears or leaves pops. The streak and the account button stay still. The pane body slides in from the side you moved toward. The header's fill and blur stay off until that scroller leaves the top, so the color behind the title shows through before you scroll. Once content passes underneath, that layer eases in, and it eases back out on the way to the top.
 
 `AccountButton` opens the name, the language and appearance switches, and sign out. When this Google account is listed in the `ADMIN_EMAILS` env var, the menu also links to `/admin`. On the crossings list it is hidden at `lg`, because the bridges header stays on screen. Sign-out returns to the sign-in screen. The account keeps the bridges; this browser keeps a copy either way. Sign-in, privacy, and the missing page keep the round switches, because those screens have no profile menu.
 

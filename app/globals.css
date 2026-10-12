@@ -129,6 +129,34 @@ body {
 }
 
 /*
+  Phone header material. A registered number so the wash and the blur ease in and back out,
+  including when a scroll reverses halfway. At 0 the layer is clear.
+*/
+@property --header-scrim {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.header-scrim {
+  --header-scrim: 0;
+  background-color: color-mix(in srgb, var(--background) calc(var(--header-scrim) * 80%), transparent);
+  -webkit-backdrop-filter: blur(calc(var(--header-scrim) * 24px));
+  backdrop-filter: blur(calc(var(--header-scrim) * 24px));
+  transition: --header-scrim 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-scrim[data-lifted="true"] {
+  --header-scrim: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-scrim {
+    transition: none;
+  }
+}
+
+/*
   Low-end devices (little memory, few cores, or data saver on, from the boot script in
   app/layout.tsx): skip every blur layer. Compositing a blurred surface during scroll is
   one of the most expensive things a weak GPU does, so these fall back to a solid fill.
@@ -140,7 +168,8 @@ body {
 }
 
 :root[data-perf="low"] .backdrop-blur-xl,
-:root[data-perf="low"] .backdrop-blur-md {
+:root[data-perf="low"] .backdrop-blur-md,
+:root[data-perf="low"] .header-scrim {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }

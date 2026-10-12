@@ -9,6 +9,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -111,12 +112,35 @@ const SWAP = {
 export function MobilePaneHeader({ tab, title }: { tab: string; title: string }) {
   const reduce = useReducedMotion();
   const { chrome, run } = usePaneChrome();
+  const headerRef = useRef<HTMLElement>(null);
+  const [lifted, setLifted] = useState(false);
+
+  useEffect(() => {
+    const scroller = headerRef.current?.parentElement;
+    if (!scroller) return;
+    const sync = () => {
+      const next = scroller.scrollTop > 0;
+      setLifted((current) => (current === next ? current : next));
+    };
+    sync();
+    scroller.addEventListener("scroll", sync, { passive: true });
+    return () => scroller.removeEventListener("scroll", sync);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-20 -mx-4 flex min-h-[calc(4rem+max(1.25rem,env(safe-area-inset-top)))] shrink-0 items-end justify-between gap-4 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 sm:-mx-6 sm:px-6 lg:hidden">
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-20 -mx-4 flex min-h-[calc(4rem+max(1.25rem,env(safe-area-inset-top)))] shrink-0 items-end justify-between gap-4 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 sm:-mx-6 sm:px-6 lg:hidden"
+    >
       {/* The blur sits on its own layer: a backdrop-filter on the header itself would make it the
-          backdrop root and stop the glass menus inside from blurring the page behind them. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-background/80 backdrop-blur-xl" />
+          backdrop root and stop the glass menus inside from blurring the page behind them.
+          The wash and the blur ease together, in either direction, and rest at nothing so the
+          color behind the title shows through before you scroll. */}
+      <div
+        aria-hidden
+        data-lifted={lifted ? "true" : undefined}
+        className="header-scrim pointer-events-none absolute inset-0 -z-10"
+      />
       <div className="grid min-w-0">
         {reduce ? (
           <Heading title={title} subtitle={chrome.subtitle} />
