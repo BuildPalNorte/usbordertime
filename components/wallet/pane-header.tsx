@@ -265,6 +265,7 @@ export function HeaderActions({
           key="add"
           type="button"
           aria-label={copy.scheduleNew}
+          data-tour="schedule-add"
           onClick={onAdd}
           initial={appear}
           animate={{ opacity: 1, scale: 1 }}

@@ -292,6 +292,22 @@ export type Copy = {
   tourAccountBody: string;
   tourDoneTitle: string;
   tourDoneBody: string;
+  scheduleTourWelcomeTitle: string;
+  scheduleTourWelcomeBody: string;
+  scheduleTourBridgesTitle: string;
+  scheduleTourBridgesBody: string;
+  scheduleTourAddTitle: string;
+  scheduleTourAddBody: string;
+  scheduleTourCardTitle: string;
+  scheduleTourCardBody: string;
+  scheduleTourToggleTitle: string;
+  scheduleTourToggleBody: string;
+  scheduleTourDoneTitle: string;
+  scheduleTourDoneBody: string;
+  scheduleTourReplay: string;
+  scheduleTourSheetBridges: string;
+  scheduleTourSheetTime: string;
+  scheduleTourSheetDays: string;
   mode: ModeCopy;
   tone: Record<Tone, string>;
   laneStatus: Record<StatusKey, string>;
@@ -690,6 +706,22 @@ export const COPY: Record<Locale, Copy> = {
     tourAccountBody: "Switch language or appearance, and find sign out here.",
     tourDoneTitle: "That's it",
     tourDoneBody: "Safe travels. You can replay this tour anytime from the account menu.",
+    scheduleTourWelcomeTitle: "Welcome to Alarmas",
+    scheduleTourWelcomeBody: "Pick a time and days, and Border Time sends the wait for your bridge before you need to leave.",
+    scheduleTourBridgesTitle: "Save a bridge first",
+    scheduleTourBridgesBody: "A schedule reports on your saved bridges. Browse crossings to add one.",
+    scheduleTourAddTitle: "Create a schedule",
+    scheduleTourAddBody: "Tap + to pick a time, days, and a bridge to hear about.",
+    scheduleTourCardTitle: "Your schedule",
+    scheduleTourCardBody: "The time, the lane, and the wait on each bridge right now. Tap it to make changes.",
+    scheduleTourToggleTitle: "Pause anytime",
+    scheduleTourToggleBody: "Flip this off to stop the notifications without deleting the schedule.",
+    scheduleTourDoneTitle: "That's it",
+    scheduleTourDoneBody: "Border Time will send the wait right on time.",
+    scheduleTourReplay: "Replay the Alarmas tour",
+    scheduleTourSheetBridges: "Pick up to six bridges and the lane you want to hear about.",
+    scheduleTourSheetTime: "Choose when you want the alert.",
+    scheduleTourSheetDays: "Pick the days, then tap Save.",
     mode: {
       car: "Car",
       ready: "Ready lane",
@@ -1070,6 +1102,22 @@ export const COPY: Record<Locale, Copy> = {
     tourAccountBody: "Cambia el idioma o la apariencia, y encuentra cerrar sesión aquí.",
     tourDoneTitle: "Eso es todo",
     tourDoneBody: "Buen viaje. Puedes repetir este recorrido cuando quieras desde el menú de la cuenta.",
+    scheduleTourWelcomeTitle: "Bienvenido a Alarmas",
+    scheduleTourWelcomeBody: "Elige una hora y días, y Border Time te manda la espera de tu puente antes de que tengas que salir.",
+    scheduleTourBridgesTitle: "Primero guarda un puente",
+    scheduleTourBridgesBody: "Una alarma avisa sobre tus puentes guardados. Explora los cruces para agregar uno.",
+    scheduleTourAddTitle: "Crea una alarma",
+    scheduleTourAddBody: "Toca + para elegir una hora, días y un puente del que quieras saber.",
+    scheduleTourCardTitle: "Tu alarma",
+    scheduleTourCardBody: "La hora, el carril y la espera de cada puente en este momento. Tócala para hacer cambios.",
+    scheduleTourToggleTitle: "Pausa cuando quieras",
+    scheduleTourToggleBody: "Apaga esto para detener los avisos sin borrar la alarma.",
+    scheduleTourDoneTitle: "Eso es todo",
+    scheduleTourDoneBody: "Border Time te mandará la espera justo a tiempo.",
+    scheduleTourReplay: "Repetir el recorrido de Alarmas",
+    scheduleTourSheetBridges: "Elige hasta seis puentes y el carril del que quieras saber.",
+    scheduleTourSheetTime: "Elige a qué hora quieres el aviso.",
+    scheduleTourSheetDays: "Elige los días y toca Guardar.",
     mode: {
       car: "Auto",
       ready: "Carril Ready",

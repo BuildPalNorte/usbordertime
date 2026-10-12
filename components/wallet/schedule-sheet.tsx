@@ -324,7 +324,7 @@ export function ScheduleSheet({
           />
           <p className="mt-2 text-[12px] leading-snug text-muted">{copy.scheduleNameHint}</p>
         </div>
-        <div className="mt-4 flex gap-3 px-5">
+        <div data-tour="sheet-steps" className="mt-4 flex gap-3 px-5">
           {stepLabels.map((label, index) => {
             const open = index <= reached && (index === 0 || ports.length > 0);
             return (
@@ -372,7 +372,7 @@ export function ScheduleSheet({
             transition={reduce ? { duration: 0.12 } : SPRING.snap}
           >
             {step === 0 && (
-              <div className="space-y-6">
+              <div data-tour="sheet-step-bridges" className="space-y-6">
                 <section>
                   <div className="flex items-end justify-between gap-3">
                     <Label>{copy.scheduleBridges}</Label>
@@ -455,7 +455,7 @@ export function ScheduleSheet({
             )}
 
             {step === 1 && (
-              <section>
+              <section data-tour="sheet-step-time">
                 <TimePicker
                   minute={minute}
                   onChange={(next) => {
@@ -468,7 +468,7 @@ export function ScheduleSheet({
             )}
 
             {step === 2 && (
-              <section>
+              <section data-tour="sheet-step-days">
                 <div className="flex justify-end gap-1">
                   <Preset
                     active={sameDays(days, WEEKDAYS)}

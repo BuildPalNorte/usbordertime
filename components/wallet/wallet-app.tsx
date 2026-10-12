@@ -7,7 +7,14 @@ import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { cityPinKey, pinStore } from "@/lib/pin-store";
 import { shareMessage } from "@/lib/i18n";
-import { defaultMode, isMode, paletteFor, portName, readLane, type Mode } from "@/lib/ports";
+import {
+  defaultMode,
+  isMode,
+  paletteFor,
+  portName,
+  readLane,
+  type Mode,
+} from "@/lib/ports";
 import {
   ASK_PATH,
   crossingPath,
@@ -43,7 +50,11 @@ import { SchedulesPane } from "./schedules-pane";
 import { TabBar, type Tab } from "./tab-bar";
 import { Toast, type ToastState } from "./toast";
 import { Tour } from "./tour";
-import { MobilePaneHeader, PaneChromeProvider, type PaneAction } from "./pane-header";
+import {
+  MobilePaneHeader,
+  PaneChromeProvider,
+  type PaneAction,
+} from "./pane-header";
 import { WalletPane } from "./wallet-pane";
 
 const NAV = { scroll: false } as const;
@@ -84,15 +95,18 @@ function subscribeFocusKey(onChange: () => void): () => void {
 
 async function fetchWaitTimes(): Promise<BorderWaitTimes> {
   const response = await fetch("/api/wait-times");
-  if (!response.ok) throw new Error(`Wait times request failed (${response.status})`);
+  if (!response.ok)
+    throw new Error(`Wait times request failed (${response.status})`);
   return response.json();
 }
 
 async function fetchCameraStreams(): Promise<Record<string, string>> {
   const response = await fetch("/api/camera-streams", { cache: "no-store" });
-  if (!response.ok) throw new Error(`Camera streams request failed (${response.status})`);
+  if (!response.ok)
+    throw new Error(`Camera streams request failed (${response.status})`);
   const body: unknown = await response.json();
-  if (!body || typeof body !== "object") throw new Error("Camera streams were empty.");
+  if (!body || typeof body !== "object")
+    throw new Error("Camera streams were empty.");
   const streams: Record<string, string> = {};
   for (const [alias, src] of Object.entries(body)) {
     if (typeof src === "string") streams[alias] = src;
@@ -116,7 +130,11 @@ export function WalletApp({
   const tab: Tab = route.tab;
 
   // Server renders no saved cards; the client reads localStorage after hydration.
-  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const hydrated = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
   const entries = useSyncExternalStore(
     walletStore.subscribe,
     walletStore.getSnapshot,
@@ -145,15 +163,24 @@ export function WalletApp({
     refetchInterval: 60_000,
   });
 
-  const replaceStream = useCallback((alias: string, src: string) => {
-    queryClient.setQueryData<Record<string, string>>(["camera-streams"], (current) => ({
-      ...(current ?? streams),
-      [alias]: src,
-    }));
-  }, [queryClient, streams]);
+  const replaceStream = useCallback(
+    (alias: string, src: string) => {
+      queryClient.setQueryData<Record<string, string>>(
+        ["camera-streams"],
+        (current) => ({
+          ...(current ?? streams),
+          [alias]: src,
+        }),
+      );
+    },
+    [queryClient, streams],
+  );
 
   const ports = data?.ports ?? EMPTY_PORTS;
-  const byNumber = useMemo(() => new Map(ports.map((p) => [p.portNumber, p])), [ports]);
+  const byNumber = useMemo(
+    () => new Map(ports.map((p) => [p.portNumber, p])),
+    [ports],
+  );
 
   const orderReady = useSyncExternalStore(
     walletStore.subscribe,
@@ -165,7 +192,11 @@ export function WalletApp({
 
   // A schedule notification names its bridges on the query. The URL is the source of
   // truth on the first paint and on back/forward; client navigations publish the rest.
-  const urlKey = useSyncExternalStore(subscribeFocusKey, focusKeyFromLocation, () => null);
+  const urlKey = useSyncExternalStore(
+    subscribeFocusKey,
+    focusKeyFromLocation,
+    () => null,
+  );
   const [navKey, setNavKey] = useState<string | null | undefined>(undefined);
   const onFocusKey = useCallback((key: string | null) => setNavKey(key), []);
   useEffect(() => {
@@ -174,7 +205,9 @@ export function WalletApp({
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   const focusKey = navKey === undefined ? urlKey : navKey;
-  const [laneOverride, setLaneOverride] = useState<Partial<Record<string, Mode>>>({});
+  const [laneOverride, setLaneOverride] = useState<
+    Partial<Record<string, Mode>>
+  >({});
   const [overrideFor, setOverrideFor] = useState<string | null>(focusKey);
   if (focusKey !== overrideFor) {
     setOverrideFor(focusKey);
@@ -185,7 +218,10 @@ export function WalletApp({
     if (!focusKey) return null;
     const split = focusKey.indexOf("\n");
     if (split < 0) return null;
-    return parseRoutesFocus(focusKey.slice(0, split), focusKey.slice(split + 1));
+    return parseRoutesFocus(
+      focusKey.slice(0, split),
+      focusKey.slice(split + 1),
+    );
   }, [focusKey]);
   const focusItems = useMemo<StackItem[]>(() => {
     if (!focus) return [];
@@ -193,7 +229,8 @@ export function WalletApp({
       const port = byNumber.get(number);
       if (!port) return [];
       const chosen = lanes[number] ?? focus.mode;
-      const mode = chosen && readLane(port, chosen).available ? chosen : defaultMode(port);
+      const mode =
+        chosen && readLane(port, chosen).available ? chosen : defaultMode(port);
       return [{ port, mode }];
     });
   }, [focus, byNumber, lanes]);
@@ -204,7 +241,10 @@ export function WalletApp({
       return port ? [{ port, mode: entry.mode }] : [];
     });
     // A shared card can open before it is saved. Keep it on the front of the stack.
-    if (routePort && !list.some((item) => item.port.portNumber === routePort.portNumber)) {
+    if (
+      routePort &&
+      !list.some((item) => item.port.portNumber === routePort.portNumber)
+    ) {
       list.push({ port: routePort, mode: defaultMode(routePort) });
     }
     // Until the one-time seed, keep the old "bookmarks float" order so the stack doesn't jump.
@@ -212,24 +252,33 @@ export function WalletApp({
     const pinIndex = new Map(pins.map((key, index) => [key, index]));
     return [...list].sort((a, b) => {
       const ai =
-        pinIndex.get(cityPinKey(a.port.border, portName(a.port).city)) ?? Number.POSITIVE_INFINITY;
+        pinIndex.get(cityPinKey(a.port.border, portName(a.port).city)) ??
+        Number.POSITIVE_INFINITY;
       const bi =
-        pinIndex.get(cityPinKey(b.port.border, portName(b.port).city)) ?? Number.POSITIVE_INFINITY;
+        pinIndex.get(cityPinKey(b.port.border, portName(b.port).city)) ??
+        Number.POSITIVE_INFINITY;
       return ai - bi;
     });
   }, [entries, byNumber, pins, orderReady, routePort]);
-  const saved = useMemo(() => new Set(entries.map((e) => e.portNumber)), [entries]);
+  const saved = useMemo(
+    () => new Set(entries.map((e) => e.portNumber)),
+    [entries],
+  );
 
   // The notification's cards in the stack's order, so each one drops straight into its slot
   // when dismissed instead of crossing the other on the way. Bridges outside the wallet go last.
   const orderedFocusItems = useMemo(() => {
-    const place = new Map(items.map((item, index) => [item.port.portNumber, index]));
-    const rank = (portNumber: string) => place.get(portNumber) ?? Number.POSITIVE_INFINITY;
+    const place = new Map(
+      items.map((item, index) => [item.port.portNumber, index]),
+    );
+    const rank = (portNumber: string) =>
+      place.get(portNumber) ?? Number.POSITIVE_INFINITY;
     return focusItems
       .map((item, index) => ({ item, index }))
       .sort(
         (a, b) =>
-          rank(a.item.port.portNumber) - rank(b.item.port.portNumber) || a.index - b.index,
+          rank(a.item.port.portNumber) - rank(b.item.port.portNumber) ||
+          a.index - b.index,
       )
       .map(({ item }) => item);
   }, [focusItems, items]);
@@ -251,10 +300,13 @@ export function WalletApp({
       : null;
   // While a notification card is open, the stack behind it is that notification's bridges.
   const viewItems =
-    focus && expandedId && focusItems.some((item) => item.port.portNumber === expandedId)
+    focus &&
+    expandedId &&
+    focusItems.some((item) => item.port.portNumber === expandedId)
       ? orderedFocusItems
       : items;
-  const openItem = viewItems.find((i) => i.port.portNumber === expandedId) ?? null;
+  const openItem =
+    viewItems.find((i) => i.port.portNumber === expandedId) ?? null;
   const feedReady = Boolean(data) && !isPending;
   const focusPending = Boolean(focus) && !feedReady && expandedId === null;
   const routesRow =
@@ -271,7 +323,9 @@ export function WalletApp({
         ? copy.routesLead
         : copy.routesSummary(focusItems.length);
   const openCityPinned = openItem
-    ? pins.includes(cityPinKey(openItem.port.border, portName(openItem.port).city))
+    ? pins.includes(
+        cityPinKey(openItem.port.border, portName(openItem.port).city),
+      )
     : false;
 
   const showToast = useCallback((next: Omit<ToastState, "id">) => {
@@ -323,7 +377,10 @@ export function WalletApp({
     if (autoSaved.current.has(routePort.portNumber)) return;
     autoSaved.current.add(routePort.portNumber);
     const lane = laneFromLocation();
-    const mode = lane && readLane(routePort, lane).available ? lane : defaultMode(routePort);
+    const mode =
+      lane && readLane(routePort, lane).available
+        ? lane
+        : defaultMode(routePort);
     walletStore.add({ portNumber: routePort.portNumber, mode });
   }, [hydrated, routePort, saved]);
 
@@ -334,7 +391,9 @@ export function WalletApp({
     if (!lane || !readLane(routePort, lane).available) return;
     const key = `${routePort.portNumber}:${lane}`;
     if (appliedShare.current === key) return;
-    const entry = entries.find((item) => item.portNumber === routePort.portNumber);
+    const entry = entries.find(
+      (item) => item.portNumber === routePort.portNumber,
+    );
     if (!entry) return;
     appliedShare.current = key;
     if (entry.mode !== lane) walletStore.setMode(routePort.portNumber, lane);
@@ -344,7 +403,9 @@ export function WalletApp({
   useLayoutEffect(() => {
     if (prevTab.current === tab) return;
     setPaneMotion(true);
-    setPaneFrom(TAB_ORDER.indexOf(tab) > TAB_ORDER.indexOf(prevTab.current) ? 28 : -28);
+    setPaneFrom(
+      TAB_ORDER.indexOf(tab) > TAB_ORDER.indexOf(prevTab.current) ? 28 : -28,
+    );
     prevTab.current = tab;
   }, [tab]);
 
@@ -416,7 +477,9 @@ export function WalletApp({
     (port: PortWaitTime) => {
       const name = portName(port).title;
       if (saved.has(port.portNumber)) {
-        const index = entries.findIndex((e) => e.portNumber === port.portNumber);
+        const index = entries.findIndex(
+          (e) => e.portNumber === port.portNumber,
+        );
         const entry = entries[index];
         haptic("heavy");
         if (route.port === port.portNumber) go("/");
@@ -433,7 +496,10 @@ export function WalletApp({
         });
       } else {
         haptic("success");
-        walletStore.add({ portNumber: port.portNumber, mode: defaultMode(port) });
+        walletStore.add({
+          portNumber: port.portNumber,
+          mode: defaultMode(port),
+        });
         showToast({
           message: copy.addedToast(name),
           action: {
@@ -447,47 +513,51 @@ export function WalletApp({
     [saved, entries, showToast, go, copy, route.port],
   );
 
-  const shareCrossing = useCallback(async (port: PortWaitTime, mode: Mode) => {
-    if (sharing.current) return;
-    sharing.current = true;
-    // Before the sheet. A tick after it returns is outside the tap, so the phone drops it.
-    haptic("medium");
-    const message = shareMessage(port, mode, copy);
-    const url = new URL(
-      crossingSharePath(port.portNumber, mode, locale),
-      window.location.origin,
-    ).href;
-    const body = `${message.text}\n${url}`;
-    try {
-      if (typeof navigator.share === "function") {
-        const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
-        if (ios) {
-          await navigator.share({ title: message.title, text: body });
-        } else {
-          const data = { title: message.title, text: message.text, url };
-          if (!navigator.canShare || navigator.canShare(data)) await navigator.share(data);
-          else await navigator.share({ title: message.title, text: body });
-        }
-        haptic("success");
-        return;
-      }
-      await navigator.clipboard.writeText(body);
-      haptic("success");
-      showToast({ message: copy.shareCopied });
-    } catch (error) {
-      if (shareCancelled(error)) return;
+  const shareCrossing = useCallback(
+    async (port: PortWaitTime, mode: Mode) => {
+      if (sharing.current) return;
+      sharing.current = true;
+      // Before the sheet. A tick after it returns is outside the tap, so the phone drops it.
+      haptic("medium");
+      const message = shareMessage(port, mode, copy);
+      const url = new URL(
+        crossingSharePath(port.portNumber, mode, locale),
+        window.location.origin,
+      ).href;
+      const body = `${message.text}\n${url}`;
       try {
+        if (typeof navigator.share === "function") {
+          const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+          if (ios) {
+            await navigator.share({ title: message.title, text: body });
+          } else {
+            const data = { title: message.title, text: message.text, url };
+            if (!navigator.canShare || navigator.canShare(data))
+              await navigator.share(data);
+            else await navigator.share({ title: message.title, text: body });
+          }
+          haptic("success");
+          return;
+        }
         await navigator.clipboard.writeText(body);
         haptic("success");
         showToast({ message: copy.shareCopied });
-      } catch {
-        haptic("error");
-        showToast({ message: copy.shareFailed });
+      } catch (error) {
+        if (shareCancelled(error)) return;
+        try {
+          await navigator.clipboard.writeText(body);
+          haptic("success");
+          showToast({ message: copy.shareCopied });
+        } catch {
+          haptic("error");
+          showToast({ message: copy.shareFailed });
+        }
+      } finally {
+        sharing.current = false;
       }
-    } finally {
-      sharing.current = false;
-    }
-  }, [copy, locale, showToast]);
+    },
+    [copy, locale, showToast],
+  );
 
   const removeOpen = useCallback(
     (portNumber: string) => {
@@ -535,11 +605,17 @@ export function WalletApp({
         const portNumbers = entries.flatMap((entry) => {
           const port = byNumber.get(entry.portNumber);
           if (!port) return [];
-          return cityPinKey(port.border, portName(port).city) === key ? [entry.portNumber] : [];
+          return cityPinKey(port.border, portName(port).city) === key
+            ? [entry.portNumber]
+            : [];
         });
         walletStore.bringToFront(portNumbers);
       }
-      showToast({ message: pinned ? copy.bookmarkedToast(city) : copy.removedBookmarkToast(city) });
+      showToast({
+        message: pinned
+          ? copy.bookmarkedToast(city)
+          : copy.removedBookmarkToast(city),
+      });
     },
     [entries, byNumber, showToast, copy],
   );
@@ -560,7 +636,12 @@ export function WalletApp({
   const addSuggested = useCallback(() => {
     if (suggested.length === 0) return;
     haptic("success");
-    walletStore.addMany(suggested.map((p) => ({ portNumber: p.portNumber, mode: defaultMode(p) })));
+    walletStore.addMany(
+      suggested.map((p) => ({
+        portNumber: p.portNumber,
+        mode: defaultMode(p),
+      })),
+    );
   }, [suggested]);
 
   const updatedAt = ports[0]?.time ? ports[0].time.slice(0, 5) : null;
@@ -610,7 +691,14 @@ export function WalletApp({
           ? copy.ask
           : copy.wallet;
   const headerAction: PaneAction =
-    tab === "wallet" && (expandedId !== null || routesRow !== null || routesMissing) ? "done" : tab === "wallet" ? "refresh" : tab === "browse" ? "done" : "none";
+    tab === "wallet" &&
+    (expandedId !== null || routesRow !== null || routesMissing)
+      ? "done"
+      : tab === "wallet"
+        ? "refresh"
+        : tab === "browse"
+          ? "done"
+          : "none";
 
   return (
     <PaneChromeProvider
@@ -621,139 +709,157 @@ export function WalletApp({
         refreshing: false,
       }}
     >
-    <CameraStreamProvider streams={cameraStreams} replace={replaceStream}>
-    <Suspense fallback={null}>
-      <RoutesFocusSync onKey={onFocusKey} />
-    </Suspense>
-    <div className="relative min-h-[100dvh] max-lg:fixed max-lg:inset-0 max-lg:min-h-0 max-lg:overflow-hidden">
-      <Glow palette={openItem && tab === "wallet" ? paletteFor(openItem.port.portNumber) : null} />
+      <CameraStreamProvider streams={cameraStreams} replace={replaceStream}>
+        <Suspense fallback={null}>
+          <RoutesFocusSync onKey={onFocusKey} />
+        </Suspense>
+        <div className="relative min-h-[100dvh] max-lg:fixed max-lg:inset-0 max-lg:min-h-0 max-lg:overflow-hidden">
+          <Glow
+            palette={
+              openItem && tab === "wallet"
+                ? paletteFor(openItem.port.portNumber)
+                : null
+            }
+          />
 
-      <div
-        ref={scrollerRef}
-        className={cn(
-          "relative mx-auto w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6 max-lg:pt-0 max-lg:flex max-lg:h-full max-lg:flex-col max-lg:overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain lg:max-w-6xl lg:pb-16",
-          // Ask docks its composer on the tab bar. Other tabs keep room to scroll the last row clear of it.
-          tab === "ask" ? "pb-[var(--tab-clearance)]" : "pb-32",
-        )}
-      >
-        <MobilePaneHeader tab={tab} title={headerTitle} />
-        <div
-          className={cn(
-            "max-lg:flex max-lg:flex-1 max-lg:flex-col lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20",
-            paneMotion && "panes-animate",
-          )}
-        >
-          <section
-            className="pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6"
-            data-active={tab === "wallet"}
-            style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
-            aria-label={copy.wallet}
-          >
-            <WalletPane
-              ref={headerRef}
-              items={viewItems}
-              hydrated={hydrated}
-              loading={(isPending && !data) || focusPending}
-              refreshing={isFetching || checking}
-              checking={checking}
-              updatedAt={updatedAt}
-              expandedId={expandedId}
-              suggested={suggested}
-              onExpand={expand}
-              onCollapse={collapse}
-              onMode={(portNumber: string, mode: Mode) => {
-                walletStore.setMode(portNumber, mode);
-                if (focus) setLaneOverride((current) => ({ ...current, [portNumber]: mode }));
-              }}
-              cityPinned={openCityPinned}
-              onPinCity={() => {
-                if (openItem) togglePin(openItem.port.border, portName(openItem.port).city);
-              }}
-              onShare={(port, mode) => {
-                void shareCrossing(port, mode);
-              }}
-              onRemove={removeOpen}
-              onReorder={reorder}
-              onRefresh={refresh}
-              onBrowse={() => changeTab("browse")}
-              onAddSuggested={addSuggested}
-              routes={routesRow}
-              routesLabel={routesLabel}
-              routesMissing={routesMissing}
-              onDismissRoutes={dismissRoutes}
-              ownsHeader={tab === "wallet"}
-            />
-          </section>
-
-          <section
-            // On a desktop the right column holds Browse, or Schedules or Ask while that tab is open.
-            className={cn("pane", (tab === "schedules" || tab === "ask") && "lg:hidden")}
-            data-active={tab === "browse"}
-            style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
-            aria-label={copy.browseCrossings}
-          >
-            <BrowsePane
-              ports={ports}
-              loading={isPending && !data}
-              error={isError}
-              saved={saved}
-              pins={pins}
-              onToggle={toggleSaved}
-              onPin={togglePin}
-              onRetry={() => {
-                haptic("light");
-                const started = performance.now();
-                void refetch().then((result) => {
-                  if (result.isError) haptic("error");
-                  else if (performance.now() - started > 280) haptic("success");
-                });
-              }}
-              onDone={() => changeTab("wallet")}
-              ownsHeader={tab === "browse"}
-            />
-          </section>
-
-          <section
-            className={cn("pane", tab !== "schedules" && "lg:hidden")}
-            data-active={tab === "schedules"}
-            style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
-            aria-label={copy.schedules}
-          >
-            <SchedulesPane
-              ports={ports}
-              items={items}
-              hydrated={hydrated}
-              onBrowse={() => changeTab("browse")}
-              ownsHeader={tab === "schedules"}
-            />
-          </section>
-
-          <section
+          <div
+            ref={scrollerRef}
             className={cn(
-              "pane max-lg:flex max-lg:flex-1 max-lg:flex-col",
-              tab !== "ask" && "lg:hidden",
+              "relative mx-auto w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6 max-lg:pt-0 max-lg:flex max-lg:h-full max-lg:flex-col max-lg:overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain lg:max-w-6xl lg:pb-16",
+              // Ask docks its composer on the tab bar. Other tabs keep room to scroll the last row clear of it.
+              tab === "ask" ? "pb-[var(--tab-clearance)]" : "pb-32",
             )}
-            data-active={tab === "ask"}
-            style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
-            aria-label={copy.ask}
           >
-            <AskPane ownsHeader={tab === "ask"} />
-          </section>
-        </div>
-      </div>
+            <MobilePaneHeader tab={tab} title={headerTitle} />
+            <div
+              className={cn(
+                "max-lg:flex max-lg:flex-1 max-lg:flex-col lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20",
+                paneMotion && "panes-animate",
+              )}
+            >
+              <section
+                className="pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6 h-full"
+                data-active={tab === "wallet"}
+                style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
+                aria-label={copy.wallet}
+              >
+                <WalletPane
+                  ref={headerRef}
+                  items={viewItems}
+                  hydrated={hydrated}
+                  loading={(isPending && !data) || focusPending}
+                  refreshing={isFetching || checking}
+                  checking={checking}
+                  updatedAt={updatedAt}
+                  expandedId={expandedId}
+                  suggested={suggested}
+                  onExpand={expand}
+                  onCollapse={collapse}
+                  onMode={(portNumber: string, mode: Mode) => {
+                    walletStore.setMode(portNumber, mode);
+                    if (focus)
+                      setLaneOverride((current) => ({
+                        ...current,
+                        [portNumber]: mode,
+                      }));
+                  }}
+                  cityPinned={openCityPinned}
+                  onPinCity={() => {
+                    if (openItem)
+                      togglePin(
+                        openItem.port.border,
+                        portName(openItem.port).city,
+                      );
+                  }}
+                  onShare={(port, mode) => {
+                    void shareCrossing(port, mode);
+                  }}
+                  onRemove={removeOpen}
+                  onReorder={reorder}
+                  onRefresh={refresh}
+                  onBrowse={() => changeTab("browse")}
+                  onAddSuggested={addSuggested}
+                  routes={routesRow}
+                  routesLabel={routesLabel}
+                  routesMissing={routesMissing}
+                  onDismissRoutes={dismissRoutes}
+                  ownsHeader={tab === "wallet"}
+                />
+              </section>
 
-      <TabBar tab={tab} onChange={changeTab} />
-      <Toast toast={toast} onDismiss={() => setToast(null)} />
-      <Tour
-        hydrated={hydrated}
-        canAutoStart={tab === "wallet" && expandedId === null && !focus}
-        tab={tab}
-        expandedId={expandedId}
-        savedCount={items.length}
-        onGoHome={() => go("/")}
-      />
-    </div>
-    </CameraStreamProvider>
+              <section
+                // On a desktop the right column holds Browse, or Schedules or Ask while that tab is open.
+                className={cn(
+                  "pane",
+                  (tab === "schedules" || tab === "ask") && "lg:hidden",
+                )}
+                data-active={tab === "browse"}
+                style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
+                aria-label={copy.browseCrossings}
+              >
+                <BrowsePane
+                  ports={ports}
+                  loading={isPending && !data}
+                  error={isError}
+                  saved={saved}
+                  pins={pins}
+                  onToggle={toggleSaved}
+                  onPin={togglePin}
+                  onRetry={() => {
+                    haptic("light");
+                    const started = performance.now();
+                    void refetch().then((result) => {
+                      if (result.isError) haptic("error");
+                      else if (performance.now() - started > 280)
+                        haptic("success");
+                    });
+                  }}
+                  onDone={() => changeTab("wallet")}
+                  ownsHeader={tab === "browse"}
+                />
+              </section>
+
+              <section
+                className={cn("pane", tab !== "schedules" && "lg:hidden")}
+                data-active={tab === "schedules"}
+                style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
+                aria-label={copy.schedules}
+              >
+                <SchedulesPane
+                  ports={ports}
+                  items={items}
+                  hydrated={hydrated}
+                  onBrowse={() => changeTab("browse")}
+                  ownsHeader={tab === "schedules"}
+                />
+              </section>
+
+              <section
+                className={cn(
+                  "pane max-lg:flex max-lg:flex-1 max-lg:flex-col",
+                  tab !== "ask" && "lg:hidden",
+                )}
+                data-active={tab === "ask"}
+                style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
+                aria-label={copy.ask}
+              >
+                <AskPane ownsHeader={tab === "ask"} />
+              </section>
+            </div>
+          </div>
+
+          <TabBar tab={tab} onChange={changeTab} />
+          <Toast toast={toast} onDismiss={() => setToast(null)} />
+          <Tour
+            hydrated={hydrated}
+            canAutoStart={tab === "wallet" && expandedId === null && !focus}
+            tab={tab}
+            expandedId={expandedId}
+            savedCount={items.length}
+            onGoHome={() => go("/")}
+          />
+        </div>
+      </CameraStreamProvider>
     </PaneChromeProvider>
   );
 }

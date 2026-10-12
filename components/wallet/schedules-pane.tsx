@@ -23,7 +23,9 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { HeaderActions, usePublishPaneChrome, type PaneAction } from "./pane-header";
 import { HapticPad } from "./haptic-pad";
 import { REDUCED, SPRING } from "./motion";
+import { scheduleTourSignal } from "@/lib/schedule-tour-signal";
 import { ScheduleSheet } from "./schedule-sheet";
+import { ScheduleTour } from "./schedule-tour";
 import type { StackItem } from "./card-stack";
 import { useSchedules } from "./use-schedules";
 
@@ -110,6 +112,20 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: 
 
       <div className="pane-body">
 
+      {process.env.NODE_ENV === "development" && (
+        <button
+          type="button"
+          onClick={() => {
+            haptic("selection");
+            scheduleTourSignal.request();
+          }}
+          className="relative mb-3 h-9 rounded-full bg-surface px-4 text-[13px] font-medium text-muted active:opacity-70"
+        >
+          <HapticPad />
+          {copy.scheduleTourReplay}
+        </button>
+      )}
+
       {!hydrated || loading ? (
         <ListSkeleton />
       ) : failed ? (
@@ -131,13 +147,19 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: 
         <Empty
           body={copy.scheduleNeedBridge}
           action={copy.browseCrossings}
+          dataTour="schedule-browse"
           onAction={() => {
             haptic("selection");
             onBrowse();
           }}
         />
       ) : count === 0 ? (
-        <Empty body={copy.scheduleEmptyBody} action={copy.scheduleNew} onAction={() => open(null)}>
+        <Empty
+          body={copy.scheduleEmptyBody}
+          action={copy.scheduleNew}
+          dataTour="schedule-add-first"
+          onAction={() => open(null)}
+        >
           {showTest && sample && <ScheduleTest ports={sample.ports} mode={sample.mode} />}
         </Empty>
       ) : (
@@ -148,6 +170,7 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: 
                 <ScheduleCard
                   schedule={schedule}
                   byNumber={byNumber}
+                  first={index === 0}
                   onOpen={() => open(schedule)}
                   onToggle={async () => {
                     haptic("selection");
@@ -176,6 +199,14 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: 
           />
         )}
       </AnimatePresence>
+
+      <ScheduleTour
+        ready={hydrated && !loading && !failed}
+        active={ownsHeader}
+        editing={editing !== null}
+        noBridges={noBridges}
+        scheduleCount={count}
+      />
     </div>
   );
 }
@@ -183,11 +214,13 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: 
 function ScheduleCard({
   schedule,
   byNumber,
+  first,
   onOpen,
   onToggle,
 }: {
   schedule: Schedule;
   byNumber: Map<string, PortWaitTime>;
+  first?: boolean;
   onOpen: () => void;
   onToggle: () => void;
 }) {
@@ -205,6 +238,7 @@ function ScheduleCard({
 
   return (
     <div
+      data-tour={first ? "first-schedule" : undefined}
       className={cn(
         "relative rounded-3xl bg-surface transition-opacity duration-200",
         !schedule.enabled && "opacity-60",
@@ -280,6 +314,7 @@ function ScheduleCard({
 
       <Switch
         on={schedule.enabled}
+        dataTour={first ? "schedule-toggle" : undefined}
         label={
           schedule.name
             ? schedule.enabled
@@ -295,13 +330,24 @@ function ScheduleCard({
   );
 }
 
-function Switch({ on, label, onToggle }: { on: boolean; label: string; onToggle: () => void }) {
+function Switch({
+  on,
+  label,
+  dataTour,
+  onToggle,
+}: {
+  on: boolean;
+  label: string;
+  dataTour?: string;
+  onToggle: () => void;
+}) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
       aria-label={label}
+      data-tour={dataTour}
       onClick={onToggle}
       className="absolute top-4 right-4 grid h-11 w-14 place-items-center"
     >
@@ -395,11 +441,13 @@ function ScheduleTest({ ports, mode }: { ports: string[]; mode: Mode }) {
 function Empty({
   body,
   action,
+  dataTour,
   onAction,
   children,
 }: {
   body: string;
   action: string;
+  dataTour?: string;
   onAction: () => void;
   children?: ReactNode;
 }) {
@@ -436,6 +484,7 @@ function Empty({
       </motion.p>
       <motion.button
         type="button"
+        data-tour={dataTour}
         onClick={onAction}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

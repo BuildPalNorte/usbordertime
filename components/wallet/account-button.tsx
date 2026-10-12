@@ -24,7 +24,13 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { HapticPad } from "./haptic-pad";
 import { useInstall } from "./install-prompt";
 import { LanguageSwitch } from "./language-switch";
@@ -42,7 +48,11 @@ export function AccountButton({ className }: { className?: string }) {
   const install = useInstall();
   const { data: session, isPending } = authClient.useSession();
   // Session is read in the browser. The server render stays signed out so hydration matches.
-  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
   const user = mounted ? (session?.user ?? null) : null;
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -117,12 +127,21 @@ export function AccountButton({ className }: { className?: string }) {
     window.location.assign("/");
   };
 
-  const label = user ? copy.signedInAs(user.name || user.email) : copy.signInWithGoogle;
-  const initial = (user?.name || user?.email || "?").trim().charAt(0).toUpperCase();
+  const label = user
+    ? copy.signedInAs(user.name || user.email)
+    : copy.signInWithGoogle;
+  const initial = (user?.name || user?.email || "?")
+    .trim()
+    .charAt(0)
+    .toUpperCase();
   const photo = user?.image && !imageFailed ? user.image : null;
 
   return (
-    <div ref={rootRef} data-tour="account-button" className={cn("relative", className)}>
+    <div
+      ref={rootRef}
+      data-tour="account-button"
+      className={cn("relative", className)}
+    >
       <motion.button
         ref={buttonRef}
         type="button"
@@ -141,7 +160,11 @@ export function AccountButton({ className }: { className?: string }) {
         aria-haspopup={user ? "menu" : undefined}
         aria-controls={user && open ? menuId : undefined}
         disabled={mounted && (isPending || busy)}
-        whileTap={reduce || (mounted && (isPending || busy)) ? undefined : { scale: 0.94 }}
+        whileTap={
+          reduce || (mounted && (isPending || busy))
+            ? undefined
+            : { scale: 0.94 }
+        }
         transition={SPRING.snap}
         className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-surface text-foreground disabled:opacity-70"
       >
@@ -175,23 +198,33 @@ export function AccountButton({ className }: { className?: string }) {
           <motion.div
             id={menuId}
             role={user && open ? "menu" : "status"}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+            initial={
+              reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }
+            }
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
             transition={SPRING.snap}
             className="glass absolute top-[calc(100%+0.5rem)] right-0 z-30 w-72 origin-top-right rounded-2xl p-1.5"
           >
             {failed && (
-              <p className="px-3 py-2 text-[13px] leading-snug text-danger">{copy.signInFailed}</p>
+              <p className="px-3 py-2 text-[13px] leading-snug text-danger">
+                {copy.signInFailed}
+              </p>
             )}
             {user && open && (
               <>
-                <p className="truncate px-3 pt-2 text-[14px] font-semibold">{user.name}</p>
-                <p className="truncate px-3 pb-2 text-[12px] text-muted">{user.email}</p>
+                <p className="truncate px-3 pt-2 text-[14px] font-semibold">
+                  {user.name}
+                </p>
+                <p className="truncate px-3 pb-2 text-[12px] text-muted">
+                  {user.email}
+                </p>
                 {streak && streak.current > 0 && (
                   <div
                     className="mx-2 mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5"
-                    style={{ backgroundColor: `color-mix(in srgb, ${levelColor} 14%, transparent)` }}
+                    style={{
+                      backgroundColor: `color-mix(in srgb, ${levelColor} 14%, transparent)`,
+                    }}
                   >
                     <span className="shrink-0" style={{ color: levelColor }}>
                       <LevelIcon size={24} level={level} handle={levelHandle} />
@@ -199,7 +232,10 @@ export function AccountButton({ className }: { className?: string }) {
                     <div className="min-w-0">
                       <p className="text-[14px] leading-tight font-semibold">
                         {copy.streakDays(streak.current)}
-                        <span className="ml-1.5 text-[12px] font-semibold" style={{ color: levelColor }}>
+                        <span
+                          className="ml-1.5 text-[12px] font-semibold"
+                          style={{ color: levelColor }}
+                        >
                           {copy.streakLevels[level]}
                         </span>
                       </p>
@@ -208,35 +244,20 @@ export function AccountButton({ className }: { className?: string }) {
                           ? copy.streakStart
                           : copy.streakDetail(streak.longest, streak.totalDays)}
                       </p>
-                      {streak.current > 1 && nextMilestone(streak.current) !== null && (
-                        <p className="truncate text-[12px] leading-tight text-muted">
-                          {copy.streakNext(
-                            (nextMilestone(streak.current) ?? 0) - streak.current,
-                            nextMilestone(streak.current) ?? 0,
-                          )}
-                        </p>
-                      )}
+                      {streak.current > 1 &&
+                        nextMilestone(streak.current) !== null && (
+                          <p className="truncate text-[12px] leading-tight text-muted">
+                            {copy.streakNext(
+                              (nextMilestone(streak.current) ?? 0) -
+                                streak.current,
+                              nextMilestone(streak.current) ?? 0,
+                            )}
+                          </p>
+                        )}
                     </div>
                   </div>
                 )}
                 {process.env.NODE_ENV === "development" && <DevStreakPicker />}
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    haptic("light");
-                    setOpen(false);
-                    tourSignal.request();
-                  }}
-                  className="relative flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium"
-                >
-                  <HapticPad />
-                  <SparklesIcon size={20} aria-hidden className="shrink-0" />
-                  {copy.tourReplay}
-                </button>
-                <LanguageSwitch variant="menu" />
-                <ThemeSwitch variant="menu" />
-                <div role="separator" className="mx-2 my-1 h-px bg-foreground/10" />
                 {/* Phones have the tab bar. A desktop has no tab bar, so the menu is the way over. */}
                 <Link
                   href={onSchedules ? EXPLORE_PATH : SCHEDULES_PATH}
@@ -248,7 +269,11 @@ export function AccountButton({ className }: { className?: string }) {
                   className="hidden h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium lg:flex"
                 >
                   {onSchedules ? (
-                    <MapIcon size={20} aria-hidden className="shrink-0 [perspective:48px]" />
+                    <MapIcon
+                      size={20}
+                      aria-hidden
+                      className="shrink-0 [perspective:48px]"
+                    />
                   ) : (
                     <ClockIcon size={20} aria-hidden className="shrink-0" />
                   )}
@@ -264,12 +289,40 @@ export function AccountButton({ className }: { className?: string }) {
                   className="hidden h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium lg:flex"
                 >
                   {onAsk ? (
-                    <MapIcon size={20} aria-hidden className="shrink-0 [perspective:48px]" />
+                    <MapIcon
+                      size={20}
+                      aria-hidden
+                      className="shrink-0 [perspective:48px]"
+                    />
                   ) : (
-                    <QuestionMarkCircleIcon size={20} aria-hidden className="shrink-0" />
+                    <QuestionMarkCircleIcon
+                      size={20}
+                      aria-hidden
+                      className="shrink-0"
+                    />
                   )}
                   {onAsk ? copy.browse : copy.ask}
                 </Link>
+                <div
+                  role="separator"
+                  className="mx-2 my-1 h-px bg-foreground/10"
+                />
+                <LanguageSwitch variant="menu" />
+                <ThemeSwitch variant="menu" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    haptic("light");
+                    setOpen(false);
+                    tourSignal.request();
+                  }}
+                  className="relative flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium"
+                >
+                  <HapticPad />
+                  <SparklesIcon size={20} aria-hidden className="shrink-0" />
+                  {copy.tourReplay}
+                </button>
                 {install.offerable && (
                   <button
                     type="button"
@@ -282,7 +335,11 @@ export function AccountButton({ className }: { className?: string }) {
                     className="relative flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium"
                   >
                     <HapticPad />
-                    <ArrowDownTrayIcon size={20} aria-hidden className="shrink-0" />
+                    <ArrowDownTrayIcon
+                      size={20}
+                      aria-hidden
+                      className="shrink-0"
+                    />
                     {copy.installMenu}
                   </button>
                 )}
