@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n";
+import { GUIDE_INDEX_PATH } from "@/lib/guide-paths";
 
 /**
  * Public crossing guides. Client-safe: no server imports.
@@ -26,10 +27,7 @@ export type Guide = {
   es: GuideText;
 };
 
-export const GUIDES_BASE: Record<Locale, string> = {
-  en: "/guides",
-  es: "/es/guias",
-};
+export const GUIDES_BASE: Record<Locale, string> = GUIDE_INDEX_PATH;
 
 export const GUIDES: readonly Guide[] = [
   {

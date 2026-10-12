@@ -1,5 +1,6 @@
 import { cn } from "@/lib/cn";
-import { guideIndexJsonLd, guideJsonLd } from "@/lib/guide-schema";
+import { DISCOVER } from "@/lib/discover";
+import { guideIndexJsonLd, guideJsonLd, jsonLd } from "@/lib/guide-schema";
 import { COPY, type Locale } from "@/lib/i18n";
 import { GUIDES, guideById, guideIndexPath, guidePath, type Guide } from "@/lib/guides";
 import Image from "next/image";
@@ -12,7 +13,7 @@ function JsonLd({ data }: { data: object }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+      dangerouslySetInnerHTML={{ __html: jsonLd(data) }}
     />
   );
 }
@@ -210,6 +211,31 @@ function Stage({
   );
 }
 
+/** Visible questions. The same words are in the page schema and in /llms.txt, so a model quotes the page. */
+function Questions({ locale }: { locale: Locale }) {
+  const discover = DISCOVER[locale];
+  return (
+    <section aria-labelledby="wait-questions" className="mx-auto mt-16 max-w-2xl px-1 sm:mt-20 sm:px-4">
+      <h2
+        id="wait-questions"
+        className="text-[24px] leading-[1.12] font-bold tracking-[-0.035em] text-balance sm:text-[30px]"
+      >
+        {discover.faqTitle}
+      </h2>
+      <div className="mt-8 flex flex-col gap-8">
+        {discover.faqs.map((faq) => (
+          <section key={faq.id}>
+            <h3 id={faq.id} className="scroll-mt-8 text-[18px] leading-snug font-semibold tracking-[-0.02em] text-balance">
+              {faq.question}
+            </h3>
+            <p className="mt-2 text-[16px] leading-[1.65] text-muted text-pretty sm:text-[17px]">{faq.answer}</p>
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function GuideIndex({ locale }: { locale: Locale }) {
   const copy = COPY[locale];
   return (
@@ -234,6 +260,7 @@ export function GuideIndex({ locale }: { locale: Locale }) {
               </li>
             ))}
           </ul>
+          <Questions locale={locale} />
           <GuideLegal locale={locale} centered className="mx-auto mt-10 max-w-xl px-4 text-center" />
         </Stage>
       </main>

@@ -28,6 +28,8 @@ export type Copy = {
   metaTitle: string;
   metaDescription: string;
   guidesTitle: string;
+  /** Short label for a link to the public guides. */
+  guidesLink: string;
   guidesDescription: string;
   guidesLead: string;
   guideStartHere: string;
@@ -381,10 +383,12 @@ function durationSpoken(
 export const COPY: Record<Locale, Copy> = {
   en: {
     metaTitle: "Border Time",
-    metaDescription: "Live US border wait times for the bridges you cross.",
+    metaDescription:
+      "Border Time is an independent app by BuildPalNorte that shows live U.S. land-port wait times from the public CBP feed, in English and Spanish.",
     guidesTitle: "Border crossing guides",
+    guidesLink: "Guides",
     guidesDescription:
-      "Plain guides to the busiest U.S.–Mexico crossings: which bridge, which lane, how to read the wait CBP posts, and how that wait eases congestion.",
+      "Border Time guides to the busiest U.S.–Mexico crossings: which bridge, which lane, how to read the wait CBP posts, and how that wait eases congestion.",
     guidesLead:
       "Which bridge to take, which lane to use, what a posted wait means, and how knowing it eases congestion. For the live number, open Border Time.",
     guideStartHere: "Start here",
@@ -864,10 +868,12 @@ export const COPY: Record<Locale, Copy> = {
   },
   es: {
     metaTitle: "Border Time",
-    metaDescription: "Tiempos de espera en vivo de los puentes que cruzas.",
+    metaDescription:
+      "Border Time es una app independiente de BuildPalNorte que muestra en vivo los tiempos de espera de los puertos terrestres de EE. UU., tomados del feed público de CBP, en inglés y en español.",
     guidesTitle: "Guías para cruzar la frontera",
+    guidesLink: "Guías",
     guidesDescription:
-      "Guías claras de los cruces más usados entre México y Estados Unidos: qué puente, qué carril, cómo leer el tiempo que publica CBP y cómo esa espera baja la congestión.",
+      "Guías de Border Time de los cruces más usados entre México y Estados Unidos: qué puente, qué carril, cómo leer el tiempo que publica CBP y cómo esa espera baja la congestión.",
     guidesLead:
       "Qué puente tomar, qué carril usar, qué significa el tiempo publicado y cómo saberlo baja la congestión. Para el número en vivo, abre Border Time.",
     guideStartHere: "Empieza aquí",

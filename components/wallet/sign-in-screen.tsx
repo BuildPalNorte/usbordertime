@@ -4,6 +4,7 @@ import { useLocale } from "@/components/locale-provider";
 import { authClient } from "@/lib/auth/client";
 import { haptic, type Haptic } from "@/lib/haptics";
 import { rememberInvite, dropInviteParam } from "@/lib/invite";
+import { GUIDE_INDEX_PATH } from "@/lib/guide-paths";
 import { currentCallbackURL } from "@/lib/routes";
 import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from "motion/react";
 import Link from "next/link";
@@ -34,7 +35,7 @@ const LIMIT = 164;
 const SLOP = 10;
 
 export function SignInScreen({ problem }: { problem?: "profile" }) {
-  const { copy } = useLocale();
+  const { locale, copy } = useLocale();
   const reduce = useReducedMotion();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -178,7 +179,8 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
             {copy.signInWithGoogle}
           </motion.button>
 
-          <p className="mt-4 flex items-center justify-center gap-3 text-[13px] font-medium text-muted">
+          <p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] font-medium text-muted">
+            <Link href={GUIDE_INDEX_PATH[locale]}>{copy.guidesLink}</Link>
             <Link href="/privacy">{copy.privacyPolicy}</Link>
             <Link href="/terms">{copy.termsOfUse}</Link>
           </p>

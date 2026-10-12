@@ -1,5 +1,6 @@
 import { Providers } from "@/components/providers";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
+import { entityJsonLd, jsonLd } from "@/lib/guide-schema";
 import { COPY, LOCALE_COOKIE } from "@/lib/i18n";
 import { resolveLocale } from "@/lib/locale.server";
 import { siteOrigin } from "@/lib/site";
@@ -43,6 +44,11 @@ export const metadata: Metadata = {
     title: "Border Time",
     description: COPY.en.metaDescription,
   },
+  alternates: {
+    types: {
+      "text/plain": "/llms.txt",
+    },
+  },
 };
 
 export const viewport: Viewport = {
@@ -65,6 +71,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="min-h-full">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(entityJsonLd()) }} />
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
         <Suspense fallback={<ShellSkeleton wordless />}>
           <Localized>{children}</Localized>

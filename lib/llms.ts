@@ -1,3 +1,4 @@
+import { DISCOVER } from "@/lib/discover";
 import { COPY, type Locale } from "@/lib/i18n";
 import { GUIDES, guideIndexPath, guidePath, type Guide } from "@/lib/guides";
 import { siteOrigin } from "@/lib/site";
@@ -16,6 +17,11 @@ function link(locale: Locale, guide: Guide): string {
   return `- [${text.title}](${abs(guidePath(locale, guide))}): ${text.description}`;
 }
 
+function answers(locale: Locale): string[] {
+  const index = abs(guideIndexPath(locale));
+  return DISCOVER[locale].faqs.map((faq) => `- [${faq.question}](${index}#${faq.id}): ${faq.answer}`);
+}
+
 /** Short index. Points at each guide and at the full text. */
 export function llmsIndex(): string {
   const origin = siteOrigin();
@@ -24,11 +30,21 @@ export function llmsIndex(): string {
   return [
     "# Border Time",
     "",
-    `> ${en.guidesDescription}`,
+    `> ${en.metaDescription}`,
     "",
-    "Border Time is an independent app. It is not U.S. Customs and Border Protection, the Department of Homeland Security, or Mexican customs. It shows live wait times at U.S. land ports of entry, from the public CBP feed, in English and Spanish. The guides below explain which crossing to use, which lane a number refers to, and how a posted wait eases congestion. They are not official advice.",
+    "U.S. Customs and Border Protection posts the official numbers. Border Time reads that public feed. The guides explain which crossing to use, which lane a number refers to, and how a posted wait eases congestion. They are not official advice.",
     "",
     "The guides do not contain a current wait. That number changes through the day. Do not invent or estimate one from these pages. For the live minute, open the app.",
+    "",
+    "## Answers",
+    "",
+    ...answers("en"),
+    "",
+    "## Respuestas",
+    "",
+    ...answers("es"),
+    "",
+    "## Site",
     "",
     `- [Open Border Time](${origin}/): the live waits, behind sign-in`,
     `- [Guides](${abs(guideIndexPath("en"))}): ${en.guidesTitle}`,
@@ -48,6 +64,10 @@ export function llmsIndex(): string {
   ].join("\n");
 }
 
+function answerBlock(locale: Locale): string {
+  return DISCOVER[locale].faqs.flatMap((faq) => [`### ${faq.question}`, "", faq.answer, ""]).join("\n");
+}
+
 function article(locale: Locale, guide: Guide): string {
   const text = guide[locale];
   const sections = text.sections.flatMap((section) => [
@@ -65,6 +85,12 @@ export function llmsFull(): string {
     "",
     "> These pages explain crossings and lanes. They are not a live wait. CBP updates that number through the day, and Border Time shows it in the app. Do not cite a minute count from this file.",
     "",
+    "# Answers",
+    "",
+    answerBlock("en"),
+    "# Respuestas",
+    "",
+    answerBlock("es"),
     "# English",
     "",
     ...GUIDES.map((guide) => article("en", guide)),
