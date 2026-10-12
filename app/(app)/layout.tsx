@@ -73,21 +73,21 @@ async function GatedHome({ children }: { children: ReactNode }) {
         <PreferenceSync userId={user.id} initial={preference} ready={preferenceReady} />
         <AlertSync />
         <StreakSync />
-        <LiveWallet>{children}</LiveWallet>
+        <LiveWallet userId={user.id}>{children}</LiveWallet>
       </SessionGate>
     </AdminAccess>
   );
 }
 
 /** Fetches the cached CBP snapshot on the server. If CBP is down, the client retries on its own. */
-async function LiveWallet({ children }: { children: ReactNode }) {
+async function LiveWallet({ userId, children }: { userId: string; children: ReactNode }) {
   const [snapshot, cameras] = await Promise.allSettled([getBorderWaitTimes(), getCameraStreams()]);
   const initial: BorderWaitTimes | null = snapshot.status === "fulfilled" ? snapshot.value : null;
   const streams = cameras.status === "fulfilled" ? cameras.value : fallbackCameraStreams();
   return (
     <>
       <Suspense fallback={<ShellSkeleton wordless />}>
-        <WalletApp initial={initial} streams={streams} />
+        <WalletApp initial={initial} streams={streams} userId={userId} />
       </Suspense>
       {children}
     </>

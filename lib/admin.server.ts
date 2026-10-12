@@ -23,6 +23,7 @@ function adminEmails(): string[] {
 
 const PEOPLE_LIMIT = 20;
 const ALERT_LIMIT = 12;
+const INVITE_LIMIT = 12;
 
 const LANE_LABEL: Record<string, string> = {
   car: "Car",
@@ -49,6 +50,7 @@ export type AdminAccount = {
   email: string;
   updatedAt: string;
   referral: string | null;
+  invitedBy: string | null;
   usage: AdminUsage;
 };
 
@@ -60,6 +62,8 @@ export type AdminUsage = {
 };
 
 export type AdminReferral = { source: Referral; label: string; count: number };
+
+export type AdminInvite = { name: string; email: string; count: number };
 
 export type AdminAlertGroup = { portNumber: string; label: string; lane: string; count: number };
 
@@ -79,6 +83,7 @@ export type AdminData = {
   usage: AdminUsageTotals;
   referrals: AdminReferral[];
   referralPending: number;
+  invites: AdminInvite[];
   alerts: AdminAlertGroup[];
   cameras: AdminCamera[];
   feed: { fetchedAt: string; ports: number } | null;
@@ -150,9 +155,11 @@ async function readDashboard(): Promise<AdminData> {
 
   const accountsQuery = sql`select count(*)::int as count from profile`;
   const peopleQuery = sql`
-    select id, name, email, updated_at, referral
-    from profile
-    order by updated_at desc
+    select p.id, p.name, p.email, p.updated_at, p.referral,
+           r.name as referrer_name, r.email as referrer_email
+    from profile p
+    left join profile r on r.id = p.referred_by
+    order by p.updated_at desc
     limit ${PEOPLE_LIMIT}
   `;
   const referralsQuery = sql`
@@ -165,6 +172,14 @@ async function readDashboard(): Promise<AdminData> {
     select count(*)::int as count
     from profile
     where referral_pending
+  `;
+  const invitesQuery = sql`
+    select r.name, r.email, count(*)::int as count
+    from profile p
+    join profile r on r.id = p.referred_by
+    group by r.id, r.name, r.email
+    order by count desc, r.name
+    limit ${INVITE_LIMIT}
   `;
   const alertTotalsQuery = sql`
     select
@@ -197,7 +212,7 @@ async function readDashboard(): Promise<AdminData> {
     return [];
   });
 
-  const [accounts, people, referralRows, referralPending, alertTotals, alertGroups, devices, schedules, cameras, feed, usageRows] =
+  const [accounts, people, referralRows, referralPending, alertTotals, alertGroups, devices, schedules, cameras, feed, usageRows, inviteRows] =
     await Promise.all([
     accountsQuery.then(
       (rows) => asCount((rows[0] as { count?: unknown } | undefined)?.count),
@@ -208,7 +223,15 @@ async function readDashboard(): Promise<AdminData> {
     ),
     peopleQuery.then(
       (rows) =>
-        rows as { id: string; name: string | null; email: string; updated_at: unknown; referral: unknown }[],
+        rows as {
+          id: string;
+          name: string | null;
+          email: string;
+          updated_at: unknown;
+          referral: unknown;
+          referrer_name: string | null;
+          referrer_email: string | null;
+        }[],
       (error: unknown) => {
         mark(error, false);
         return [];
@@ -270,6 +293,13 @@ async function readDashboard(): Promise<AdminData> {
     ),
     feedQuery,
     usageQuery,
+    invitesQuery.then(
+      (rows) => rows as { name: string | null; email: string; count: unknown }[],
+      (error: unknown) => {
+        mark(error, false);
+        return [];
+      },
+    ),
   ]);
 
   const usageByUser = new Map(usageRows.map((row) => [row.userId, row]));
@@ -303,6 +333,7 @@ async function readDashboard(): Promise<AdminData> {
           email: row.email,
           updatedAt,
           referral: isReferral(row.referral) ? REFERRAL_LABEL[row.referral] : null,
+          invitedBy: personName(row.referrer_name, row.referrer_email),
           usage: usageFor(usageByUser.get(row.id)),
         },
       ];
@@ -311,6 +342,12 @@ async function readDashboard(): Promise<AdminData> {
     accountTotal: accounts,
     referrals: referralCounts(referralRows),
     referralPending,
+    invites: inviteRows.flatMap((row) => {
+      const name = personName(row.name, row.email);
+      const count = asCount(row.count);
+      if (!name || !row.email || count < 1) return [];
+      return [{ name, email: row.email, count }];
+    }),
     alerts: alertGroups.map((row) => {
       const port = byNumber.get(row.port_number);
       const name = port ? portName(port) : null;
@@ -329,6 +366,12 @@ async function readDashboard(): Promise<AdminData> {
     feed: feed ? { fetchedAt: feed.fetchedAt, ports: feed.ports.length } : null,
     problem,
   };
+}
+
+function personName(name: string | null | undefined, email: string | null | undefined): string | null {
+  if (typeof name === "string" && name.trim()) return name.trim();
+  if (typeof email === "string" && email.trim()) return email.trim();
+  return null;
 }
 
 function usageFor(entry: UsageTotals | undefined): AdminUsage {

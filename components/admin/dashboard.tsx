@@ -93,6 +93,9 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                       <p className="truncate text-[15px] font-medium">{person.name}</p>
                       <p className="truncate text-[13px] text-muted">{person.email}</p>
                       {person.referral && <p className="truncate text-[13px] text-muted">{person.referral}</p>}
+                      {person.invitedBy && (
+                        <p className="truncate text-[13px] text-muted">Invited by {person.invitedBy}</p>
+                      )}
                       <UsageSummary usage={person.usage} />
                     </div>
                     <div className="shrink-0 text-right">
@@ -189,6 +192,29 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                   ? "1 still choosing."
                   : `${data.referralPending.toLocaleString("en-US")} still choosing.`}
               </p>
+            )}
+          </section>
+
+          <section>
+            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Invites</h2>
+            {data.invites.length === 0 ? (
+              <p className="mt-3 text-[15px] text-muted">No one has brought someone in yet.</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
+                {data.invites.map((invite) => (
+                  <li key={invite.email} className="flex items-baseline justify-between gap-4 px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-medium">{invite.name}</p>
+                      {invite.name !== invite.email && (
+                        <p className="truncate text-[13px] text-muted">{invite.email}</p>
+                      )}
+                    </div>
+                    <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                      {invite.count.toLocaleString("en-US")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
 

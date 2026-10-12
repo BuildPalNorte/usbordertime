@@ -1,5 +1,7 @@
-import { isReferral, type Referral } from "@/lib/referral";
 import { database } from "@/lib/db.server";
+import { INVITE_COOKIE, isUserId } from "@/lib/invite";
+import { isReferral, type Referral } from "@/lib/referral";
+import { cookies } from "next/headers";
 
 export type ProfileIdentity = {
   id: string;
@@ -21,6 +23,12 @@ export function ensureProfileColumns(): Promise<void> {
         alter table profile
         add column if not exists referral_pending boolean not null default false
       `;
+      await sql`alter table profile add column if not exists referred_by text`;
+      await sql`
+        create index if not exists profile_referred_by_idx
+        on profile (referred_by)
+        where referred_by is not null
+      `;
     })().catch((error: unknown) => {
       ensuring = null;
       throw error;
@@ -34,8 +42,21 @@ function pendingFrom(value: unknown): boolean {
 }
 
 /**
+ * The sharer stored before sign-in, when that id is already a profile and is not this account.
+ * A missing or forged id does not block the new profile.
+ */
+async function referrerFromVisit(userId: string): Promise<string | null> {
+  const value = (await cookies()).get(INVITE_COOKIE)?.value;
+  if (!isUserId(value) || value === userId) return null;
+  const sql = database();
+  const rows = await sql`select id from profile where id = ${value} limit 1`;
+  return rows.length > 0 ? value : null;
+}
+
+/**
  * Creates the profile on first sign-in and refreshes name, email, and photo when they change.
  * A returning visit with nothing new is a read, not a write.
+ * `referred_by` is written only on the insert. A later visit does not change it.
  */
 export async function ensureProfile(identity: ProfileIdentity): Promise<{ referralPending: boolean }> {
   await ensureProfileColumns();
@@ -52,9 +73,10 @@ export async function ensureProfile(identity: ProfileIdentity): Promise<{ referr
   ) {
     return { referralPending: pendingFrom(row.referral_pending) };
   }
+  const referredBy = row ? null : await referrerFromVisit(identity.id);
   const rows = await sql`
-    insert into profile (id, email, name, image, referral_pending)
-    values (${identity.id}, ${identity.email}, ${identity.name}, ${identity.image}, true)
+    insert into profile (id, email, name, image, referral_pending, referred_by)
+    values (${identity.id}, ${identity.email}, ${identity.name}, ${identity.image}, true, ${referredBy})
     on conflict (id) do update
     set email = excluded.email,
         name = excluded.name,

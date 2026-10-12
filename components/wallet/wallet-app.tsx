@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { cityPinKey, pinStore } from "@/lib/pin-store";
 import { shareMessage } from "@/lib/i18n";
+import { withInvite } from "@/lib/invite";
 import {
   defaultMode,
   isMode,
@@ -119,9 +120,11 @@ async function fetchCameraStreams(): Promise<Record<string, string>> {
 export function WalletApp({
   initial,
   streams,
+  userId,
 }: {
   initial: BorderWaitTimes | null;
   streams: Record<string, string>;
+  userId: string;
 }) {
   const { locale, copy } = useLocale();
   const queryClient = useQueryClient();
@@ -523,7 +526,7 @@ export function WalletApp({
       haptic("medium");
       const message = shareMessage(port, mode, copy);
       const url = new URL(
-        crossingSharePath(port.portNumber, mode, locale),
+        withInvite(crossingSharePath(port.portNumber, mode, locale), userId),
         window.location.origin,
       ).href;
       const body = `${message.text}\n${url}`;
@@ -558,7 +561,7 @@ export function WalletApp({
         sharing.current = false;
       }
     },
-    [copy, locale, showToast],
+    [copy, locale, showToast, userId],
   );
 
   const removeOpen = useCallback(

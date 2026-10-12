@@ -482,7 +482,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Your account",
-        body: "Signing in uses Google. Each visit saves a profile: the account id, your email, your name, and the address of your Google profile photo. A later visit refreshes those fields. The first time you sign in, we also ask how you found Border Time and save the option you pick. We use the profile to keep you signed in and to show your name and photo, and the option to see what brings people here. We do not sell them, and we do not use them for advertising. Signing in also sets a session cookie in this browser so you stay signed in. Signing out removes that cookie.",
+        body: "Signing in uses Google. Each visit saves a profile: the account id, your email, your name, and the address of your Google profile photo. A later visit refreshes those fields. The first time you sign in, we also ask how you found Border Time and save the option you pick. When you share a crossing, the link includes your account id. If someone new signs in from that link, we save your id on their profile, so we can see who brought them here. Their browser keeps that id in a cookie for 30 days, or until they sign in. We use the profile to keep you signed in and to show your name and photo, and the option to see what brings people here. We do not sell them, and we do not use them for advertising. Signing in also sets a session cookie in this browser so you stay signed in. Signing out removes that cookie.",
       },
       {
         heading: "Saved with your account",
@@ -510,7 +510,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "How long it stays",
-        body: `Signing out ends the session in this browser and removes this device's push address. The profile, how you found us, saved bridges, bookmarks, language, appearance, the streak, and the activity log stay until you ask us to delete the account. Write to ${CONTACT_EMAIL} and we delete the account and everything saved with it. Wait alerts stay until you turn them off. Alarms stay until you delete them. This browser keeps its copy until you clear the site's data.`,
+        body: `Signing out ends the session in this browser and removes this device's push address. The profile, how you found us, who shared the link you signed up from, saved bridges, bookmarks, language, appearance, the streak, and the activity log stay until you ask us to delete the account. Write to ${CONTACT_EMAIL} and we delete the account and everything saved with it. Wait alerts stay until you turn them off. Alarms stay until you delete them. This browser keeps its copy until you clear the site's data.`,
       },
       {
         heading: "Children",
@@ -972,7 +972,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Tu cuenta",
-        body: "El inicio de sesión usa Google. Cada visita guarda un perfil: el id de la cuenta, tu correo, tu nombre y la dirección de tu foto de perfil de Google. Una visita posterior actualiza esos datos. La primera vez que inicias sesión, también preguntamos cómo encontraste Border Time y guardamos la opción que eliges. Usamos el perfil para mantener tu sesión y para mostrar tu nombre y tu foto, y la opción para ver qué trae a la gente aquí. No los vendemos y no los usamos para publicidad. Al iniciar sesión también se guarda una cookie de sesión en este navegador para que sigas dentro. Al cerrar sesión, esa cookie se quita.",
+        body: "El inicio de sesión usa Google. Cada visita guarda un perfil: el id de la cuenta, tu correo, tu nombre y la dirección de tu foto de perfil de Google. Una visita posterior actualiza esos datos. La primera vez que inicias sesión, también preguntamos cómo encontraste Border Time y guardamos la opción que eliges. Cuando compartes un cruce, el enlace incluye el id de tu cuenta. Si alguien nuevo inicia sesión desde ese enlace, guardamos tu id en su perfil, para saber quién lo trajo. Su navegador guarda ese id en una cookie durante 30 días, o hasta que inicie sesión. Usamos el perfil para mantener tu sesión y para mostrar tu nombre y tu foto, y la opción para ver qué trae a la gente aquí. No los vendemos y no los usamos para publicidad. Al iniciar sesión también se guarda una cookie de sesión en este navegador para que sigas dentro. Al cerrar sesión, esa cookie se quita.",
       },
       {
         heading: "Guardado en tu cuenta",
@@ -1000,7 +1000,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Cuánto tiempo permanece",
-        body: `Cerrar sesión termina la sesión en este navegador y quita la dirección push de este dispositivo. El perfil, cómo nos encontraste, los puentes guardados, las ciudades fijadas, el idioma, la apariencia, la racha y el registro de uso permanecen hasta que pidas borrar la cuenta. Escribe a ${CONTACT_EMAIL} y borramos la cuenta y todo lo que está guardado con ella. Las alertas de espera permanecen hasta que las apagues. Las alarmas permanecen hasta que las elimines. Este navegador guarda su copia hasta que borres los datos del sitio.`,
+        body: `Cerrar sesión termina la sesión en este navegador y quita la dirección push de este dispositivo. El perfil, cómo nos encontraste, quién compartió el enlace con el que creaste la cuenta, los puentes guardados, las ciudades fijadas, el idioma, la apariencia, la racha y el registro de uso permanecen hasta que pidas borrar la cuenta. Escribe a ${CONTACT_EMAIL} y borramos la cuenta y todo lo que está guardado con ella. Las alertas de espera permanecen hasta que las apagues. Las alarmas permanecen hasta que las elimines. Este navegador guarda su copia hasta que borres los datos del sitio.`,
       },
       {
         heading: "Menores",

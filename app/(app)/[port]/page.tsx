@@ -1,5 +1,6 @@
 import { crossingPreview } from "@/lib/crossing-preview";
 import { COPY } from "@/lib/i18n";
+import { inviteQuery, withInvite } from "@/lib/invite";
 import { resolveLocale } from "@/lib/locale.server";
 import { localeQuery } from "@/lib/routes";
 import type { Metadata } from "next";
@@ -30,13 +31,14 @@ export async function generateMetadata({
   }
 
   const { message, path, image } = preview;
+  const sharedPath = withInvite(path, inviteQuery(first(query.from)));
   return {
     title: { absolute: copy.pageTitle(message.title) },
     description: message.text,
     openGraph: {
       title: message.title,
       description: message.text,
-      url: path,
+      url: sharedPath,
       siteName: "Border Time",
       type: "website",
       locale: locale === "es" ? "es_MX" : "en_US",

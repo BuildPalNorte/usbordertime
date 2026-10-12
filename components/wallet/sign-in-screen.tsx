@@ -3,11 +3,13 @@
 import { useLocale } from "@/components/locale-provider";
 import { authClient } from "@/lib/auth/client";
 import { haptic, type Haptic } from "@/lib/haptics";
+import { rememberInvite, dropInviteParam } from "@/lib/invite";
 import { currentCallbackURL } from "@/lib/routes";
 import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type MouseEvent as ReactMouseEvent,
@@ -37,6 +39,11 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
+  useLayoutEffect(() => {
+    rememberInvite(window.location.search);
+    dropInviteParam();
+  }, []);
+
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("sign-in") !== "failed") return;
@@ -54,6 +61,7 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
     if (tick) haptic(tick);
     setBusy(true);
     setFailed(false);
+    rememberInvite(window.location.search);
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: currentCallbackURL(),
