@@ -1,4 +1,6 @@
 import { AccountList } from "@/components/admin/account-list";
+import { AdminTabs } from "@/components/admin/admin-tabs";
+import { AnnouncementModal } from "@/components/admin/announcement-modal";
 import { SignOutButton } from "@/components/admin/sign-out-button";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
 import type { AdminCamera, AdminData, AdminFeedGroup, AdminViewer } from "@/lib/admin.server";
@@ -160,7 +162,8 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         <Link href="/" className="inline-flex min-h-11 items-center text-[15px] font-medium text-muted">
           Back
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <AnnouncementModal initial={data.announcements} />
           <ThemeSwitch />
           <SignOutButton />
         </div>
@@ -198,164 +201,170 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         the last 7 days. {insights.idle.toLocaleString("en-US")} have not done anything beyond signing in.
       </p>
 
-      <div className="mt-10 grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
-        <Section title="Journey" hint="How far accounts get, from sign-in to asking a question.">
-          <Funnel steps={insights.funnel} />
-        </Section>
-
-        <div className="flex flex-col gap-10">
-          <Section title="Growth">
-            <Growth days={insights.growth} />
-          </Section>
-
-          <Section title="Where they came from" hint="Each source with how many came back and set something up.">
-            {insights.sources.length === 0 ? (
-              <p className="text-[15px] text-muted">No accounts yet.</p>
-            ) : (
-              <Rows>
-                {insights.sources.map((source) => (
-                  <li key={source.key} className="px-4 py-3">
-                    <div className={LINE}>
-                      <p className="text-[15px] font-medium">{source.label}</p>
-                      <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                        {source.accounts.toLocaleString("en-US")}
-                      </p>
-                    </div>
-                    <p className="mt-1 flex gap-x-2 text-[13px] whitespace-nowrap text-muted">
-                      <span>{source.returned} came back</span>
-                      <span>{source.activated} set up crossings</span>
-                      <span>{source.avgDays} days on average</span>
-                    </p>
-                  </li>
-                ))}
-              </Rows>
-            )}
-          </Section>
-        </div>
-      </div>
-
       <div className="mt-10 min-w-0">
-        <Section title="Accounts" hint="Open one to see everything it has done, and follow invites between people.">
-          {insights.accounts.length === 0 ? (
-            <p className="text-[15px] text-muted">No accounts yet.</p>
-          ) : (
-            <AccountList accounts={insights.accounts} now={now} />
-          )}
-          {data.accountTotal > insights.accounts.length && (
-            <p className="mt-3 text-[13px] text-muted">
-              Showing the latest {insights.accounts.length.toLocaleString("en-US")} of{" "}
-              {data.accountTotal.toLocaleString("en-US")}.
-            </p>
-          )}
-        </Section>
-      </div>
+        <AdminTabs
+          overview={
+            <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+              <Section title="Journey" hint="How far accounts get, from sign-in to asking a question.">
+                <Funnel steps={insights.funnel} />
+              </Section>
 
-      <div className="mt-10 grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
-        <div className="flex flex-col gap-10">
-          <Section title="Crossings" hint="Who saved, watches, or schedules each crossing, next to its wait right now.">
-            {data.crossings.length === 0 ? (
-              <p className="text-[15px] text-muted">No one has saved or watched a crossing.</p>
-            ) : (
-              <Rows>
-                {data.crossings.map((crossing) => (
-                  <li key={crossing.portNumber} className={`${LINE} px-4 py-3`}>
-                    <div>
-                      <p className="text-[15px] font-medium">{crossing.label}</p>
-                      <p className="text-[13px] text-muted">
-                        {crossing.saved} saved · {crossing.alerts} alerts · {crossing.alarms} alarms
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-[15px] font-semibold tabular-nums">
-                        {crossing.people.toLocaleString("en-US")} {crossing.people === 1 ? "person" : "people"}
-                      </p>
-                      <p className="text-[13px] text-muted tabular-nums">
-                        {crossing.waitMinutes === null ? "No wait data" : `${crossing.waitMinutes} min now`}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </Rows>
-            )}
-          </Section>
+              <div className="flex flex-col gap-10">
+                <Section title="Growth">
+                  <Growth days={insights.growth} />
+                </Section>
 
-          <Section title="Usage">
-            {data.usage.active === 0 ? (
-              <p className="text-[15px] text-muted">No activity yet.</p>
-            ) : (
-              <Rows>
-                <li className={`${LINE} px-4 py-3`}>
-                  <p className="text-[15px] font-medium">Active accounts</p>
-                  <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                    {data.usage.active.toLocaleString("en-US")}
-                  </p>
-                </li>
-                {USAGE_KINDS.map((kind) => (
-                  <li key={kind} className={`${LINE} px-4 py-3`}>
-                    <p className="text-[15px] font-medium">{USAGE_LABEL[kind]}</p>
-                    <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                      {data.usage.byKind[kind].toLocaleString("en-US")}
-                    </p>
-                  </li>
-                ))}
-              </Rows>
-            )}
-          </Section>
-        </div>
+                <Section title="Where they came from" hint="Each source with how many came back and set something up.">
+                  {insights.sources.length === 0 ? (
+                    <p className="text-[15px] text-muted">No accounts yet.</p>
+                  ) : (
+                    <Rows>
+                      {insights.sources.map((source) => (
+                        <li key={source.key} className="px-4 py-3">
+                          <div className={LINE}>
+                            <p className="text-[15px] font-medium">{source.label}</p>
+                            <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                              {source.accounts.toLocaleString("en-US")}
+                            </p>
+                          </div>
+                          <p className="mt-1 flex gap-x-2 text-[13px] whitespace-nowrap text-muted">
+                            <span>{source.returned} came back</span>
+                            <span>{source.activated} set up crossings</span>
+                            <span>{source.avgDays} days on average</span>
+                          </p>
+                        </li>
+                      ))}
+                    </Rows>
+                  )}
+                </Section>
 
-        <div className="flex flex-col gap-10">
-          <Section title="Invites" hint="Who brought people in, and how many of them did something.">
-            {insights.inviters.length === 0 ? (
-              <p className="text-[15px] text-muted">No one has brought someone in yet.</p>
-            ) : (
-              <Rows>
-                {insights.inviters.map((inviter) => (
-                  <li key={inviter.id} className="px-4 py-3">
-                    <div className={LINE}>
-                      <p className="text-[15px] font-medium">{inviter.name}</p>
-                      <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                        {inviter.invited.length.toLocaleString("en-US")}
-                      </p>
-                    </div>
-                    <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
-                      {inviter.activated} of {inviter.invited.length} set up crossings:{" "}
-                      {inviter.invited.map((child) => child.name).join(", ")}
-                    </p>
-                  </li>
-                ))}
-              </Rows>
-            )}
-          </Section>
-
-          <Section title="Wait times">
-            <div className="rounded-3xl border border-line bg-surface px-4 py-4">
-              {data.feed ? (
-                <>
-                  <p className="text-[15px] font-medium">{formatWhen(data.feed.fetchedAt)}</p>
-                  <p className="mt-1 text-[13px] text-muted">
-                    {data.feed.ports.toLocaleString("en-US")} crossings in the latest snapshot
-                  </p>
-                </>
-              ) : (
-                <p className="text-[15px] text-muted">The CBP feed did not answer.</p>
-              )}
+                <Section title="Wait times">
+                  <div className="rounded-3xl border border-line bg-surface px-4 py-4">
+                    {data.feed ? (
+                      <>
+                        <p className="text-[15px] font-medium">{formatWhen(data.feed.fetchedAt)}</p>
+                        <p className="mt-1 text-[13px] text-muted">
+                          {data.feed.ports.toLocaleString("en-US")} crossings in the latest snapshot
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-[15px] text-muted">The CBP feed did not answer.</p>
+                    )}
+                  </div>
+                </Section>
+              </div>
             </div>
-          </Section>
-        </div>
-      </div>
+          }
+          accounts={
+            <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+              <Section
+                title="Accounts"
+                hint="Open one to see everything it has done, and follow invites between people."
+              >
+                {insights.accounts.length === 0 ? (
+                  <p className="text-[15px] text-muted">No accounts yet.</p>
+                ) : (
+                  <AccountList accounts={insights.accounts} now={now} />
+                )}
+                {data.accountTotal > insights.accounts.length && (
+                  <p className="mt-3 text-[13px] text-muted">
+                    Showing the latest {insights.accounts.length.toLocaleString("en-US")} of{" "}
+                    {data.accountTotal.toLocaleString("en-US")}.
+                  </p>
+                )}
+              </Section>
 
-      <div className="mt-10 min-w-0">
-        <Section
-          title="Cameras"
-          hint="Nuevo and Viejo, then every other crossing. Saved means that address is in the database."
-        >
-          <div className="flex flex-col gap-6">
-            <CameraList name="Brownsville" detail="Comtodo" cameras={brownsvilleCameras(data.cameras)} />
-            {data.feedGroups.map((group) => (
-              <CameraList key={group.id} name={group.name} detail={group.detail} cameras={groupCameras(group)} />
-            ))}
-          </div>
-        </Section>
+              <Section title="Invites" hint="Who brought people in, and how many of them did something.">
+                {insights.inviters.length === 0 ? (
+                  <p className="text-[15px] text-muted">No one has brought someone in yet.</p>
+                ) : (
+                  <Rows>
+                    {insights.inviters.map((inviter) => (
+                      <li key={inviter.id} className="px-4 py-3">
+                        <div className={LINE}>
+                          <p className="text-[15px] font-medium">{inviter.name}</p>
+                          <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                            {inviter.invited.length.toLocaleString("en-US")}
+                          </p>
+                        </div>
+                        <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
+                          {inviter.activated} of {inviter.invited.length} set up crossings:{" "}
+                          {inviter.invited.map((child) => child.name).join(", ")}
+                        </p>
+                      </li>
+                    ))}
+                  </Rows>
+                )}
+              </Section>
+            </div>
+          }
+          crossings={
+            <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+              <Section title="Crossings" hint="Who saved, watches, or schedules each crossing, next to its wait right now.">
+                {data.crossings.length === 0 ? (
+                  <p className="text-[15px] text-muted">No one has saved or watched a crossing.</p>
+                ) : (
+                  <Rows>
+                    {data.crossings.map((crossing) => (
+                      <li key={crossing.portNumber} className={`${LINE} px-4 py-3`}>
+                        <div>
+                          <p className="text-[15px] font-medium">{crossing.label}</p>
+                          <p className="text-[13px] text-muted">
+                            {crossing.saved} saved · {crossing.alerts} alerts · {crossing.alarms} alarms
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-[15px] font-semibold tabular-nums">
+                            {crossing.people.toLocaleString("en-US")} {crossing.people === 1 ? "person" : "people"}
+                          </p>
+                          <p className="text-[13px] text-muted tabular-nums">
+                            {crossing.waitMinutes === null ? "No wait data" : `${crossing.waitMinutes} min now`}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </Rows>
+                )}
+              </Section>
+
+              <Section title="Usage">
+                {data.usage.active === 0 ? (
+                  <p className="text-[15px] text-muted">No activity yet.</p>
+                ) : (
+                  <Rows>
+                    <li className={`${LINE} px-4 py-3`}>
+                      <p className="text-[15px] font-medium">Active accounts</p>
+                      <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                        {data.usage.active.toLocaleString("en-US")}
+                      </p>
+                    </li>
+                    {USAGE_KINDS.map((kind) => (
+                      <li key={kind} className={`${LINE} px-4 py-3`}>
+                        <p className="text-[15px] font-medium">{USAGE_LABEL[kind]}</p>
+                        <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                          {data.usage.byKind[kind].toLocaleString("en-US")}
+                        </p>
+                      </li>
+                    ))}
+                  </Rows>
+                )}
+              </Section>
+            </div>
+          }
+          cameras={
+            <Section
+              title="Cameras"
+              hint="Nuevo and Viejo, then every other crossing. Saved means that address is in the database."
+            >
+              <div className="flex flex-col gap-6">
+                <CameraList name="Brownsville" detail="Comtodo" cameras={brownsvilleCameras(data.cameras)} />
+                {data.feedGroups.map((group) => (
+                  <CameraList key={group.id} name={group.name} detail={group.detail} cameras={groupCameras(group)} />
+                ))}
+              </div>
+            </Section>
+          }
+        />
       </div>
     </div>
   );

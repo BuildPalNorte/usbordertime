@@ -1,5 +1,7 @@
 import { getAuth } from "@/lib/auth/server";
 import { buildInsights, type Insights, type RawFacts } from "@/lib/admin-insights";
+import { listAnnouncements } from "@/lib/announcement.server";
+import type { Announcement } from "@/lib/announcement";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { FEED_GROUPS, type FeedKind } from "@/lib/camera-feeds";
 import { defaultMode, laneFor, listedCameras, portName } from "@/lib/ports";
@@ -82,6 +84,7 @@ export type AdminData = {
   cameras: AdminCamera[];
   feedGroups: AdminFeedGroup[];
   feed: { fetchedAt: string; ports: number } | null;
+  announcements: Announcement[];
   problem: boolean;
 };
 
@@ -174,9 +177,14 @@ async function readDashboard(): Promise<AdminData> {
     return [];
   });
 
+  const announcementsQuery = listAnnouncements().catch((error: unknown) => {
+    mark(error, true);
+    return [];
+  });
+
   const factsQuery = readFacts(mark);
 
-  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, usageRows] =
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, usageRows, announcements] =
     await Promise.all([
     factsQuery,
     accountsQuery.then(
@@ -228,6 +236,7 @@ async function readDashboard(): Promise<AdminData> {
     ),
     feedQuery,
     usageQuery,
+    announcementsQuery,
   ]);
 
   const insights = buildInsights({
@@ -276,6 +285,7 @@ async function readDashboard(): Promise<AdminData> {
     cameras: camerasFrom(cameras),
     feedGroups: feedGroupsFrom(feeds),
     feed: feed ? { fetchedAt: feed.fetchedAt, ports: feed.ports.length } : null,
+    announcements,
     problem,
   };
 }
