@@ -487,7 +487,12 @@ export function WalletApp({
         );
         const entry = entries[index];
         haptic("heavy");
-        if (route.port === port.portNumber) go("/");
+        if (route.port === port.portNumber) {
+          go("/");
+          // See removeOpen: the route lags the navigation, so mark this port
+          // saved first or the deep-link auto-save effect re-adds it.
+          autoSaved.current.add(port.portNumber);
+        }
         walletStore.remove(port.portNumber);
         showToast({
           message: copy.removedToast(name),
@@ -575,6 +580,11 @@ export function WalletApp({
       }
       haptic("heavy");
       go("/");
+      // The route doesn't update until navigation resolves, so the deep-link
+      // auto-save effect can still see this port as the route for a render or two
+      // after it's gone from the wallet. Mark it saved so that effect doesn't
+      // mistake the removal for a fresh deep link and add it right back.
+      autoSaved.current.add(portNumber);
       walletStore.remove(portNumber);
       showToast({
         message: copy.removedToast(portName(port).title),

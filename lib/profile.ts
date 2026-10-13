@@ -25,6 +25,10 @@ export function ensureProfileColumns(): Promise<void> {
       `;
       await sql`alter table profile add column if not exists referred_by text`;
       await sql`
+        alter table profile
+        add column if not exists location_pending boolean not null default false
+      `;
+      await sql`
         create index if not exists profile_referred_by_idx
         on profile (referred_by)
         where referred_by is not null
@@ -58,12 +62,21 @@ async function referrerFromVisit(userId: string): Promise<string | null> {
  * A returning visit with nothing new is a read, not a write.
  * `referred_by` is written only on the insert. A later visit does not change it.
  */
-export async function ensureProfile(identity: ProfileIdentity): Promise<{ referralPending: boolean }> {
+export async function ensureProfile(
+  identity: ProfileIdentity,
+): Promise<{ referralPending: boolean; locationPending: boolean }> {
   await ensureProfileColumns();
   const sql = database();
   const existing = (await sql`
-    select email, name, image, referral_pending from profile where id = ${identity.id} limit 1
-  `) as { email: string; name: string; image: string | null; referral_pending?: unknown }[];
+    select email, name, image, referral_pending, location_pending
+    from profile where id = ${identity.id} limit 1
+  `) as {
+    email: string;
+    name: string;
+    image: string | null;
+    referral_pending?: unknown;
+    location_pending?: unknown;
+  }[];
   const row = existing[0];
   if (
     row &&
@@ -71,21 +84,56 @@ export async function ensureProfile(identity: ProfileIdentity): Promise<{ referr
     row.name === identity.name &&
     (row.image ?? null) === identity.image
   ) {
-    return { referralPending: pendingFrom(row.referral_pending) };
+    return {
+      referralPending: pendingFrom(row.referral_pending),
+      locationPending: pendingFrom(row.location_pending),
+    };
   }
   const referredBy = row ? null : await referrerFromVisit(identity.id);
   const rows = await sql`
-    insert into profile (id, email, name, image, referral_pending, referred_by)
-    values (${identity.id}, ${identity.email}, ${identity.name}, ${identity.image}, true, ${referredBy})
+    insert into profile (id, email, name, image, referral_pending, location_pending, referred_by)
+    values (${identity.id}, ${identity.email}, ${identity.name}, ${identity.image}, true, true, ${referredBy})
     on conflict (id) do update
     set email = excluded.email,
         name = excluded.name,
         image = excluded.image,
         updated_at = now()
-    returning referral_pending
+    returning referral_pending, location_pending
   `;
-  const pending = (rows[0] as { referral_pending?: unknown } | undefined)?.referral_pending;
-  return { referralPending: pendingFrom(pending) };
+  const saved = rows[0] as { referral_pending?: unknown; location_pending?: unknown } | undefined;
+  return {
+    referralPending: pendingFrom(saved?.referral_pending),
+    locationPending: pendingFrom(saved?.location_pending),
+  };
+}
+
+/**
+ * Clears the location question for an account that still owes one, whichever way they
+ * answered — sharing their position or picking manually both end the question.
+ * A second call after it is cleared still reports success.
+ */
+export async function saveLocationChoice(userId: string): Promise<boolean> {
+  await ensureProfileColumns();
+  const sql = database();
+  const updated = await sql`
+    update profile
+    set location_pending = false,
+        updated_at = now()
+    where id = ${userId}
+      and location_pending = true
+    returning id
+  `;
+  if (updated.length > 0) return true;
+
+  const rows = await sql`select location_pending from profile where id = ${userId} limit 1`;
+  return rows.length > 0 && !pendingFrom((rows[0] as { location_pending?: unknown }).location_pending);
+}
+
+/** Development only. Puts the location question back in front of this account. */
+export async function replayLocationPrompt(userId: string): Promise<void> {
+  await ensureProfileColumns();
+  const sql = database();
+  await sql`update profile set location_pending = true, updated_at = now() where id = ${userId}`;
 }
 
 /**

@@ -118,6 +118,16 @@ export type Copy = {
   referralSaving: string;
   referralFailed: string;
   referralOption: Record<Referral, string>;
+  locationTitle: string;
+  locationBody: string;
+  locationShareOption: string;
+  locationManualOption: string;
+  locationFinding: string;
+  locationDenied: string;
+  locationNoMatch: string;
+  locationFoundTitle: (city: string) => string;
+  locationFoundBody: (count: number) => string;
+  locationContinue: string;
   privacyPolicy: string;
   termsOfUse: string;
   admin: string;
@@ -490,6 +500,16 @@ export const COPY: Record<Locale, Copy> = {
     referralSaving: "Saving…",
     referralFailed: "Could not save that. Try again.",
     referralOption: REFERRAL_LABEL,
+    locationTitle: "Find your closest bridges?",
+    locationBody: "Share your location and we'll add the crossings nearest you. Or pick them yourself.",
+    locationShareOption: "Share my location",
+    locationManualOption: "I'll choose manually",
+    locationFinding: "Finding your closest bridges…",
+    locationDenied: "We couldn't get your location. Choose your bridges manually below.",
+    locationNoMatch: "We couldn't find bridges near you. Choose manually below.",
+    locationFoundTitle: (city) => `Added your bridges near ${city}`,
+    locationFoundBody: (count) => (count === 1 ? "1 crossing saved to your wallet." : `${count} crossings saved to your wallet.`),
+    locationContinue: "Continue",
     privacyPolicy: "Privacy policy",
     termsOfUse: "Terms of use",
     admin: "Admin",
@@ -991,6 +1011,18 @@ export const COPY: Record<Locale, Copy> = {
       google: "Google",
       other: "En otro lugar",
     },
+    locationTitle: "¿Buscamos tus puentes más cercanos?",
+    locationBody:
+      "Comparte tu ubicación y agregamos los cruces más cercanos a ti. O elígelos tú mismo.",
+    locationShareOption: "Compartir mi ubicación",
+    locationManualOption: "Elegiré manualmente",
+    locationFinding: "Buscando tus puentes más cercanos…",
+    locationDenied: "No pudimos obtener tu ubicación. Elige tus puentes manualmente abajo.",
+    locationNoMatch: "No encontramos puentes cerca de ti. Elige manualmente abajo.",
+    locationFoundTitle: (city) => `Agregamos tus puentes cerca de ${city}`,
+    locationFoundBody: (count) =>
+      count === 1 ? "1 cruce guardado en tu monedero." : `${count} cruces guardados en tu monedero.`,
+    locationContinue: "Continuar",
     privacyPolicy: "Política de privacidad",
     termsOfUse: "Términos de uso",
     admin: "Admin",

@@ -4,6 +4,7 @@ import { PreferenceSync } from "@/components/wallet/preference-sync";
 import { SessionGate } from "@/components/wallet/session-gate";
 import { StreakSync } from "@/components/wallet/streak-sync";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
+import { LocationPrompt } from "@/components/wallet/location-prompt";
 import { ReferralPrompt } from "@/components/wallet/referral-prompt";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
@@ -31,7 +32,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   );
 }
 
-/** The bridges render only after Google sign-in. A new profile answers how they found the app first. */
+/**
+ * The bridges render only after Google sign-in. A new profile answers how they found the
+ * app, then whether to find their closest bridges from their location or pick them by hand.
+ */
 async function GatedHome({ children }: { children: ReactNode }) {
   // The session depends on the request and the clock. Defer to request time so it is not prerendered.
   await connection();
@@ -59,6 +63,16 @@ async function GatedHome({ children }: { children: ReactNode }) {
     return (
       <SessionGate>
         <ReferralPrompt />
+      </SessionGate>
+    );
+  }
+
+  if (profileResult.value.locationPending) {
+    // Reuses the same "use cache" fetch LiveWallet will make below, so asking here is free.
+    const snapshot = await getBorderWaitTimes().catch(() => null);
+    return (
+      <SessionGate>
+        <LocationPrompt ports={snapshot?.ports ?? []} />
       </SessionGate>
     );
   }
