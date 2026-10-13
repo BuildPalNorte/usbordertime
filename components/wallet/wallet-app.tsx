@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useLocale } from "@/components/locale-provider";
 import { NotFoundScreen } from "@/components/not-found-screen";
+import type { Announcement } from "@/lib/announcement";
 import type { BorderWaitTimes, PortWaitTime } from "@/lib/border-wait-times";
 import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
@@ -42,6 +43,7 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from "react";
+import { AnnouncementNotice } from "./announcement-notice";
 import { CameraStreamProvider } from "./camera-streams";
 import { AskPane } from "./ask-pane";
 import { BrowsePane } from "./browse-pane";
@@ -121,10 +123,12 @@ export function WalletApp({
   initial,
   streams,
   userId,
+  announcement,
 }: {
   initial: BorderWaitTimes | null;
   streams: Record<string, string>;
   userId: string;
+  announcement: Announcement | null;
 }) {
   const { locale, copy } = useLocale();
   const queryClient = useQueryClient();
@@ -799,6 +803,8 @@ export function WalletApp({
                   routesMissing={routesMissing}
                   onDismissRoutes={dismissRoutes}
                   ownsHeader={tab === "wallet"}
+                  announcement={announcement}
+                  onViewAnnouncement={go}
                 />
               </section>
 
@@ -865,6 +871,7 @@ export function WalletApp({
 
           <TabBar tab={tab} onChange={changeTab} />
           <Toast toast={toast} onDismiss={() => setToast(null)} />
+          <AnnouncementNotice announcement={announcement} hydrated={hydrated} onView={go} />
           <Tour
             hydrated={hydrated}
             canAutoStart={tab === "wallet" && expandedId === null && !focus}

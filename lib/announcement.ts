@@ -4,11 +4,20 @@
  * One message the admin sent to every device on file at once - "the app changed, come look" -
  * as opposed to `wait_alert` (one lane, one account) or `schedule` (one account, on a timer).
  */
+/** Where the in-app copy of a broadcast sits. The push itself is unchanged. */
+export type AnnouncementSurface = "banner" | "modal";
+
+export function isAnnouncementSurface(value: unknown): value is AnnouncementSurface {
+  return value === "banner" || value === "modal";
+}
+
 export type Announcement = {
   id: string;
   title: string;
   body: string;
   url: string;
+  /** Banner sits under the bridges header. Modal covers the screen until it is closed. */
+  surface: AnnouncementSurface;
   sentAt: string;
   recipients: number;
 };
@@ -38,12 +47,13 @@ export function isAnnouncementUrl(value: unknown): value is string {
 }
 
 /** What the route accepts, before it's cleaned and validated. */
-export type AnnouncementInput = { title: string; body: string; url: string };
+export type AnnouncementInput = { title: string; body: string; url: string; surface: AnnouncementSurface };
 
 export function parseAnnouncementInput(value: unknown): AnnouncementInput | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
   if (typeof record.title !== "string" || typeof record.body !== "string") return null;
   const url = isAnnouncementUrl(record.url) ? record.url : "/";
-  return { title: record.title, body: record.body, url };
+  const surface = isAnnouncementSurface(record.surface) ? record.surface : "modal";
+  return { title: record.title, body: record.body, url, surface };
 }

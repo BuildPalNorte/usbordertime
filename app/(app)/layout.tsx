@@ -9,6 +9,7 @@ import { ReferralPrompt } from "@/components/wallet/referral-prompt";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
 import { isAdminEmail } from "@/lib/admin.server";
+import { latestAnnouncement } from "@/lib/announcement.server";
 import { getAuth } from "@/lib/auth/server";
 import { getBorderWaitTimes, type BorderWaitTimes } from "@/lib/border-wait-times";
 import { getCameraStreams } from "@/lib/camera-streams";
@@ -95,13 +96,19 @@ async function GatedHome({ children }: { children: ReactNode }) {
 
 /** Fetches the cached CBP snapshot on the server. If CBP is down, the client retries on its own. */
 async function LiveWallet({ userId, children }: { userId: string; children: ReactNode }) {
-  const [snapshot, cameras] = await Promise.allSettled([getBorderWaitTimes(), getCameraStreams()]);
+  const [snapshot, cameras, announcement] = await Promise.allSettled([
+    getBorderWaitTimes(),
+    getCameraStreams(),
+    latestAnnouncement(),
+  ]);
   const initial: BorderWaitTimes | null = snapshot.status === "fulfilled" ? snapshot.value : null;
   const streams = cameras.status === "fulfilled" ? cameras.value : fallbackCameraStreams();
+  // A failed read just means no banner this visit, not a broken wallet.
+  const latest = announcement.status === "fulfilled" ? announcement.value : null;
   return (
     <>
       <Suspense fallback={<ShellSkeleton wordless />}>
-        <WalletApp initial={initial} streams={streams} userId={userId} />
+        <WalletApp initial={initial} streams={streams} userId={userId} announcement={latest} />
       </Suspense>
       {children}
     </>

@@ -39,6 +39,7 @@ import { SPRING } from "./motion";
 import { GoogleMark } from "./sign-in-screen";
 import { ThemeSwitch } from "./theme-switch";
 import { useAdminAccess } from "./admin-access";
+import { DevAnnouncementPreview } from "./dev-announcement-preview";
 import { DevLocationReplay } from "./dev-location-replay";
 import { DevStreakPicker } from "./dev-streak-picker";
 import { LEVEL_COLOR, LevelIcon, useIconLoop } from "./streak-chip";
@@ -261,6 +262,9 @@ export function AccountButton({ className }: { className?: string }) {
                 )}
                 {process.env.NODE_ENV === "development" && <DevStreakPicker />}
                 {process.env.NODE_ENV === "development" && <DevLocationReplay />}
+                {process.env.NODE_ENV === "development" && (
+                  <DevAnnouncementPreview onDone={() => setOpen(false)} />
+                )}
                 {/* Phones have the tab bar. A desktop has no tab bar, so the menu is the way over. */}
                 <Link
                   href={onSchedules ? EXPLORE_PATH : SCHEDULES_PATH}

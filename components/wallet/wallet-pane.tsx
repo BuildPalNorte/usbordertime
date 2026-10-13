@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/locale-provider";
+import type { Announcement } from "@/lib/announcement";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import type { Mode } from "@/lib/ports";
 import { AccountButton } from "./account-button";
@@ -12,6 +13,7 @@ import { HeaderActions, usePublishPaneChrome, type PaneAction } from "./pane-hea
 import { CardStack, type StackItem } from "./card-stack";
 import { RouteRow } from "./route-row";
 import { HapticPad } from "./haptic-pad";
+import { AnnouncementBanner } from "./announcement-banner";
 import { InstallBanner } from "./install-prompt";
 import { CARD_H, PEEK, SPRING } from "./motion";
 
@@ -42,6 +44,9 @@ type Props = {
   onDismissRoutes: () => void;
   /** This tab owns the phone header, which stays put while the body slides. */
   ownsHeader: boolean;
+  /** The latest broadcast. A banner surface renders here; a modal is drawn over the app. */
+  announcement: Announcement | null;
+  onViewAnnouncement: (url: string) => void;
 };
 
 export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(props, headerRef) {
@@ -63,6 +68,8 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
     routesMissing,
     onDismissRoutes,
     ownsHeader,
+    announcement,
+    onViewAnnouncement,
   } = props;
   const { copy } = useLocale();
   const open = expandedId !== null && items.some((i) => i.port.portNumber === expandedId);
@@ -119,7 +126,16 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
       </header>
 
       <div className="pane-body">
-      {!open && !holding && <InstallBanner />}
+      {!open && !holding && (
+        <>
+          <AnnouncementBanner
+            announcement={announcement}
+            hydrated={hydrated}
+            onView={onViewAnnouncement}
+          />
+          <InstallBanner />
+        </>
+      )}
 
       {!hydrated || loading ? (
         <StackSkeleton />

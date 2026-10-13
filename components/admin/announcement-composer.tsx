@@ -1,6 +1,6 @@
 "use client";
 
-import type { Announcement } from "@/lib/announcement";
+import type { Announcement, AnnouncementSurface } from "@/lib/announcement";
 import { MAX_ANNOUNCEMENT_BODY, MAX_ANNOUNCEMENT_TITLE } from "@/lib/announcement";
 import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
@@ -29,10 +29,12 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
   const titleId = useId();
   const bodyId = useId();
   const urlId = useId();
+  const surfaceId = useId();
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("/");
+  const [surface, setSurface] = useState<AnnouncementSurface>("modal");
   const [history, setHistory] = useState(initial);
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -55,7 +57,7 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
       const response = await fetch("/api/admin/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body, url: url.trim() || "/" }),
+        body: JSON.stringify({ title, body, url: url.trim() || "/", surface }),
       });
       if (!response.ok) {
         haptic("error");
@@ -69,6 +71,7 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
       setTitle("");
       setBody("");
       setUrl("/");
+      setSurface("modal");
     } catch {
       haptic("error");
       setProblem("failed");
@@ -132,6 +135,51 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
               placeholder="Watch Brownsville's bridges live, right from the card."
               className="mt-2 block w-full resize-none appearance-none rounded-2xl bg-background px-4 py-3 text-[15px] leading-snug text-foreground outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-accent"
             />
+          </div>
+
+          <div>
+            <div id={surfaceId} className="text-[12px] font-semibold tracking-[0.06em] text-muted uppercase">
+              Shows as
+            </div>
+            <div
+              role="radiogroup"
+              aria-labelledby={surfaceId}
+              className="mt-2 grid grid-cols-2 gap-1 rounded-full bg-background p-1"
+            >
+              {(
+                [
+                  ["banner", "Banner"],
+                  ["modal", "Modal"],
+                ] as const
+              ).map(([value, label]) => {
+                const selected = surface === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => {
+                      if (selected) return;
+                      haptic("selection");
+                      setProblem(null);
+                      setSurface(value);
+                    }}
+                    className={cn(
+                      "h-10 rounded-full text-[15px] font-medium",
+                      selected ? "bg-foreground text-background" : "text-muted",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[12px] leading-snug text-muted">
+              {surface === "banner"
+                ? "Sits under the bridges header until they dismiss it."
+                : "Covers the screen until they close it."}
+            </p>
           </div>
 
           <div>
@@ -202,7 +250,9 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
                     </p>
                   </div>
                   <p className="mt-1 truncate text-[13px] text-muted">{entry.body}</p>
-                  <p className="mt-1 text-[12px] text-muted">{WHEN.format(new Date(entry.sentAt))}</p>
+                  <p className="mt-1 text-[12px] text-muted">
+                    {entry.surface === "banner" ? "Banner" : "Modal"} · {WHEN.format(new Date(entry.sentAt))}
+                  </p>
                 </motion.li>
               ))}
             </AnimatePresence>

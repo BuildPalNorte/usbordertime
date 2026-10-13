@@ -155,6 +155,7 @@ export type Copy = {
   cbpNotice: string;
   undo: string;
   view: string;
+  announcementDismiss: string;
   notFoundTitle: string;
   notFoundCard: string;
   notFoundCrossing: string;
@@ -622,6 +623,7 @@ export const COPY: Record<Locale, Copy> = {
     cbpNotice: "CBP notice, in English",
     undo: "Undo",
     view: "View",
+    announcementDismiss: "Dismiss",
     notFoundTitle: "Page not found",
     notFoundCard: "Page not found",
     notFoundCrossing: "No such crossing",
@@ -1142,6 +1144,7 @@ export const COPY: Record<Locale, Copy> = {
     cbpNotice: "Aviso de CBP, en inglés",
     undo: "Deshacer",
     view: "Ver",
+    announcementDismiss: "Descartar",
     notFoundTitle: "Página no encontrada",
     notFoundCard: "Página no encontrada",
     notFoundCrossing: "Este cruce no existe",

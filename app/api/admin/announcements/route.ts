@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   if (!input) return badRequest("Expected a title, body, and url.");
 
   try {
-    const result = await sendAnnouncement(adminId, input.title, input.body, input.url);
+    const result = await sendAnnouncement(adminId, input.title, input.body, input.url, input.surface);
     if (result.status === "empty") return badRequest("Title and body can't be empty.");
     if (result.status === "no-devices") {
       return Response.json({ error: "No device has notifications on yet." }, { status: 409, headers: NO_STORE });
