@@ -302,3 +302,56 @@ export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDay
     recent: accounts.filter((account) => (account.lastActive ?? "") >= weekAgo).length,
   };
 }
+
+export type ActivityFilter = "all" | "week" | "idle";
+export type SourceFilter = "any" | Referral | "choosing" | "unknown";
+export type LocaleFilter = "any" | "en" | "es" | "unset";
+export type InviteFilter = "any" | "brought" | "invited";
+export type StepFilter = "any" | StepKey;
+
+/** Choices that narrow the account list. Each group is one value, and the groups combine. */
+export type AccountFilter = {
+  activity: ActivityFilter;
+  source: SourceFilter;
+  locale: LocaleFilter;
+  invite: InviteFilter;
+  step: StepFilter;
+};
+
+export const DEFAULT_ACCOUNT_FILTER: AccountFilter = {
+  activity: "all",
+  source: "any",
+  locale: "any",
+  invite: "any",
+  step: "any",
+};
+
+const WEEK_MS = 7 * DAY_MS;
+
+function accountMatches(account: Connected, filter: AccountFilter, now: number): boolean {
+  if (filter.activity === "week" && (account.lastActive ?? "") < new Date(now - WEEK_MS).toISOString()) return false;
+  if (filter.activity === "idle" && account.depth !== 0) return false;
+  if (filter.source === "choosing" || filter.source === "unknown") {
+    if (account.sourceState !== filter.source) return false;
+  } else if (filter.source !== "any" && account.source !== filter.source) {
+    return false;
+  }
+  if (filter.locale === "unset") {
+    if (account.locale === "en" || account.locale === "es") return false;
+  } else if (filter.locale !== "any" && account.locale !== filter.locale) {
+    return false;
+  }
+  if (filter.invite === "brought" && account.invited.length === 0) return false;
+  if (filter.invite === "invited" && !account.invitedBy) return false;
+  if (filter.step !== "any" && !account.steps[filter.step]) return false;
+  return true;
+}
+
+/** Accounts whose name or email contains `query`, and that match every chosen filter. Order stays as given. */
+export function listedAccounts(accounts: Connected[], query: string, filter: AccountFilter, now: number): Connected[] {
+  const needle = query.trim().toLowerCase();
+  return accounts.filter((account) => {
+    if (needle && !`${account.name} ${account.email}`.toLowerCase().includes(needle)) return false;
+    return accountMatches(account, filter, now);
+  });
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildInsights, type RawFacts } from "@/lib/admin-insights";
+import { buildInsights, DEFAULT_ACCOUNT_FILTER, listedAccounts, type Connected, type RawFacts } from "@/lib/admin-insights";
 
 const NOW = new Date("2026-10-12T18:00:00Z");
 
@@ -81,5 +81,88 @@ describe("buildInsights", () => {
     const insights = buildInsights(EMPTY, NOW);
     expect(insights.funnel[0]).toMatchObject({ count: 0, share: 0 });
     expect(insights.growth).toHaveLength(14);
+  });
+});
+
+function account(id: string, extra: Partial<Connected> = {}): Connected {
+  return {
+    id,
+    name: id,
+    email: `${id}@example.com`,
+    joinedAt: "2026-10-01T00:00:00.000Z",
+    lastActive: null,
+    source: null,
+    sourceState: "unknown",
+    invitedBy: null,
+    invited: [],
+    locale: null,
+    saved: 0,
+    pins: 0,
+    alerts: 0,
+    alarms: 0,
+    alarmsOn: 0,
+    devices: 0,
+    questions: 0,
+    days: 0,
+    streak: { current: 0, longest: 0 },
+    steps: { answered: false, returned: false, saved: false, watching: false, notified: false, asked: false },
+    depth: 0,
+    ...extra,
+  };
+}
+
+describe("listedAccounts", () => {
+  const now = Date.parse("2026-10-13T00:00:00.000Z");
+  const weekEdge = new Date(now - 7 * 86_400_000).toISOString();
+  const rows = [
+    account("ann", {
+      name: "Ann",
+      email: "ann@example.com",
+      lastActive: weekEdge,
+      source: "instagram",
+      sourceState: "answered",
+      locale: "es",
+      invited: [{ id: "bo", name: "Bo", activated: false }],
+      steps: { answered: true, returned: true, saved: true, watching: false, notified: false, asked: true },
+      depth: 4,
+    }),
+    account("bo", {
+      name: "Bo",
+      lastActive: "2026-10-01T00:00:00.000Z",
+      sourceState: "choosing",
+      locale: "en",
+      invitedBy: { id: "ann", name: "Ann" },
+      depth: 0,
+    }),
+    account("cy", { name: "Cy", locale: null, depth: 1, steps: { answered: false, returned: false, saved: true, watching: false, notified: false, asked: false } }),
+  ];
+
+  it("keeps everyone when nothing is chosen", () => {
+    expect(listedAccounts(rows, "", DEFAULT_ACCOUNT_FILTER, now).map((row) => row.id)).toEqual(["ann", "bo", "cy"]);
+  });
+
+  it("matches a name or email, ignoring case and surrounding spaces", () => {
+    expect(listedAccounts(rows, "  ANN@ ", DEFAULT_ACCOUNT_FILTER, now).map((row) => row.id)).toEqual(["ann"]);
+  });
+
+  it("combines activity, source, language, invites, and a reached step", () => {
+    const match = listedAccounts(
+      rows,
+      "",
+      { activity: "week", source: "instagram", locale: "es", invite: "brought", step: "asked" },
+      now,
+    );
+    expect(match.map((row) => row.id)).toEqual(["ann"]);
+  });
+
+  it("treats the week boundary as included and idle as no steps reached", () => {
+    expect(listedAccounts(rows, "", { ...DEFAULT_ACCOUNT_FILTER, activity: "week" }, now).map((row) => row.id)).toEqual(["ann"]);
+    expect(listedAccounts(rows, "", { ...DEFAULT_ACCOUNT_FILTER, activity: "idle" }, now).map((row) => row.id)).toEqual(["bo"]);
+  });
+
+  it("separates people still choosing, people who were invited, and a language that was never chosen", () => {
+    expect(listedAccounts(rows, "", { ...DEFAULT_ACCOUNT_FILTER, source: "choosing" }, now).map((row) => row.id)).toEqual(["bo"]);
+    expect(listedAccounts(rows, "", { ...DEFAULT_ACCOUNT_FILTER, invite: "invited" }, now).map((row) => row.id)).toEqual(["bo"]);
+    expect(listedAccounts(rows, "", { ...DEFAULT_ACCOUNT_FILTER, locale: "unset" }, now).map((row) => row.id)).toEqual(["cy"]);
   });
 });
