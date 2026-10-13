@@ -1,5 +1,6 @@
 import { database } from "@/lib/db.server";
 import { INVITE_COOKIE, isUserId } from "@/lib/invite";
+import { type GeoPoint } from "@/lib/port-locations";
 import { isReferral, type Referral } from "@/lib/referral";
 import { cookies } from "next/headers";
 
@@ -27,6 +28,11 @@ export function ensureProfileColumns(): Promise<void> {
       await sql`
         alter table profile
         add column if not exists location_pending boolean not null default false
+      `;
+      await sql`
+        alter table profile
+        add column if not exists latitude double precision,
+        add column if not exists longitude double precision
       `;
       await sql`
         create index if not exists profile_referred_by_idx
@@ -110,19 +116,31 @@ export async function ensureProfile(
 /**
  * Clears the location question for an account that still owes one, whichever way they
  * answered — sharing their position or picking manually both end the question.
- * A second call after it is cleared still reports success.
+ * A shared position is stored on that profile even when the question was already
+ * cleared, so a replay can replace it. Picking by hand leaves latitude and longitude
+ * as they were. A second call after it is cleared still reports success.
  */
-export async function saveLocationChoice(userId: string): Promise<boolean> {
+export async function saveLocationChoice(userId: string, point: GeoPoint | null = null): Promise<boolean> {
   await ensureProfileColumns();
   const sql = database();
-  const updated = await sql`
-    update profile
-    set location_pending = false,
-        updated_at = now()
-    where id = ${userId}
-      and location_pending = true
-    returning id
-  `;
+  const updated = point
+    ? await sql`
+        update profile
+        set location_pending = false,
+            latitude = ${point.lat},
+            longitude = ${point.lng},
+            updated_at = now()
+        where id = ${userId}
+        returning id
+      `
+    : await sql`
+        update profile
+        set location_pending = false,
+            updated_at = now()
+        where id = ${userId}
+          and location_pending = true
+        returning id
+      `;
   if (updated.length > 0) return true;
 
   const rows = await sql`select location_pending from profile where id = ${userId} limit 1`;

@@ -5,7 +5,7 @@ import type { PortWaitTime } from "@/lib/border-wait-times";
 import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { cityPinKey, pinStore } from "@/lib/pin-store";
-import { nearbyBridges } from "@/lib/port-locations";
+import { nearbyBridges, type GeoPoint } from "@/lib/port-locations";
 import { defaultMode, portName } from "@/lib/ports";
 import { signOutAndReload } from "@/lib/sign-out";
 import { walletStore } from "@/lib/wallet-store";
@@ -24,6 +24,8 @@ type Found = {
   cities: string[];
   /** One row per bridge. `city` is shown only when more than one city matched. */
   items: { title: string; city: string }[];
+  /** The position they shared, saved with the account when they continue. */
+  point: GeoPoint;
 };
 
 /**
@@ -39,11 +41,21 @@ export function LocationPrompt({ ports }: { ports: PortWaitTime[] }) {
   const [step, setStep] = useState<Step>("ask");
   const [problem, setProblem] = useState<"denied" | "noMatch" | "failed" | null>(null);
   const [found, setFound] = useState<Found | null>(null);
+  /** Set once geolocation succeeds, including when no bridge is close enough to add. */
+  const [shared, setShared] = useState<GeoPoint | null>(null);
 
-  const finish = async () => {
+  const savePoint = (point: GeoPoint | null) =>
+    fetch("/api/location-onboarding", {
+      method: "POST",
+      ...(point
+        ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(point) }
+        : {}),
+    });
+
+  const finish = async (point: GeoPoint | null) => {
     setStep("saving");
     try {
-      const response = await fetch("/api/location-onboarding", { method: "POST" });
+      const response = await savePoint(point);
       if (!response.ok) throw new Error("save");
     } catch {
       // The browser already has the choice applied. The next sign-in asks again at worst.
@@ -66,10 +78,11 @@ export function LocationPrompt({ ports }: { ports: PortWaitTime[] }) {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const match = nearbyBridges(ports, {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
+        const point = { lat: position.coords.latitude, lng: position.coords.longitude };
+        setShared(point);
+        // Store it before Continue. A later tap that omits the body must not be the only save.
+        void savePoint(point);
+        const match = nearbyBridges(ports, point);
         if (!match) {
           haptic("error");
           setProblem("noMatch");
@@ -85,6 +98,7 @@ export function LocationPrompt({ ports }: { ports: PortWaitTime[] }) {
         setFound({
           cities: match.cities.map((city) => city.city),
           items: match.ports.map((port) => ({ title: portName(port).title, city: portName(port).city })),
+          point,
         });
         setStep("found");
       },
@@ -100,7 +114,7 @@ export function LocationPrompt({ ports }: { ports: PortWaitTime[] }) {
   const choose = () => {
     if (step !== "ask") return;
     haptic("selection");
-    void finish();
+    void finish(shared);
   };
 
   const busy = step === "locating" || step === "saving";
@@ -114,9 +128,20 @@ export function LocationPrompt({ ports }: { ports: PortWaitTime[] }) {
     })();
   };
 
-  if (step === "found" && found) {
+  // Stay on the found screen while saving, so Continue doesn't flash the question again
+  // before the refresh swaps in the wallet and its cards fan in.
+  if (found && (step === "found" || step === "saving")) {
     return (
-      <Found copy={copy} locale={locale} reduce={reduce} found={found} onContinue={() => void finish()} />
+      <Found
+        copy={copy}
+        locale={locale}
+        reduce={reduce}
+        found={found}
+        saving={step === "saving"}
+        onContinue={() => {
+          if (step === "found") void finish(found.point);
+        }}
+      />
     );
   }
 
@@ -189,8 +214,10 @@ function Found({
   locale,
   reduce,
   found,
+  saving,
   onContinue,
 }: {
+  saving: boolean;
   copy: ReturnType<typeof useLocale>["copy"];
   locale: string;
   reduce: boolean | null;
@@ -210,15 +237,33 @@ function Found({
       </header>
 
       <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
-          <motion.div
-            initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.4 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={SPRING.pop}
-            className="grid size-16 shrink-0 place-items-center rounded-full bg-accent text-accent-ink"
-          >
-            <Check />
-          </motion.div>
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col items-center justify-center text-center transition-[opacity,transform] duration-300 ease-out",
+            saving && "scale-[0.97] opacity-40",
+          )}
+        >
+          <div className="relative grid size-16 shrink-0 place-items-center">
+            {!reduce &&
+              [0, 1, 2].map((ring) => (
+                <motion.span
+                  key={ring}
+                  aria-hidden
+                  initial={{ opacity: 0.45, scale: 1 }}
+                  animate={{ opacity: 0, scale: 3.2 }}
+                  transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.15 + ring * 0.22 }}
+                  className="absolute inset-0 rounded-full border-2 border-accent"
+                />
+              ))}
+            <motion.div
+              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.4 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={SPRING.pop}
+              className="relative grid size-16 place-items-center rounded-full bg-accent text-accent-ink"
+            >
+              <Check draw={!reduce} />
+            </motion.div>
+          </div>
 
           <motion.h1
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
@@ -269,10 +314,27 @@ function Found({
           <button
             type="button"
             onClick={onContinue}
-            className="relative h-12 w-full rounded-full bg-accent text-[16px] font-semibold text-accent-ink"
+            disabled={saving}
+            aria-busy={saving}
+            className="relative grid h-12 w-full place-items-center rounded-full bg-accent text-[16px] font-semibold text-accent-ink"
           >
             <HapticPad />
-            {copy.locationContinue}
+            {saving ? (
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden
+                className={cn("size-5", reduce ? "animate-pulse" : "animate-spin")}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+              >
+                <circle cx="12" cy="12" r="9" opacity="0.25" />
+                <path d="M21 12a9 9 0 0 0-9-9" />
+              </svg>
+            ) : (
+              copy.locationContinue
+            )}
           </button>
         </motion.div>
       </div>
@@ -280,7 +342,7 @@ function Found({
   );
 }
 
-function Check({ small }: { small?: boolean }) {
+function Check({ small, draw }: { small?: boolean; draw?: boolean }) {
   return (
     <svg
       viewBox="0 0 16 16"
@@ -292,7 +354,16 @@ function Check({ small }: { small?: boolean }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+      {draw ? (
+        <motion.path
+          d="M3.5 8.5 6.5 11.5 12.5 4.5"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
+        />
+      ) : (
+        <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+      )}
     </svg>
   );
 }

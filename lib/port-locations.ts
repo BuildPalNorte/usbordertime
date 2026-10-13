@@ -5,6 +5,22 @@ import { portName } from "@/lib/ports";
 
 export type GeoPoint = { lat: number; lng: number };
 
+/** A real latitude and longitude. Strings from the database are coerced first. */
+export function geoPointFrom(lat: unknown, lng: unknown): GeoPoint | null {
+  const latitude = typeof lat === "number" ? lat : typeof lat === "string" ? Number(lat) : NaN;
+  const longitude = typeof lng === "number" ? lng : typeof lng === "string" ? Number(lng) : NaN;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+  return { lat: latitude, lng: longitude };
+}
+
+export function isGeoPoint(value: unknown): value is GeoPoint {
+  if (!value || typeof value !== "object") return false;
+  const point = value as { lat?: unknown; lng?: unknown };
+  const parsed = geoPointFrom(point.lat, point.lng);
+  return parsed !== null && parsed.lat === point.lat && parsed.lng === point.lng;
+}
+
 /**
  * One point per CBP crossing city, keyed by `portName(port).city` lowercased.
  * Covers every city the feed has published. A city added later shows up here as

@@ -5,6 +5,7 @@ import type { Announcement } from "@/lib/announcement";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { FEED_GROUPS, type FeedKind } from "@/lib/camera-feeds";
 import { defaultMode, laneFor, listedCameras, portName } from "@/lib/ports";
+import { geoPointFrom } from "@/lib/port-locations";
 import { ensureProfile, ensureProfileColumns } from "@/lib/profile";
 import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
 import { readUsageTotals, type UsageTotals } from "@/lib/usage.server";
@@ -399,9 +400,12 @@ async function readFacts(mark: (error: unknown, quietWhenMissing: boolean) => vo
       referral: string | null;
       referral_pending: unknown;
       referred_by: string | null;
+      latitude: unknown;
+      longitude: unknown;
     }>(
       sql`
-        select id, name, email, created_at, updated_at, referral, referral_pending, referred_by
+        select id, name, email, created_at, updated_at, referral, referral_pending, referred_by,
+               latitude, longitude
         from profile
         order by created_at desc
         limit ${ACCOUNT_LIMIT}
@@ -441,6 +445,7 @@ async function readFacts(mark: (error: unknown, quietWhenMissing: boolean) => vo
           referral: row.referral,
           referralPending: row.referral_pending === true || row.referral_pending === "t",
           referredBy: row.referred_by,
+          location: geoPointFrom(row.latitude, row.longitude),
         },
       ];
     }),

@@ -1,3 +1,4 @@
+import { type GeoPoint } from "@/lib/port-locations";
 import { isReferral, REFERRAL_LABEL, REFERRALS, type Referral } from "@/lib/referral";
 
 /** Client-safe. No server imports here. Turns raw rows from every table into the admin's connected view. */
@@ -11,6 +12,8 @@ export type RawProfile = {
   referral: string | null;
   referralPending: boolean;
   referredBy: string | null;
+  /** Latitude and longitude they shared, or null when they picked bridges by hand. */
+  location: GeoPoint | null;
 };
 
 export type RawFacts = {
@@ -36,6 +39,8 @@ export type Connected = {
   invitedBy: { id: string; name: string } | null;
   invited: { id: string; name: string; activated: boolean }[];
   locale: string | null;
+  /** Latitude and longitude they shared, or null when they picked bridges by hand. */
+  location: GeoPoint | null;
   saved: number;
   pins: number;
   alerts: number;
@@ -194,6 +199,7 @@ export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDay
         return { id, name: child.name.trim() || child.email, activated: activatedOf(id) };
       }),
       locale: pref?.locale ?? null,
+      location: profile.location,
       saved,
       pins: pref?.pins ?? 0,
       alerts,
@@ -345,6 +351,18 @@ function accountMatches(account: Connected, filter: AccountFilter, now: number):
   if (filter.invite === "invited" && !account.invitedBy) return false;
   if (filter.step !== "any" && !account.steps[filter.step]) return false;
   return true;
+}
+
+/** Four decimal places, about 10 meters, with the hemisphere spelled out. */
+export function formatAccountLocation(location: GeoPoint): string {
+  const lat = Math.abs(location.lat).toFixed(4);
+  const lng = Math.abs(location.lng).toFixed(4);
+  return `${lat}° ${location.lat >= 0 ? "N" : "S"}, ${lng}° ${location.lng >= 0 ? "E" : "W"}`;
+}
+
+/** Opens this point in Google Maps. The query keeps the full stored precision. */
+export function accountLocationUrl(location: GeoPoint): string {
+  return `https://www.google.com/maps?q=${location.lat},${location.lng}`;
 }
 
 /** Accounts whose name or email contains `query`, and that match every chosen filter. Order stays as given. */

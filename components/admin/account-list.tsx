@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  accountLocationUrl,
   DEFAULT_ACCOUNT_FILTER,
+  formatAccountLocation,
   listedAccounts,
   STEP_LABEL,
   STEPS,
@@ -71,8 +73,13 @@ function plural(count: number, one: string, many: string): string {
 }
 
 /** Small stats an account owns, in the order a person would ask about them. */
-function facts(account: Connected): { label: string; value: string }[] {
+function facts(account: Connected): { label: string; value: string; href?: string }[] {
   return [
+    {
+      label: "Location",
+      value: account.location ? formatAccountLocation(account.location) : "—",
+      href: account.location ? accountLocationUrl(account.location) : undefined,
+    },
     { label: "Days opened", value: account.days.toLocaleString("en-US") },
     {
       label: "Streak",
@@ -280,6 +287,9 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
                   <div>
                     <p className="text-[15px] font-medium">{account.name}</p>
                     <p className="text-[13px] text-muted">{account.email}</p>
+                    <p className="mt-0.5 text-[13px] text-muted">
+                      Location {account.location ? formatAccountLocation(account.location) : "—"}
+                    </p>
                     <div className="mt-2 flex gap-1" role="img" aria-label={`${account.depth} of ${STEPS.length} steps reached`}>
                       {STEPS.map((key) => (
                         <span
@@ -302,7 +312,20 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
                       {facts(account).map((item) => (
                         <div key={item.label}>
                           <dt className="text-[12px] text-muted">{item.label}</dt>
-                          <dd className="mt-0.5 text-[14px] font-medium break-words tabular-nums">{item.value}</dd>
+                          <dd className="mt-0.5 text-[14px] font-medium break-words tabular-nums">
+                            {item.href ? (
+                              <a
+                                href={item.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline underline-offset-2"
+                              >
+                                {item.value}
+                              </a>
+                            ) : (
+                              item.value
+                            )}
+                          </dd>
                         </div>
                       ))}
                     </dl>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nearbyBridges } from "@/lib/port-locations";
+import { geoPointFrom, isGeoPoint, nearbyBridges } from "@/lib/port-locations";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 
 function port(portNumber: string, border: string, portName: string, crossingName: string | null): PortWaitTime {
@@ -62,5 +62,26 @@ describe("nearbyBridges", () => {
 
   it("returns null for an empty feed", () => {
     expect(nearbyBridges([], { lat: 0, lng: 0 })).toBeNull();
+  });
+});
+
+describe("geoPointFrom", () => {
+  it("accepts a latitude and longitude, including numeric strings from the database", () => {
+    expect(geoPointFrom(25.9, -97.5)).toEqual({ lat: 25.9, lng: -97.5 });
+    expect(geoPointFrom("25.9", "-97.5")).toEqual({ lat: 25.9, lng: -97.5 });
+    expect(geoPointFrom(90, 180)).toEqual({ lat: 90, lng: 180 });
+  });
+
+  it("rejects a missing or out-of-range coordinate", () => {
+    expect(geoPointFrom(null, -97.5)).toBeNull();
+    expect(geoPointFrom(91, 0)).toBeNull();
+    expect(geoPointFrom(0, -181)).toBeNull();
+    expect(geoPointFrom("nope", 0)).toBeNull();
+  });
+
+  it("accepts only an object with numeric coordinates", () => {
+    expect(isGeoPoint({ lat: 25.9, lng: -97.5 })).toBe(true);
+    expect(isGeoPoint({ lat: "25.9", lng: -97.5 })).toBe(false);
+    expect(isGeoPoint(null)).toBe(false);
   });
 });

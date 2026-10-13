@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildInsights, DEFAULT_ACCOUNT_FILTER, listedAccounts, type Connected, type RawFacts } from "@/lib/admin-insights";
+import {
+  accountLocationUrl,
+  buildInsights,
+  DEFAULT_ACCOUNT_FILTER,
+  formatAccountLocation,
+  listedAccounts,
+  type Connected,
+  type RawFacts,
+} from "@/lib/admin-insights";
 
 const NOW = new Date("2026-10-12T18:00:00Z");
 
@@ -13,6 +21,7 @@ function profile(id: string, extra: Partial<RawFacts["profiles"][number]> = {}) 
     referral: null,
     referralPending: false,
     referredBy: null,
+    location: null,
     ...extra,
   };
 }
@@ -33,7 +42,7 @@ describe("buildInsights", () => {
       {
         ...EMPTY,
         profiles: [
-          profile("a", { referral: "friend" }),
+          profile("a", { referral: "friend", location: { lat: 25.9, lng: -97.5 } }),
           profile("b", { referral: "whatsapp", referredBy: "a" }),
           profile("c", { referralPending: true }),
         ],
@@ -49,6 +58,7 @@ describe("buildInsights", () => {
 
     const a = insights.accounts.find((row) => row.id === "a")!;
     expect(a.depth).toBe(6);
+    expect(a.location).toEqual({ lat: 25.9, lng: -97.5 });
     expect(a.invited).toEqual([{ id: "b", name: "b", activated: true }]);
 
     const b = insights.accounts.find((row) => row.id === "b")!;
@@ -96,6 +106,7 @@ function account(id: string, extra: Partial<Connected> = {}): Connected {
     invitedBy: null,
     invited: [],
     locale: null,
+    location: null,
     saved: 0,
     pins: 0,
     alerts: 0,
@@ -164,5 +175,18 @@ describe("listedAccounts", () => {
     expect(listedAccounts(rows, "", { ...DEFAULT_ACCOUNT_FILTER, source: "choosing" }, now).map((row) => row.id)).toEqual(["bo"]);
     expect(listedAccounts(rows, "", { ...DEFAULT_ACCOUNT_FILTER, invite: "invited" }, now).map((row) => row.id)).toEqual(["bo"]);
     expect(listedAccounts(rows, "", { ...DEFAULT_ACCOUNT_FILTER, locale: "unset" }, now).map((row) => row.id)).toEqual(["cy"]);
+  });
+});
+
+describe("formatAccountLocation", () => {
+  it("writes hemispheres and keeps four decimal places", () => {
+    expect(formatAccountLocation({ lat: 25.9, lng: -97.5 })).toBe("25.9000° N, 97.5000° W");
+    expect(formatAccountLocation({ lat: -33.8688, lng: 151.2093 })).toBe("33.8688° S, 151.2093° E");
+  });
+
+  it("links the stored point without rounding it away", () => {
+    expect(accountLocationUrl({ lat: 25.90123, lng: -97.49741 })).toBe(
+      "https://www.google.com/maps?q=25.90123,-97.49741",
+    );
   });
 });
