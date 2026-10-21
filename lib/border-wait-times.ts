@@ -75,6 +75,13 @@ const EMPTY_LANE: LaneReading = {
   updateTime: null,
 };
 
+/**
+ * CBP lists the Brownsville & Matamoros bridge twice. Port 230106 ("B&M Bridge")
+ * repeats the lane caps and stays Update Pending. Port 535501 is the row that
+ * posts the wait, and the one the app shows as Viejo.
+ */
+const OMITTED_PORT_NUMBERS = new Set(["230106"]);
+
 export async function getBorderWaitTimes(): Promise<BorderWaitTimes> {
   "use cache";
   cacheLife("minutes");
@@ -93,7 +100,17 @@ export async function getBorderWaitTimes(): Promise<BorderWaitTimes> {
     );
   }
 
-  const body: unknown = await response.json();
+  const ports = normalizeWaitTimesBody(await response.json());
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    source: CBP_WAIT_TIMES_URL,
+    ports,
+  };
+}
+
+/** The crossings the app keeps from one CBP payload. */
+export function normalizeWaitTimesBody(body: unknown): PortWaitTime[] {
   if (!Array.isArray(body)) {
     throw new BorderWaitTimesError(
       "CBP border wait times returned an unexpected payload.",
@@ -102,7 +119,8 @@ export async function getBorderWaitTimes(): Promise<BorderWaitTimes> {
 
   const ports = body.flatMap((entry) => {
     const port = normalizePort(entry);
-    return port ? [port] : [];
+    if (!port || OMITTED_PORT_NUMBERS.has(port.portNumber)) return [];
+    return [port];
   });
 
   if (ports.length === 0) {
@@ -111,11 +129,7 @@ export async function getBorderWaitTimes(): Promise<BorderWaitTimes> {
     );
   }
 
-  return {
-    fetchedAt: new Date().toISOString(),
-    source: CBP_WAIT_TIMES_URL,
-    ports,
-  };
+  return ports;
 }
 
 export function parseWaitTimesQuery(params: {

@@ -29,7 +29,6 @@ export function isGeoPoint(value: unknown): value is GeoPoint {
 const CITY_LOCATION: Record<string, GeoPoint> = {
   "alexandria bay": { lat: 44.3356, lng: -75.9199 },
   andrade: { lat: 32.7187, lng: -114.7122 },
-  "b&m bridge": { lat: 25.8976, lng: -97.4897 },
   "bota cargo facility": { lat: 31.7067, lng: -106.4064 },
   blaine: { lat: 48.9975, lng: -122.7576 },
   "bridge of the americas": { lat: 31.7067, lng: -106.4064 },

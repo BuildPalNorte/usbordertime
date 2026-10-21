@@ -125,7 +125,7 @@ When CBP has not posted numbers yet, the lane stays present and the counts stay 
 | `port_number` | Stable id for the crossing. Usually six digits (`230401`). Treat it as an opaque string: `L01901` (Madawaska) and `l24501` (Fort Hancock) are real ids, and the letter case differs. This is what saved crossings and card colors key on. |
 | `border` | `"Mexican Border"` or `"Canadian Border"`. The app's `mexican` / `canadian` query maps onto these two strings. |
 | `port_name` | CBP's name, usually a city or port, usually uppercase. One name covers every bridge in that city, so it repeats. |
-| `crossing_name` | The bridge or gate when the port has more than one. Often `""`, often the same text as `port_name`, and sometimes padded with spaces. Brownsville's rows are `port_name: "Brownsville"` with crossings `B&M`, `Gateway`, `Los Indios`, `Veterans International`. |
+| `crossing_name` | The bridge or gate when the port has more than one. Often `""`, often the same text as `port_name`, and sometimes padded with spaces. Brownsville's rows are `port_name: "Brownsville"` with crossings `B&M`, `Gateway`, `Los Indios`, `Veterans International`. CBP also sends a second B&M row, port `230106`, named `B&M Bridge` for both the port and the crossing. That row does not post a wait. The app drops it and keeps port `535501`. |
 | `hours` | A short English phrase, not a schedule. Seen values include `24 hrs/day`, `6 am-10 pm`, `6 am-Midnight`, `8 am-4 pm`. |
 | `date` | `MM/DD/YYYY` in the port's local time. |
 | `time` | `HH:MM:SS` in the port's local time. This is when CBP assembled the row, not when the lane was last measured. Ports in one response do not share a clock: a Pacific row can read `17:13` while an Eastern row in the same array reads `20:13`. |
@@ -162,7 +162,7 @@ Lane groups are always present, and each lane object always has the same four ke
 
 ## What the app stores
 
-`normalizePort` drops a row with no `port_number` or `port_name`. Empty strings on names and notices become `null`. `""` and `"N/A"` on counts become `null`, not `0`. A missing lane object becomes an empty reading: `operationalStatus: "N/A"` and null counts. A blank `operational_status` is stored as `"N/A"`.
+`normalizePort` drops a row with no `port_number` or `port_name`, and drops port `230106` (`B&M Bridge`). Brownsville B&M (`535501`) is the listing that posts the wait. Empty strings on names and notices become `null`. `""` and `"N/A"` on counts become `null`, not `0`. A missing lane object becomes an empty reading: `operationalStatus: "N/A"` and null counts. A blank `operational_status` is stored as `"N/A"`.
 
 | CBP | Normalized |
 | --- | --- |

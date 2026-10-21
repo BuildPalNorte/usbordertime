@@ -8,7 +8,7 @@ alwaysApply: false
 
 `getBorderWaitTimes()` in `lib/border-wait-times.ts` is the only fetch of `https://bwt.cbp.gov/api/waittimes`. It uses `"use cache"` and `cacheLife("minutes")`. `cacheComponents` is enabled in `next.config.ts`. Do not add a second fetch or `unstable_cache`.
 
-The raw body is a JSON array of snake_case port objects. Field names, the status strings CBP actually sends, and the normalized shape are in `docs/cbp-wait-times.md`. `normalizePort` drops an entry with no `port_number` or `port_name`. A non-array body or an empty list throws `BorderWaitTimesError`. A missing lane group becomes `EMPTY_LANE` (`operationalStatus: "N/A"`, counts `null`). `""` and `"N/A"` counts are `null`, not `0`.
+The raw body is a JSON array of snake_case port objects. Field names, the status strings CBP actually sends, and the normalized shape are in `docs/cbp-wait-times.md`. `normalizePort` drops an entry with no `port_number` or `port_name`. It also drops port `230106` (`B&M Bridge`), a second listing of Brownsville B&M that does not post a wait. Port `535501` is the row the app keeps. A non-array body or an empty list throws `BorderWaitTimesError`. A missing lane group becomes `EMPTY_LANE` (`operationalStatus: "N/A"`, counts `null`). `""` and `"N/A"` counts are `null`, not `0`.
 
 `app/(app)/layout.tsx` calls `getBorderWaitTimes()` inside Suspense and passes the snapshot as `initial`. A thrown error becomes `initial={null}` so the client can retry. Do not fail the page.
 
