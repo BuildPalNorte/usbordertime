@@ -17,6 +17,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { HapticPad } from "./haptic-pad";
+import { InAppNotice, useInAppBrowser } from "./in-app-notice";
 import { LanguageSwitch } from "./language-switch";
 import { cn } from "@/lib/cn";
 import { cardBackground, PALETTES, project, TONE_DOT } from "@/lib/ports";
@@ -39,6 +40,7 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
   const reduce = useReducedMotion();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const inApp = useInAppBrowser();
 
   useLayoutEffect(() => {
     rememberInvite(window.location.search);
@@ -100,7 +102,11 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
         <LanguageSwitch />
       </header>
 
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] max-lg:pb-[calc(var(--sign-card-h)+0.5rem)] sm:px-6">
+      <main
+        className={cn(
+          "mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6",
+          !inApp && "max-lg:pb-[calc(var(--sign-card-h)+0.5rem)]",
+        )}>
         <div
           aria-hidden
           className="relative select-none max-lg:origin-top max-lg:scale-[0.7] max-lg:mb-[calc(var(--stack-h)*-0.3)]"
@@ -163,21 +169,27 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
           <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.04em] text-balance">
             {copy.signInHeadline}
           </h1>
-          <p className="mx-auto mt-3 max-w-[30ch] text-[15px] leading-relaxed text-muted">{copy.signInBody}</p>
+          {inApp ? (
+            <InAppNotice browser={inApp} />
+          ) : (
+            <>
+              <p className="mx-auto mt-3 max-w-[30ch] text-[15px] leading-relaxed text-muted">{copy.signInBody}</p>
 
-          <motion.button
-            type="button"
-            onClick={() => void signIn()}
-            disabled={busy}
-            aria-busy={busy}
-            whileTap={reduce || busy ? undefined : { scale: 0.97 }}
-            transition={SPRING.snap}
-            className="relative mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-full bg-surface px-6 text-[16px] font-semibold text-foreground disabled:opacity-70 max-lg:hidden"
-          >
-            <HapticPad />
-            <GoogleMark />
-            {copy.signInWithGoogle}
-          </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => void signIn()}
+                disabled={busy}
+                aria-busy={busy}
+                whileTap={reduce || busy ? undefined : { scale: 0.97 }}
+                transition={SPRING.snap}
+                className="relative mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-full bg-surface px-6 text-[16px] font-semibold text-foreground disabled:opacity-70 max-lg:hidden"
+              >
+                <HapticPad />
+                <GoogleMark />
+                {copy.signInWithGoogle}
+              </motion.button>
+            </>
+          )}
 
           <p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] font-medium text-muted">
             <Link href={GUIDE_INDEX_PATH[locale]}>{copy.guidesLink}</Link>
@@ -193,7 +205,7 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
         </div>
       </main>
 
-      <SignInCard swipe={swipe} busy={busy} onTap={() => void signIn()} />
+      {!inApp && <SignInCard swipe={swipe} busy={busy} onTap={() => void signIn()} />}
       <SignInHandoff busy={busy} reduce={!!reduce} />
     </div>
   );

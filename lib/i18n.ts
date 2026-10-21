@@ -112,6 +112,12 @@ export type Copy = {
   signInRedirecting: string;
   signInHeadline: string;
   signInSample: string;
+  inAppTitle: (app: string) => string;
+  inAppBody: string;
+  inAppOpen: string;
+  inAppCopy: string;
+  inAppCopied: string;
+  inAppStepsIos: readonly string[];
   referralTitle: string;
   referralBody: string;
   referralContinue: string;
@@ -495,6 +501,17 @@ export const COPY: Record<Locale, Copy> = {
     signInRedirecting: "Signing in…",
     signInHeadline: "Know before you cross.",
     signInSample: "Sample",
+    inAppTitle: (app) => `You're opening this in ${app}`,
+    inAppBody:
+      "Open Border Time in your phone's browser, then sign in there. Your account, alerts, and Home Screen app only work from your real browser.",
+    inAppOpen: "Open in browser",
+    inAppCopy: "Copy link",
+    inAppCopied: "Link copied",
+    inAppStepsIos: [
+      "Tap the ••• button.",
+      "Choose Open in Safari, or Open in external browser.",
+      "Sign in with Google there.",
+    ],
     referralTitle: "How did you find us?",
     referralBody: "Pick one. It stays with your account.",
     referralContinue: "Continue",
@@ -999,6 +1016,17 @@ export const COPY: Record<Locale, Copy> = {
     signInRedirecting: "Iniciando sesión…",
     signInHeadline: "Sabe antes de cruzar.",
     signInSample: "Ejemplo",
+    inAppTitle: (app) => `Estás abriendo esto en ${app}`,
+    inAppBody:
+      "Abre Border Time en el navegador de tu teléfono e inicia sesión ahí. Tu cuenta, tus alertas y la app en tu pantalla de inicio solo funcionan desde tu navegador.",
+    inAppOpen: "Abrir en el navegador",
+    inAppCopy: "Copiar enlace",
+    inAppCopied: "Enlace copiado",
+    inAppStepsIos: [
+      "Toca el botón •••.",
+      "Elige Abrir en Safari, o Abrir en navegador externo.",
+      "Inicia sesión con Google ahí.",
+    ],
     referralTitle: "¿Cómo nos encontraste?",
     referralBody: "Elige una. Se queda en tu cuenta.",
     referralContinue: "Continuar",
