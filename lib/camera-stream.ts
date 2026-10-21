@@ -2,31 +2,13 @@
  * IPCamLive keeps a stable alias per camera. The playlist host and stream id
  * move. A missing playlist is an Apache 404 with no CORS header, so the
  * browser cannot read that status. The server checks it, then asks the alias.
+ *
+ * The apex host (`ipcamlive.com`) answers that question with an empty 500.
+ * The player pages, including the one Comtodo embeds, live on the group hosts.
  */
+const LOOKUP_HOSTS = ["g3.ipcamlive.com", "g2.ipcamlive.com", "g1.ipcamlive.com", "g0.ipcamlive.com"];
 
-export async function lookupCameraStream(alias: string): Promise<string | null> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `https://ipcamlive.com/player/getcamerastreamstate.php?alias=${encodeURIComponent(alias)}&getstreaminfo=1`,
-      { cache: "no-store" },
-    );
-  } catch {
-    return null;
-  }
-  if (!response.ok) return null;
-
-  let address: unknown;
-  let streamid: unknown;
-  try {
-    const body = (await response.json()) as {
-      details?: { address?: unknown; streamid?: unknown };
-    };
-    address = body.details?.address;
-    streamid = body.details?.streamid;
-  } catch {
-    return null;
-  }
+function playlistFrom(address: unknown, streamid: unknown): string | null {
   if (typeof address !== "string" || typeof streamid !== "string") return null;
   if (!/^[A-Za-z0-9]+$/.test(streamid)) return null;
 
@@ -43,6 +25,36 @@ export async function lookupCameraStream(alias: string): Promise<string | null> 
   url.search = "";
   url.hash = "";
   return url.toString();
+}
+
+async function lookupOnHost(host: string, alias: string): Promise<string | null> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://${host}/player/getcamerastreamstate.php?alias=${encodeURIComponent(alias)}&getstreaminfo=1`,
+      { cache: "no-store" },
+    );
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+
+  try {
+    const body = (await response.json()) as {
+      details?: { address?: unknown; streamid?: unknown };
+    };
+    return playlistFrom(body.details?.address, body.details?.streamid);
+  } catch {
+    return null;
+  }
+}
+
+export async function lookupCameraStream(alias: string): Promise<string | null> {
+  for (const host of LOOKUP_HOSTS) {
+    const src = await lookupOnHost(host, alias);
+    if (src) return src;
+  }
+  return null;
 }
 
 /**
