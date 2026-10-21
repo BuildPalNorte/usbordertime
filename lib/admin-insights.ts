@@ -114,6 +114,9 @@ export type Insights = {
 
 const DAY_MS = 86_400_000;
 
+/** How many days of sign-ups the Growth chart can look back. The chart picks a shorter range from this. */
+export const GROWTH_DAYS = 90;
+
 function maxIso(a: string | null, b: string | null): string | null {
   if (!a) return b;
   if (!b) return a;
@@ -130,7 +133,7 @@ function chicagoDay(date: Date): string {
   }).format(date);
 }
 
-export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDays = 14): Insights {
+export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDays = GROWTH_DAYS): Insights {
   const streakOf = new Map(facts.streaks.map((row) => [row.userId, row]));
   const prefOf = new Map(facts.preferences.map((row) => [row.userId, row]));
   const usageOf = new Map(facts.usage.map((row) => [row.userId, row]));
@@ -285,8 +288,10 @@ export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDay
     }))
     .sort((a, b) => b.people - a.people || b.alerts + b.alarms - (a.alerts + a.alarms) || a.portNumber.localeCompare(b.portNumber));
 
+  // Step back on the calendar, not by 24-hour chunks, so a daylight-saving change never repeats or skips a day.
+  const [year, month, dayOfMonth] = chicagoDay(now).split("-").map(Number);
   const growth: GrowthDay[] = Array.from({ length: growthDays }, (_, index) => ({
-    day: chicagoDay(new Date(now.getTime() - (growthDays - 1 - index) * DAY_MS)),
+    day: new Date(Date.UTC(year, month - 1, dayOfMonth - (growthDays - 1 - index))).toISOString().slice(0, 10),
     count: 0,
   }));
   const slot = new Map(growth.map((entry) => [entry.day, entry]));
@@ -363,6 +368,24 @@ export function formatAccountLocation(location: GeoPoint): string {
 /** Opens this point in Google Maps. The query keeps the full stored precision. */
 export function accountLocationUrl(location: GeoPoint): string {
   return `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+}
+
+export type AccountSort = "active" | "newest" | "engaged";
+
+export const ACCOUNT_SORT: { value: AccountSort; label: string }[] = [
+  { value: "active", label: "Last active" },
+  { value: "newest", label: "Newest" },
+  { value: "engaged", label: "Most engaged" },
+];
+
+/** A sorted copy. `active` is the order `buildInsights` already returns, so it only copies. */
+export function sortedAccounts(accounts: Connected[], sort: AccountSort): Connected[] {
+  const copy = [...accounts];
+  if (sort === "newest") copy.sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
+  if (sort === "engaged") {
+    copy.sort((a, b) => b.depth - a.depth || b.days - a.days || (b.lastActive ?? "").localeCompare(a.lastActive ?? ""));
+  }
+  return copy;
 }
 
 /** Accounts whose name or email contains `query`, and that match every chosen filter. Order stays as given. */

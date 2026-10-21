@@ -90,7 +90,9 @@ describe("buildInsights", () => {
   it("handles an empty database", () => {
     const insights = buildInsights(EMPTY, NOW);
     expect(insights.funnel[0]).toMatchObject({ count: 0, share: 0 });
-    expect(insights.growth).toHaveLength(14);
+    expect(insights.growth).toHaveLength(90);
+    expect(insights.growth.at(-1)?.day).toBe("2026-10-12");
+    expect(new Set(insights.growth.map((entry) => entry.day)).size).toBe(90);
   });
 });
 

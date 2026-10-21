@@ -1,33 +1,23 @@
 "use client";
 
 import {
+  ACCOUNT_SORT,
   accountLocationUrl,
   DEFAULT_ACCOUNT_FILTER,
   formatAccountLocation,
   listedAccounts,
+  sortedAccounts,
   STEP_LABEL,
   STEPS,
   type AccountFilter,
+  type AccountSort,
   type Connected,
 } from "@/lib/admin-insights";
+import { formatAgo, formatMoment } from "@/lib/admin-time";
 import { haptic } from "@/lib/haptics";
 import { REFERRAL_LABEL, REFERRALS } from "@/lib/referral";
 import { cn } from "@/lib/cn";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-
-const WHEN = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "America/Chicago",
-});
-
-function formatWhen(value: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : WHEN.format(date);
-}
 
 const ACTIVITY: { value: AccountFilter["activity"]; label: string }[] = [
   { value: "all", label: "Everyone" },
@@ -77,13 +67,13 @@ function facts(account: Connected): { label: string; value: string; href?: strin
   return [
     {
       label: "Location",
-      value: account.location ? formatAccountLocation(account.location) : "—",
+      value: account.location ? formatAccountLocation(account.location) : "Not shared",
       href: account.location ? accountLocationUrl(account.location) : undefined,
     },
     { label: "Days opened", value: account.days.toLocaleString("en-US") },
     {
       label: "Streak",
-      value: `${account.streak.current} now · ${account.streak.longest} best`,
+      value: `${account.streak.current} now, ${account.streak.longest} best`,
     },
     { label: "Crossings saved", value: String(account.saved) },
     { label: "City bookmarks", value: String(account.pins) },
@@ -91,7 +81,7 @@ function facts(account: Connected): { label: string; value: string; href?: strin
     { label: "Alarms", value: `${account.alarmsOn} on of ${account.alarms}` },
     { label: "Devices", value: String(account.devices) },
     { label: "Questions", value: String(account.questions) },
-    { label: "Language", value: account.locale === "es" ? "Spanish" : account.locale === "en" ? "English" : "—" },
+    { label: "Language", value: account.locale === "es" ? "Spanish" : account.locale === "en" ? "English" : "Not chosen" },
   ];
 }
 
@@ -174,9 +164,13 @@ function FilterGroup<T extends string>({
   );
 }
 
+const PAGE = 25;
+
 export function AccountList({ accounts, now }: { accounts: Connected[]; now: number }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<AccountFilter>(DEFAULT_ACCOUNT_FILTER);
+  const [sort, setSort] = useState<AccountSort>("active");
+  const [limit, setLimit] = useState(PAGE);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const jump = useRef<string | null>(null);
@@ -184,7 +178,10 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
 
   const byId = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
 
-  const shown = useMemo(() => listedAccounts(accounts, query, filter, now), [accounts, query, filter, now]);
+  const ordered = useMemo(() => sortedAccounts(accounts, sort), [accounts, sort]);
+  const shown = useMemo(() => listedAccounts(ordered, query, filter, now), [ordered, query, filter, now]);
+  const page = shown.slice(0, limit);
+  const remaining = shown.length - page.length;
   const chosen = activeChoices(filter);
   const narrowed = query.trim().length > 0 || chosen.length > 0;
 
@@ -199,12 +196,14 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
   function go(id: string) {
     if (!byId.has(id)) return;
     jump.current = id;
+    setLimit(accounts.length);
     setQuery("");
     setFilter(DEFAULT_ACCOUNT_FILTER);
     setOpen(id);
   }
 
   function clear() {
+    setLimit(PAGE);
     setQuery("");
     setFilter(DEFAULT_ACCOUNT_FILTER);
   }
@@ -212,6 +211,7 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
   function pick<K extends keyof AccountFilter>(key: K, value: AccountFilter[K]) {
     if (filter[key] === value) return;
     haptic("selection");
+    setLimit(PAGE);
     setFilter({ ...filter, [key]: value });
   }
 
@@ -221,7 +221,10 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
         <input
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            setLimit(PAGE);
+            setQuery(event.target.value);
+          }}
           placeholder="Search name or email"
           aria-label="Search accounts"
           className="h-11 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4 text-base outline-none focus-visible:border-foreground"
@@ -242,7 +245,7 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
               : "border-line bg-surface text-foreground",
           )}
         >
-          Filter{chosen.length > 0 ? ` · ${chosen.length}` : ""}
+          Filter{chosen.length > 0 ? ` (${chosen.length})` : ""}
         </button>
       </div>
 
@@ -260,13 +263,33 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
         <p className="min-w-0 text-[13px] text-muted">
           {plural(shown.length, "account", "accounts")}
           {shown.length !== accounts.length ? ` of ${accounts.length.toLocaleString("en-US")}` : ""}
-          {chosen.length > 0 ? ` · ${chosen.join(" · ")}` : ""}
+          {chosen.length > 0 ? `, ${chosen.join(", ")}` : ""}
         </p>
-        {narrowed && (
-          <button type="button" onClick={clear} className="inline-flex h-11 shrink-0 items-center text-[13px] font-medium text-foreground">
-            Clear
-          </button>
-        )}
+        <div className="flex shrink-0 items-center gap-3">
+          {narrowed && (
+            <button type="button" onClick={clear} className="inline-flex h-11 items-center text-[13px] font-medium text-foreground">
+              Clear
+            </button>
+          )}
+          <label className="inline-flex h-11 items-center gap-1.5 text-[13px] text-muted">
+            <span className="sr-only sm:not-sr-only">Sort</span>
+            <select
+              value={sort}
+              onChange={(event) => {
+                haptic("selection");
+                setLimit(PAGE);
+                setSort(event.target.value as AccountSort);
+              }}
+              className="h-9 rounded-full border border-line bg-surface px-3 text-[13px] font-medium text-foreground outline-none focus-visible:border-foreground"
+            >
+              {ACCOUNT_SORT.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       {shown.length === 0 ? (
@@ -274,7 +297,7 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
       ) : (
         <div className="@container mt-3 overflow-x-auto overscroll-x-contain rounded-3xl border border-line bg-surface">
         <ul className="w-max min-w-full divide-y divide-line">
-          {shown.map((account) => {
+          {page.map((account) => {
             const expanded = open === account.id;
             return (
               <li key={account.id} id={`account-${account.id}`}>
@@ -288,7 +311,7 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
                     <p className="text-[15px] font-medium">{account.name}</p>
                     <p className="text-[13px] text-muted">{account.email}</p>
                     <p className="mt-0.5 text-[13px] text-muted">
-                      Location {account.location ? formatAccountLocation(account.location) : "—"}
+                      Location {account.location ? formatAccountLocation(account.location) : "not shared"}
                     </p>
                     <div className="mt-2 flex gap-1" role="img" aria-label={`${account.depth} of ${STEPS.length} steps reached`}>
                       {STEPS.map((key) => (
@@ -301,8 +324,12 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
                     </div>
                   </div>
                   <div className="shrink-0 text-right text-[13px] text-muted">
-                    <p>Joined {formatWhen(account.joinedAt)}</p>
-                    <p className="mt-1">Active {formatWhen(account.lastActive)}</p>
+                    <p className="font-medium text-foreground" title={formatMoment(account.lastActive, now)}>
+                      {account.lastActive ? `Active ${formatAgo(account.lastActive, now)}` : "Never active"}
+                    </p>
+                    <p className="mt-1" title={formatMoment(account.joinedAt, now)}>
+                      Joined {formatAgo(account.joinedAt, now)}
+                    </p>
                   </div>
                 </button>
 
@@ -377,7 +404,7 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
                                 className="inline-flex min-h-11 max-w-full items-center rounded-full border border-line px-3 text-[13px] font-medium break-words text-foreground"
                               >
                                 {child.name}
-                                {child.activated ? "" : " · idle"}
+                                {child.activated ? "" : " (idle)"}
                               </button>
                             ))}
                           </div>
@@ -390,6 +417,21 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
             );
           })}
         </ul>
+        {remaining > 0 && (
+          <div className="sticky left-0 w-[100cqw] border-t border-line">
+            <button
+              type="button"
+              onClick={() => {
+                haptic("light");
+                setLimit(limit + PAGE);
+              }}
+              className="inline-flex min-h-11 w-full items-center justify-center text-[14px] font-medium text-foreground active:bg-surface-strong"
+            >
+              Show {Math.min(PAGE, remaining)} more
+              <span className="ml-1.5 font-normal text-muted tabular-nums">{remaining.toLocaleString("en-US")} left</span>
+            </button>
+          </div>
+        )}
         </div>
       )}
     </div>

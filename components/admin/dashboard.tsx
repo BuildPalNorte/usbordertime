@@ -1,27 +1,15 @@
 import { AccountList } from "@/components/admin/account-list";
 import { AdminTabs } from "@/components/admin/admin-tabs";
 import { AnnouncementModal } from "@/components/admin/announcement-modal";
+import { GrowthChart } from "@/components/admin/growth-chart";
+import { MoreRows } from "@/components/admin/more-rows";
 import { SignOutButton } from "@/components/admin/sign-out-button";
+import { formatAgo, formatMoment } from "@/lib/admin-time";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
 import type { AdminCamera, AdminData, AdminFeedGroup, AdminViewer } from "@/lib/admin.server";
 import { USAGE_KINDS, USAGE_LABEL } from "@/lib/usage";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-
-const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" });
-
-const WHEN = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "America/Chicago",
-});
-
-function formatWhen(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : WHEN.format(date);
-}
 
 function percent(share: number): string {
   return `${Math.round(share * 100)}%`;
@@ -71,7 +59,7 @@ function CameraList({
             <div className={LINE}>
               <p className="text-[15px] font-medium">{camera.label}</p>
               <p className="shrink-0 text-[13px] text-muted">
-                {camera.kind ? `${camera.kind} · ` : ""}
+                {camera.kind ? `${camera.kind}, ` : ""}
                 {camera.source === "saved" ? "Saved" : "Built in"}
               </p>
             </div>
@@ -123,32 +111,6 @@ function Funnel({ steps }: { steps: AdminData["insights"]["funnel"] }) {
         </li>
       ))}
     </Rows>
-  );
-}
-
-function Growth({ days }: { days: AdminData["insights"]["growth"] }) {
-  const peak = Math.max(1, ...days.map((entry) => entry.count));
-  const total = days.reduce((sum, entry) => sum + entry.count, 0);
-  return (
-    <div className="rounded-3xl border border-line bg-surface px-4 py-4">
-      <p className="text-[13px] text-muted">
-        {total.toLocaleString("en-US")} new in the last {days.length} days
-      </p>
-      <ul className="mt-3 flex h-20 items-end gap-1" aria-label="New accounts per day">
-        {days.map((entry) => (
-          <li
-            key={entry.day}
-            title={`${DAY.format(new Date(`${entry.day}T12:00:00`))}: ${entry.count}`}
-            className="min-w-0 flex-1 rounded-t-sm bg-foreground"
-            style={{ height: `${Math.max(entry.count === 0 ? 3 : 8, (entry.count / peak) * 100)}%`, opacity: entry.count === 0 ? 0.15 : 1 }}
-          />
-        ))}
-      </ul>
-      <div className="mt-2 flex justify-between text-[12px] text-muted">
-        <span>{DAY.format(new Date(`${days[0]?.day}T12:00:00`))}</span>
-        <span>Today</span>
-      </div>
-    </div>
   );
 }
 
@@ -211,7 +173,11 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
 
               <div className="flex flex-col gap-10">
                 <Section title="Growth">
-                  <Growth days={insights.growth} />
+                  <GrowthChart
+                    days={insights.growth}
+                    before={Math.max(0, insights.accounts.length - insights.growth.reduce((sum, entry) => sum + entry.count, 0))}
+                    now={now}
+                  />
                 </Section>
 
                 <Section title="Where they came from" hint="Each source with how many came back and set something up.">
@@ -242,9 +208,9 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                   <div className="rounded-3xl border border-line bg-surface px-4 py-4">
                     {data.feed ? (
                       <>
-                        <p className="text-[15px] font-medium">{formatWhen(data.feed.fetchedAt)}</p>
+                        <p className="text-[15px] font-medium">Updated {formatAgo(data.feed.fetchedAt, now)}</p>
                         <p className="mt-1 text-[13px] text-muted">
-                          {data.feed.ports.toLocaleString("en-US")} crossings in the latest snapshot
+                          {data.feed.ports.toLocaleString("en-US")} crossings, read {formatMoment(data.feed.fetchedAt, now)}
                         </p>
                       </>
                     ) : (
@@ -256,7 +222,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
             </div>
           }
           accounts={
-            <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+            <div className="grid min-w-0 gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-14">
               <Section
                 title="Accounts"
                 hint="Open one to see everything it has done, and follow invites between people."
@@ -278,7 +244,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                 {insights.inviters.length === 0 ? (
                   <p className="text-[15px] text-muted">No one has brought someone in yet.</p>
                 ) : (
-                  <Rows>
+                  <MoreRows noun="people">
                     {insights.inviters.map((inviter) => (
                       <li key={inviter.id} className="px-4 py-3">
                         <div className={LINE}>
@@ -289,11 +255,12 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                         </div>
                         <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
                           {inviter.activated} of {inviter.invited.length} set up crossings:{" "}
-                          {inviter.invited.map((child) => child.name).join(", ")}
+                          {inviter.invited.slice(0, 3).map((child) => child.name).join(", ")}
+                          {inviter.invited.length > 3 ? ` and ${inviter.invited.length - 3} more` : ""}
                         </p>
                       </li>
                     ))}
-                  </Rows>
+                  </MoreRows>
                 )}
               </Section>
             </div>
@@ -304,13 +271,13 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                 {data.crossings.length === 0 ? (
                   <p className="text-[15px] text-muted">No one has saved or watched a crossing.</p>
                 ) : (
-                  <Rows>
+                  <MoreRows noun="crossings">
                     {data.crossings.map((crossing) => (
                       <li key={crossing.portNumber} className={`${LINE} px-4 py-3`}>
                         <div>
                           <p className="text-[15px] font-medium">{crossing.label}</p>
                           <p className="text-[13px] text-muted">
-                            {crossing.saved} saved · {crossing.alerts} alerts · {crossing.alarms} alarms
+                            {crossing.saved} saved, {crossing.alerts} alerts, {crossing.alarms} alarms
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
@@ -323,7 +290,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                         </div>
                       </li>
                     ))}
-                  </Rows>
+                  </MoreRows>
                 )}
               </Section>
 

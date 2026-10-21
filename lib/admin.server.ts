@@ -25,8 +25,12 @@ function adminEmails(): string[] {
   });
 }
 
-const ACCOUNT_LIMIT = 500;
-const CROSSING_LIMIT = 15;
+/**
+ * A safety ceiling, not a display size. Every figure on the page (funnel, sources, growth, crossings)
+ * is built from these rows, so a low number silently skews all of them. The list pages itself in the browser.
+ */
+const ACCOUNT_LIMIT = 10_000;
+const CROSSING_LIMIT = 80;
 
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
