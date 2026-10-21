@@ -9,6 +9,7 @@ import { ReferralPrompt } from "@/components/wallet/referral-prompt";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
 import { isAdminEmail } from "@/lib/admin.server";
+import type { Announcement } from "@/lib/announcement";
 import { latestAnnouncement } from "@/lib/announcement.server";
 import { getAuth } from "@/lib/auth/server";
 import { getBorderWaitTimes, type BorderWaitTimes } from "@/lib/border-wait-times";
@@ -45,6 +46,8 @@ async function GatedHome({ children }: { children: ReactNode }) {
   const user = session?.user;
   if (!user?.id || !user.email) return <SignInScreen />;
 
+  // Start the shared reads now so they run alongside the profile lookup, not after it.
+  const live = loadLive();
   // The profile and the preference do not depend on each other, so read them together.
   const [profileResult, preferenceResult] = await Promise.allSettled([
     ensureProfile({
@@ -69,8 +72,7 @@ async function GatedHome({ children }: { children: ReactNode }) {
   }
 
   if (profileResult.value.locationPending) {
-    // Reuses the same "use cache" fetch LiveWallet will make below, so asking here is free.
-    const snapshot = await getBorderWaitTimes().catch(() => null);
+    const { snapshot } = await live;
     return (
       <SessionGate>
         <LocationPrompt ports={snapshot?.ports ?? []} />
@@ -88,27 +90,50 @@ async function GatedHome({ children }: { children: ReactNode }) {
         <PreferenceSync userId={user.id} initial={preference} ready={preferenceReady} />
         <AlertSync />
         <StreakSync />
-        <LiveWallet userId={user.id}>{children}</LiveWallet>
+        <LiveWallet userId={user.id} live={live}>{children}</LiveWallet>
       </SessionGate>
     </AdminAccess>
   );
 }
 
-/** Fetches the cached CBP snapshot on the server. If CBP is down, the client retries on its own. */
-async function LiveWallet({ userId, children }: { userId: string; children: ReactNode }) {
+type Live = {
+  snapshot: BorderWaitTimes | null;
+  streams: Record<string, string>;
+  announcement: Announcement | null;
+};
+
+/**
+ * The cached CBP snapshot, camera addresses and latest announcement, read together.
+ * If CBP is down the client retries on its own, and a failed announcement read just means no
+ * banner this visit. Never rejects, so starting it early cannot leave an unhandled rejection.
+ */
+async function loadLive(): Promise<Live> {
   const [snapshot, cameras, announcement] = await Promise.allSettled([
     getBorderWaitTimes(),
     getCameraStreams(),
     latestAnnouncement(),
   ]);
-  const initial: BorderWaitTimes | null = snapshot.status === "fulfilled" ? snapshot.value : null;
-  const streams = cameras.status === "fulfilled" ? cameras.value : fallbackCameraStreams();
-  // A failed read just means no banner this visit, not a broken wallet.
-  const latest = announcement.status === "fulfilled" ? announcement.value : null;
+  return {
+    snapshot: snapshot.status === "fulfilled" ? snapshot.value : null,
+    streams: cameras.status === "fulfilled" ? cameras.value : fallbackCameraStreams(),
+    announcement: announcement.status === "fulfilled" ? announcement.value : null,
+  };
+}
+
+async function LiveWallet({
+  userId,
+  live,
+  children,
+}: {
+  userId: string;
+  live: Promise<Live>;
+  children: ReactNode;
+}) {
+  const { snapshot, streams, announcement } = await live;
   return (
     <>
       <Suspense fallback={<ShellSkeleton wordless />}>
-        <WalletApp initial={initial} streams={streams} userId={userId} announcement={latest} />
+        <WalletApp initial={snapshot} streams={streams} userId={userId} announcement={announcement} />
       </Suspense>
       {children}
     </>

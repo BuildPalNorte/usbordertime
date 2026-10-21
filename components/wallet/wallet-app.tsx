@@ -45,16 +45,18 @@ import {
 } from "react";
 import { AnnouncementNotice } from "./announcement-notice";
 import { CameraStreamProvider } from "./camera-streams";
-import { AskPane } from "./ask-pane";
 import { BrowsePane } from "./browse-pane";
 import type { StackItem } from "./card-stack";
 import { Glow } from "./glow";
 import { RoutesFocusSync } from "./route-row";
-import { SchedulesPane } from "./schedules-pane";
 import { TabBar, type Tab } from "./tab-bar";
 import { Toast, type ToastState } from "./toast";
 // Only a first-time rider needs the tour, so it stays out of the main bundle.
 const Tour = dynamic(() => import("./tour").then((m) => m.Tour), { ssr: false });
+// Ask (chat, markdown, voice) and Alarmas (sheet, tour) are separate chunks. They still render on
+// the server, so the pane is there at first paint; only their script waits for hydration.
+const AskPane = dynamic(() => import("./ask-pane").then((m) => m.AskPane));
+const SchedulesPane = dynamic(() => import("./schedules-pane").then((m) => m.SchedulesPane));
 import {
   MobilePaneHeader,
   PaneChromeProvider,

@@ -19,18 +19,13 @@ export function ensureProfileColumns(): Promise<void> {
   if (!ensuring) {
     const sql = database();
     ensuring = (async () => {
-      await sql`alter table profile add column if not exists referral text`;
+      // One statement, not five: this runs once per cold server and each call is a network trip.
       await sql`
         alter table profile
-        add column if not exists referral_pending boolean not null default false
-      `;
-      await sql`alter table profile add column if not exists referred_by text`;
-      await sql`
-        alter table profile
-        add column if not exists location_pending boolean not null default false
-      `;
-      await sql`
-        alter table profile
+        add column if not exists referral text,
+        add column if not exists referral_pending boolean not null default false,
+        add column if not exists referred_by text,
+        add column if not exists location_pending boolean not null default false,
         add column if not exists latitude double precision,
         add column if not exists longitude double precision
       `;

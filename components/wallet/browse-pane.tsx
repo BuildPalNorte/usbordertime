@@ -26,8 +26,8 @@ import {
 import { AverageWait } from "./average-wait";
 import { WaitDuration } from "./wait-duration";
 import { useCameraStreams } from "./camera-streams";
-import { CrossingCamera } from "./crossing-camera";
-import { CrossingFeeds } from "./crossing-feeds";
+import { CrossingCamera } from "./lazy-camera";
+import { CrossingFeeds } from "./lazy-camera";
 import { HapticPad } from "./haptic-pad";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { UsualDay } from "./usual-day";
