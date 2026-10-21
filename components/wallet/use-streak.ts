@@ -2,6 +2,9 @@
 
 import { isDay, type StreakView } from "@/lib/streak";
 import { useQuery } from "@tanstack/react-query";
+import { useSyncExternalStore } from "react";
+
+const emptySubscribe = () => () => {};
 
 export const STREAK_KEY = ["streak"] as const;
 
@@ -48,6 +51,10 @@ export async function recordVisit(): Promise<StreakView | null> {
 /**
  * This account's streak. The cache is filled by `StreakSync` when it counts a visit, so this never
  * fetches on its own and stays empty until that visit lands.
+ *
+ * That sync sits outside the wallet, so its result can be in the cache before the wallet hydrates.
+ * The server render has no streak. Reading it during hydration would put the chip where the server
+ * drew the account button, and React would rebuild the page. It appears on the commit after.
  */
 export function useStreak(): StreakView | null {
   const query = useQuery<StreakView | null>({
@@ -57,5 +64,6 @@ export function useStreak(): StreakView | null {
     initialData: null,
     staleTime: Infinity,
   });
-  return query.data ?? null;
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  return mounted ? (query.data ?? null) : null;
 }
