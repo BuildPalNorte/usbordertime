@@ -14,7 +14,9 @@ afterEach(() => {
 
 describe("lookupCameraStream", () => {
   it("asks a group host and builds the playlist from the alias", async () => {
-    const fetchMock = vi.fn(async () => state("http://s81.ipcamlive.com/", "51ytqpcmyijrwvljf"));
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) =>
+      state("http://s81.ipcamlive.com/", "51ytqpcmyijrwvljf"),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(lookupCameraStream(ALIAS)).resolves.toBe(PLAYLIST);
