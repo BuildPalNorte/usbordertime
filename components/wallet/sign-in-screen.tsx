@@ -35,6 +35,9 @@ const LIMIT = 164;
 /** Movement before a touch becomes a swipe, so a tap still lands. */
 const SLOP = 10;
 
+/** Set after the first note this page load, so a strict-mode remount does not note twice. */
+let noted = false;
+
 export function SignInScreen({ problem }: { problem?: "profile" }) {
   const { locale, copy } = useLocale();
   const reduce = useReducedMotion();
@@ -55,6 +58,13 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
     setFailed(true);
     url.searchParams.delete("sign-in");
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+
+  // Counts this browser once per page load, so arrivals that never sign in are known. Best effort.
+  useEffect(() => {
+    if (noted) return;
+    noted = true;
+    void fetch("/api/visitor", { method: "POST", keepalive: true }).catch(() => {});
   }, []);
 
   const busyRef = useRef(false);

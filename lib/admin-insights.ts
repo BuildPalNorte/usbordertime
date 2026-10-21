@@ -1,3 +1,4 @@
+import { isExcludedFromAnalytics, OFTEN_OPENS } from "@/lib/analytics";
 import { type GeoPoint } from "@/lib/port-locations";
 import { isReferral, REFERRAL_LABEL, REFERRALS, type Referral } from "@/lib/referral";
 
@@ -24,6 +25,20 @@ export type RawFacts = {
   schedules: { userId: string; ports: string[]; enabled: boolean }[];
   devices: { userId: string; count: number }[];
   usage: { userId: string; total: number; lastActive: string | null; byKind: Record<string, number> }[];
+  /** How many times each account opened each crossing's details. */
+  views: { userId: string; portNumber: string; opens: number; lastOpenedAt: string | null }[];
+};
+
+/** A crossing one account opened, with how often and when last. */
+export type OpenedBridge = { portNumber: string; opens: number; lastOpenedAt: string | null };
+
+/** An account that keeps opening a crossing it has no alert or alarm for. */
+export type OftenRow = {
+  userId: string;
+  name: string;
+  portNumber: string;
+  opens: number;
+  lastOpenedAt: string | null;
 };
 
 /** Everything known about one account, from every table. */
@@ -49,6 +64,10 @@ export type Connected = {
   devices: number;
   questions: number;
   days: number;
+  /** Total opens of any crossing's details. */
+  opens: number;
+  /** The crossings they opened most, up to `TOP_BRIDGES`. */
+  topBridges: OpenedBridge[];
   streak: { current: number; longest: number };
   steps: Record<StepKey, boolean>;
   /** How many of the steps this account reached. */
@@ -91,6 +110,10 @@ export type CrossingRow = {
   saved: number;
   alerts: number;
   alarms: number;
+  /** Distinct accounts that opened this crossing's details. */
+  viewers: number;
+  /** Total opens of this crossing's details. */
+  opens: number;
   /** Distinct accounts that touch this crossing in any way. */
   people: number;
 };
@@ -105,6 +128,8 @@ export type Insights = {
   sources: SourceRow[];
   inviters: InviterRow[];
   crossings: CrossingRow[];
+  /** Opened at least `OFTEN_OPENS` times with no alert or alarm on that crossing, most opens first. */
+  often: OftenRow[];
   growth: GrowthDay[];
   /** Accounts that reached no step beyond signing in. */
   idle: number;
@@ -133,7 +158,33 @@ function chicagoDay(date: Date): string {
   }).format(date);
 }
 
-export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDays = GROWTH_DAYS): Insights {
+/** The accounts that never count toward any figure, and every table with their rows removed. */
+function withoutExcluded(facts: RawFacts): RawFacts {
+  const out = new Set(facts.profiles.filter((row) => isExcludedFromAnalytics(row.email)).map((row) => row.id));
+  if (out.size === 0) return facts;
+  const keep = <T extends { userId: string }>(rows: T[]) => rows.filter((row) => !out.has(row.userId));
+  return {
+    profiles: facts.profiles.filter((row) => !out.has(row.id)),
+    streaks: keep(facts.streaks),
+    preferences: keep(facts.preferences),
+    alerts: keep(facts.alerts),
+    schedules: keep(facts.schedules),
+    devices: keep(facts.devices),
+    usage: keep(facts.usage),
+    views: keep(facts.views),
+  };
+}
+
+const TOP_BRIDGES = 5;
+
+export function buildInsights(raw: RawFacts, now: Date = new Date(), growthDays = GROWTH_DAYS): Insights {
+  const facts = withoutExcluded(raw);
+  const viewsOf = new Map<string, RawFacts["views"]>();
+  for (const row of facts.views) {
+    const list = viewsOf.get(row.userId) ?? [];
+    list.push(row);
+    viewsOf.set(row.userId, list);
+  }
   const streakOf = new Map(facts.streaks.map((row) => [row.userId, row]));
   const prefOf = new Map(facts.preferences.map((row) => [row.userId, row]));
   const usageOf = new Map(facts.usage.map((row) => [row.userId, row]));
@@ -178,6 +229,9 @@ export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDay
     const saved = pref?.wallet.length ?? 0;
     const source = isReferral(profile.referral) ? profile.referral : null;
     const inviter = profile.referredBy ? byId.get(profile.referredBy) : undefined;
+    const opened = [...(viewsOf.get(profile.id) ?? [])].sort(
+      (a, b) => b.opens - a.opens || (b.lastOpenedAt ?? "").localeCompare(a.lastOpenedAt ?? "") || a.portNumber.localeCompare(b.portNumber),
+    );
 
     const steps: Record<StepKey, boolean> = {
       answered: source !== null,
@@ -211,6 +265,12 @@ export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDay
       devices,
       questions,
       days,
+      opens: opened.reduce((sum, row) => sum + row.opens, 0),
+      topBridges: opened.slice(0, TOP_BRIDGES).map((row) => ({
+        portNumber: row.portNumber,
+        opens: row.opens,
+        lastOpenedAt: row.lastOpenedAt,
+      })),
       streak: { current: streak?.current ?? 0, longest: streak?.longest ?? 0 },
       steps,
       depth: STEPS.filter((key) => steps[key]).length,
@@ -264,13 +324,33 @@ export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDay
     }))
     .sort((a, b) => b.invited.length - a.invited.length || b.activated - a.activated || a.name.localeCompare(b.name));
 
-  const crossingMap = new Map<string, { saved: number; alerts: number; alarms: number; people: Set<string> }>();
+  const crossingMap = new Map<
+    string,
+    { saved: number; alerts: number; alarms: number; opens: number; viewers: Set<string>; people: Set<string> }
+  >();
+  const entryFor = (port: string) => {
+    const entry = crossingMap.get(port) ?? {
+      saved: 0,
+      alerts: 0,
+      alarms: 0,
+      opens: 0,
+      viewers: new Set<string>(),
+      people: new Set<string>(),
+    };
+    crossingMap.set(port, entry);
+    return entry;
+  };
   const touch = (port: string, userId: string, field: "saved" | "alerts" | "alarms") => {
-    const entry = crossingMap.get(port) ?? { saved: 0, alerts: 0, alarms: 0, people: new Set<string>() };
+    const entry = entryFor(port);
     entry[field] += 1;
     entry.people.add(userId);
-    crossingMap.set(port, entry);
   };
+  for (const view of facts.views) {
+    const entry = entryFor(view.portNumber);
+    entry.opens += view.opens;
+    entry.viewers.add(view.userId);
+    entry.people.add(view.userId);
+  }
   for (const pref of facts.preferences) {
     for (const port of new Set(pref.wallet.map((entry) => entry.portNumber))) touch(port, pref.userId, "saved");
   }
@@ -284,9 +364,36 @@ export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDay
       saved: entry.saved,
       alerts: entry.alerts,
       alarms: entry.alarms,
+      viewers: entry.viewers.size,
+      opens: entry.opens,
       people: entry.people.size,
     }))
-    .sort((a, b) => b.people - a.people || b.alerts + b.alarms - (a.alerts + a.alarms) || a.portNumber.localeCompare(b.portNumber));
+    .sort((a, b) => b.people - a.people || b.alerts + b.alarms - (a.alerts + a.alarms) || b.opens - a.opens || a.portNumber.localeCompare(b.portNumber));
+
+  const watched = new Map<string, Set<string>>();
+  for (const alert of facts.alerts) {
+    const set = watched.get(alert.userId) ?? new Set<string>();
+    set.add(alert.portNumber);
+    watched.set(alert.userId, set);
+  }
+  for (const schedule of facts.schedules) {
+    const set = watched.get(schedule.userId) ?? new Set<string>();
+    for (const port of schedule.ports) set.add(port);
+    watched.set(schedule.userId, set);
+  }
+  const often: OftenRow[] = facts.views
+    .filter((view) => view.opens >= OFTEN_OPENS && byId.has(view.userId) && !watched.get(view.userId)?.has(view.portNumber))
+    .map((view) => {
+      const profile = byId.get(view.userId)!;
+      return {
+        userId: view.userId,
+        name: profile.name.trim() || profile.email,
+        portNumber: view.portNumber,
+        opens: view.opens,
+        lastOpenedAt: view.lastOpenedAt,
+      };
+    })
+    .sort((a, b) => b.opens - a.opens || (b.lastOpenedAt ?? "").localeCompare(a.lastOpenedAt ?? "") || a.name.localeCompare(b.name));
 
   // Step back on the calendar, not by 24-hour chunks, so a daylight-saving change never repeats or skips a day.
   const [year, month, dayOfMonth] = chicagoDay(now).split("-").map(Number);
@@ -308,6 +415,7 @@ export function buildInsights(facts: RawFacts, now: Date = new Date(), growthDay
     sources,
     inviters,
     crossings,
+    often,
     growth,
     idle: accounts.filter((account) => account.depth === 0).length,
     recent: accounts.filter((account) => (account.lastActive ?? "") >= weekAgo).length,

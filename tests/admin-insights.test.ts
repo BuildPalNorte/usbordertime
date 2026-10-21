@@ -34,6 +34,7 @@ const EMPTY: RawFacts = {
   schedules: [],
   devices: [],
   usage: [],
+  views: [],
 };
 
 describe("buildInsights", () => {
@@ -84,7 +85,54 @@ describe("buildInsights", () => {
       },
       NOW,
     );
-    expect(insights.crossings).toEqual([{ portNumber: "1", saved: 1, alerts: 1, alarms: 1, people: 1 }]);
+    expect(insights.crossings).toEqual([
+      { portNumber: "1", saved: 1, alerts: 1, alarms: 1, viewers: 0, opens: 0, people: 1 },
+    ]);
+  });
+
+  it("counts opens per crossing and per account, and lists opens with no alert", () => {
+    const insights = buildInsights(
+      {
+        ...EMPTY,
+        profiles: [profile("a"), profile("b")],
+        alerts: [{ userId: "b", portNumber: "1" }],
+        views: [
+          { userId: "a", portNumber: "1", opens: 4, lastOpenedAt: "2026-10-12T10:00:00.000Z" },
+          { userId: "a", portNumber: "2", opens: 2, lastOpenedAt: "2026-10-12T09:00:00.000Z" },
+          { userId: "b", portNumber: "1", opens: 5, lastOpenedAt: "2026-10-12T11:00:00.000Z" },
+        ],
+      },
+      NOW,
+    );
+    const one = insights.crossings.find((row) => row.portNumber === "1")!;
+    expect(one).toMatchObject({ opens: 9, viewers: 2, people: 2 });
+    const a = insights.accounts.find((row) => row.id === "a")!;
+    expect(a.opens).toBe(6);
+    expect(a.topBridges.map((row) => row.portNumber)).toEqual(["1", "2"]);
+    // b opened crossing 1 five times but has an alert on it. a's two opens of crossing 2 are too few.
+    expect(insights.often).toEqual([
+      { userId: "a", name: "a", portNumber: "1", opens: 4, lastOpenedAt: "2026-10-12T10:00:00.000Z" },
+    ]);
+  });
+
+  it("leaves an excluded account out of every figure", () => {
+    const insights = buildInsights(
+      {
+        ...EMPTY,
+        profiles: [profile("a"), profile("me", { email: "Orlandovaluta568@Gmail.com", referral: "friend" })],
+        preferences: [{ userId: "me", locale: "en", wallet: [{ portNumber: "1" }], pins: 0 }],
+        alerts: [{ userId: "me", portNumber: "1" }],
+        devices: [{ userId: "me", count: 1 }],
+        usage: [{ userId: "me", total: 9, lastActive: "2026-10-12T10:00:00.000Z", byKind: { visit: 9 } }],
+        views: [{ userId: "me", portNumber: "1", opens: 9, lastOpenedAt: "2026-10-12T10:00:00.000Z" }],
+      },
+      NOW,
+    );
+    expect(insights.accounts.map((row) => row.id)).toEqual(["a"]);
+    expect(insights.funnel[0].count).toBe(1);
+    expect(insights.crossings).toEqual([]);
+    expect(insights.often).toEqual([]);
+    expect(insights.sources.find((row) => row.key === "friend")).toBeUndefined();
   });
 
   it("handles an empty database", () => {
@@ -117,6 +165,8 @@ function account(id: string, extra: Partial<Connected> = {}): Connected {
     devices: 0,
     questions: 0,
     days: 0,
+    opens: 0,
+    topBridges: [],
     streak: { current: 0, longest: 0 },
     steps: { answered: false, returned: false, saved: false, watching: false, notified: false, asked: false },
     depth: 0,

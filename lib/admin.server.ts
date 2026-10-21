@@ -10,6 +10,9 @@ import { ensureProfile, ensureProfileColumns } from "@/lib/profile";
 import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
 import { readUsageTotals, type UsageTotals } from "@/lib/usage.server";
 import { database } from "@/lib/db.server";
+import { ANALYTICS_EXCLUDED_EMAILS, isExcludedFromAnalytics } from "@/lib/analytics";
+import { readPortViews } from "@/lib/port-view.server";
+import { readArrivals, type Arrivals } from "@/lib/visitor.server";
 import { headers } from "next/headers";
 
 /**
@@ -76,6 +79,8 @@ export type AdminCrossing = {
   alerts: number;
   alarms: number;
   people: number;
+  viewers: number;
+  opens: number;
   /** Current wait in minutes for the crossing's main lane, or null when the feed has none. */
   waitMinutes: number | null;
 };
@@ -90,6 +95,10 @@ export type AdminData = {
   feedGroups: AdminFeedGroup[];
   feed: { fetchedAt: string; ports: number } | null;
   announcements: Announcement[];
+  /** Browsers that opened the sign-in screen, or null when the table could not be read. */
+  arrivals: Arrivals | null;
+  /** Display name for every crossing in the feed, by port number. */
+  portLabels: Record<string, string>;
   problem: boolean;
 };
 
@@ -156,19 +165,28 @@ async function readDashboard(): Promise<AdminData> {
     mark(error, false);
   });
 
-  const accountsQuery = sql`select count(*)::int as count from profile`;
+  // The people who run the app are left out of every total.
+  const excluded = ANALYTICS_EXCLUDED_EMAILS.map((email) => email.trim().toLowerCase());
+  const accountsQuery = sql`
+    select count(*)::int as count from profile where lower(email) <> all(${excluded})
+  `;
   const alertTotalsQuery = sql`
     select
       count(*)::int as alerts,
       count(*) filter (where below)::int as below
     from wait_alert
+    where user_id not in (select id from profile where lower(email) = any(${excluded}))
   `;
-  const devicesQuery = sql`select count(*)::int as count from push_subscription`;
+  const devicesQuery = sql`
+    select count(*)::int as count from push_subscription
+    where user_id not in (select id from profile where lower(email) = any(${excluded}))
+  `;
   const schedulesQuery = sql`
     select
       count(*)::int as total,
       count(*) filter (where enabled)::int as enabled
     from schedule
+    where user_id not in (select id from profile where lower(email) = any(${excluded}))
   `;
   const camerasQuery = sql`select alias, src from camera_stream`;
   const feedsQuery = sql`select id, src from camera_feed`;
@@ -188,8 +206,12 @@ async function readDashboard(): Promise<AdminData> {
   });
 
   const factsQuery = readFacts(mark);
+  const arrivalsQuery = readArrivals().catch((error: unknown) => {
+    mark(error, true);
+    return null;
+  });
 
-  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, usageRows, announcements] =
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals] =
     await Promise.all([
     factsQuery,
     accountsQuery.then(
@@ -242,7 +264,11 @@ async function readDashboard(): Promise<AdminData> {
     feedQuery,
     usageQuery,
     announcementsQuery,
+    arrivalsQuery,
   ]);
+
+  const out = new Set(facts.profiles.filter((row) => isExcludedFromAnalytics(row.email)).map((row) => row.id));
+  const usageRows = rawUsageRows.filter((row) => !out.has(row.userId));
 
   const insights = buildInsights({
     ...facts,
@@ -254,6 +280,15 @@ async function readDashboard(): Promise<AdminData> {
     })),
   });
   const byNumber = new Map((feed?.ports ?? []).map((port) => [port.portNumber, port]));
+  const labelOf = (portNumber: string): string => {
+    const port = byNumber.get(portNumber);
+    const name = port ? portName(port) : null;
+    return name && !name.subtitleIsRegion && name.subtitle !== name.title
+      ? `${name.title} · ${name.subtitle}`
+      : (name?.title ?? portNumber);
+  };
+  const portLabels: Record<string, string> = {};
+  for (const port of feed?.ports ?? []) portLabels[port.portNumber] = labelOf(port.portNumber);
   const alertCount = asCount(alertTotals.alerts);
   const below = asCount(alertTotals.below);
   const scheduleTotal = asCount(schedules.total);
@@ -291,6 +326,8 @@ async function readDashboard(): Promise<AdminData> {
     feedGroups: feedGroupsFrom(feeds),
     feed: feed ? { fetchedAt: feed.fetchedAt, ports: feed.ports.length } : null,
     announcements,
+    arrivals,
+    portLabels,
     problem,
   };
 }
@@ -394,7 +431,7 @@ async function readFacts(mark: (error: unknown, quietWhenMissing: boolean) => vo
       },
     );
 
-  const [profiles, streaks, preferences, alerts, schedules, devices] = await Promise.all([
+  const [profiles, streaks, preferences, alerts, schedules, devices, views] = await Promise.all([
     safe<{
       id: string;
       name: string | null;
@@ -433,6 +470,10 @@ async function readFacts(mark: (error: unknown, quietWhenMissing: boolean) => vo
       sql`select user_id, count(*)::int as count from push_subscription group by user_id`,
       true,
     ),
+    readPortViews().catch((error: unknown) => {
+      mark(error, true);
+      return [];
+    }),
   ]);
 
   return {
@@ -477,5 +518,6 @@ async function readFacts(mark: (error: unknown, quietWhenMissing: boolean) => vo
       enabled: row.enabled,
     })),
     devices: devices.map((row) => ({ userId: row.user_id, count: asCount(row.count) })),
+    views,
   };
 }

@@ -9,6 +9,13 @@ export async function sessionUserId(): Promise<string | null> {
   return session?.user?.id ?? null;
 }
 
+/** The signed-in account id and email for this request, or null. */
+export async function sessionUser(): Promise<{ id: string; email: string | null } | null> {
+  const session = await getAuth().api.getSession({ headers: await headers() });
+  const user = session?.user;
+  return user?.id ? { id: user.id, email: user.email ?? null } : null;
+}
+
 export function unauthorized(): Response {
   return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
 }

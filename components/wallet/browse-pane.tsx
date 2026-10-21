@@ -13,6 +13,7 @@ import {
 } from "@/lib/i18n";
 import { hourFromClock } from "@/lib/lane-averages";
 import { cityPinKey } from "@/lib/pin-store";
+import { trackPortView } from "@/lib/port-view";
 import {
   cardBackground,
   crossingStream,
@@ -513,6 +514,7 @@ function CrossingRow({
           }
           onClick={() => {
             haptic("light");
+            if (!open) trackPortView(port.portNumber);
             setOpen((v) => !v);
           }}
           className="relative flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"

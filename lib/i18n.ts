@@ -532,7 +532,7 @@ export const COPY: Record<Locale, Copy> = {
     termsOfUse: "Terms of use",
     admin: "Admin",
     privacyTitle: "Privacy policy",
-    privacyUpdated: "Updated October 13, 2026",
+    privacyUpdated: "Updated October 21, 2026",
     privacyLead:
       "Border Time shows live wait times at U.S. land ports. This page is what we keep.",
     privacySections: [
@@ -558,19 +558,19 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Visit streak",
-        body: "To count a streak, the first time you open the app each day we save that day's date in your time zone with your account, along with your current streak, your longest streak, and how many days you have opened the app. We do not record what you looked at.",
+        body: "To count a streak, the first time you open the app each day we save that day's date in your time zone with your account, along with your current streak, your longest streak, and how many days you have opened the app. That streak does not record what you looked at. The next section covers what is counted.",
       },
       {
         heading: "How the app is used",
-        body: "We keep a short log on your account: the first time you open the app each day, each question you send in Ask, each wait alert you save, each alarm you save, and each time your bridges, bookmarks, language, or appearance are saved. The log counts those actions. It does not include the words you asked or which bridge you opened. The people who run Border Time can see those counts with your name and email.",
+        body: "We keep a short log on your account: the first time you open the app each day, each question you send in Ask, each wait alert you save, each alarm you save, and each time your bridges, bookmarks, language, or appearance are saved. The log counts those actions. It does not include the words you asked. We also count how many times you open each crossing's details, per crossing, with your account. Before you sign in, this browser gets a random id in a cookie, kept for a year, so we can count visits that never create an account. Signing in attaches that id to your account. The people who run Border Time can see these counts with your name and email. We do not sell them, and we do not use them for advertising.",
       },
       {
         heading: "Other services",
-        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, the location you shared, your saved bridges, bookmarks, language, and appearance, your wait alerts, your alarms, your visit streak, the activity log, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. OpenAI receives the questions you type in Ask, and the text of a question you speak. We do not store the chat. If you speak a question in Chrome, Google receives the audio and returns the words. We receive only those words, not the recording. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
+        body: "Google supplies your name, email, and photo at sign-in, and hosts the photo. Our database stores the account, the profile, the location you shared, your saved bridges, bookmarks, language, and appearance, your wait alerts, your alarms, your visit streak, the activity log, how often you open each crossing, the visitor id, and device push addresses, and the current camera addresses. IPCamLive serves the two cameras. OpenAI receives the questions you type in Ask, and the text of a question you speak. We do not store the chat. If you speak a question in Chrome, Google receives the audio and returns the words. We receive only those words, not the recording. CBP publishes the wait times. What each of them does on its own side is covered by its own policy.",
       },
       {
         heading: "How long it stays",
-        body: `Signing out ends the session in this browser and removes this device's push address. The profile, how you found us, who shared the link you signed up from, the location you shared, saved bridges, bookmarks, language, appearance, the streak, and the activity log stay until you ask us to delete the account. Write to ${CONTACT_EMAIL} and we delete the account and everything saved with it. Wait alerts stay until you turn them off. Alarms stay until you delete them. This browser keeps its copy until you clear the site's data.`,
+        body: `Signing out ends the session in this browser and removes this device's push address. The profile, how you found us, who shared the link you signed up from, the location you shared, saved bridges, bookmarks, language, appearance, the streak, the activity log, and the crossing counts stay until you ask us to delete the account. Write to ${CONTACT_EMAIL} and we delete the account and everything saved with it. Wait alerts stay until you turn them off. Alarms stay until you delete them. This browser keeps its copy until you clear the site's data.`,
       },
       {
         heading: "Children",
@@ -1057,7 +1057,7 @@ export const COPY: Record<Locale, Copy> = {
     termsOfUse: "Términos de uso",
     admin: "Admin",
     privacyTitle: "Política de privacidad",
-    privacyUpdated: "Actualizada el 13 de octubre de 2026",
+    privacyUpdated: "Actualizada el 21 de octubre de 2026",
     privacyLead:
       "Border Time muestra los tiempos de espera en vivo de los puertos terrestres de Estados Unidos. Esta página dice qué guardamos.",
     privacySections: [
@@ -1083,19 +1083,19 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Racha de visitas",
-        body: "Para contar una racha, la primera vez que abres la app cada día guardamos con tu cuenta la fecha de ese día en tu zona horaria, junto con tu racha actual, tu racha más larga y cuántos días has abierto la app. No registramos qué viste.",
+        body: "Para contar una racha, la primera vez que abres la app cada día guardamos con tu cuenta la fecha de ese día en tu zona horaria, junto con tu racha actual, tu racha más larga y cuántos días has abierto la app. La racha no registra qué viste. La siguiente sección explica qué se cuenta.",
       },
       {
         heading: "Cómo se usa",
-        body: "Guardamos un registro corto en tu cuenta: la primera vez que abres la app cada día, cada pregunta que envías en Preguntar, cada alerta de espera que guardas, cada alarma que guardas, y cada vez que se guardan tus puentes, ciudades, idioma o apariencia. El registro cuenta esas acciones. No incluye las palabras que preguntaste ni qué puente abriste. Quienes operan Border Time pueden ver esos conteos junto con tu nombre y tu correo.",
+        body: "Guardamos un registro corto en tu cuenta: la primera vez que abres la app cada día, cada pregunta que envías en Preguntar, cada alerta de espera que guardas, cada alarma que guardas, y cada vez que se guardan tus puentes, ciudades, idioma o apariencia. El registro cuenta esas acciones. No incluye las palabras que preguntaste. También contamos cuántas veces abres los detalles de cada cruce, por cruce, junto con tu cuenta. Antes de iniciar sesión, este navegador recibe un identificador aleatorio en una cookie, que dura un año, para poder contar las visitas que nunca crean una cuenta. Al iniciar sesión, ese identificador se vincula a tu cuenta. Quienes operan Border Time pueden ver esos conteos junto con tu nombre y tu correo. No los vendemos ni los usamos para publicidad.",
       },
       {
         heading: "Otros servicios",
-        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, la ubicación que compartiste, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus alarmas, tu racha de visitas, el registro de uso y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. OpenAI recibe las preguntas que escribes en Preguntar, y el texto de una pregunta que dices. No guardamos el chat. Si dices una pregunta en Chrome, Google recibe el audio y devuelve las palabras. Nosotros recibimos solo esas palabras, no la grabación. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
+        body: "Google aporta tu nombre, correo y foto al iniciar sesión, y aloja la foto. Nuestra base de datos guarda la cuenta, el perfil, la ubicación que compartiste, tus puentes guardados, ciudades fijadas, idioma y apariencia, tus alertas de espera, tus alarmas, tu racha de visitas, el registro de uso, cuántas veces abres cada cruce, el identificador de visitante y las direcciones push de tus dispositivos, y las direcciones actuales de las cámaras. IPCamLive sirve las dos cámaras. OpenAI recibe las preguntas que escribes en Preguntar, y el texto de una pregunta que dices. No guardamos el chat. Si dices una pregunta en Chrome, Google recibe el audio y devuelve las palabras. Nosotros recibimos solo esas palabras, no la grabación. CBP publica los tiempos de espera. Lo que cada uno hace por su cuenta lo cubre su propia política.",
       },
       {
         heading: "Cuánto tiempo permanece",
-        body: `Cerrar sesión termina la sesión en este navegador y quita la dirección push de este dispositivo. El perfil, cómo nos encontraste, quién compartió el enlace con el que creaste la cuenta, la ubicación que compartiste, los puentes guardados, las ciudades fijadas, el idioma, la apariencia, la racha y el registro de uso permanecen hasta que pidas borrar la cuenta. Escribe a ${CONTACT_EMAIL} y borramos la cuenta y todo lo que está guardado con ella. Las alertas de espera permanecen hasta que las apagues. Las alarmas permanecen hasta que las elimines. Este navegador guarda su copia hasta que borres los datos del sitio.`,
+        body: `Cerrar sesión termina la sesión en este navegador y quita la dirección push de este dispositivo. El perfil, cómo nos encontraste, quién compartió el enlace con el que creaste la cuenta, la ubicación que compartiste, los puentes guardados, las ciudades fijadas, el idioma, la apariencia, la racha, el registro de uso y los conteos por cruce permanecen hasta que pidas borrar la cuenta. Escribe a ${CONTACT_EMAIL} y borramos la cuenta y todo lo que está guardado con ella. Las alertas de espera permanecen hasta que las apagues. Las alarmas permanecen hasta que las elimines. Este navegador guarda su copia hasta que borres los datos del sitio.`,
       },
       {
         heading: "Menores",

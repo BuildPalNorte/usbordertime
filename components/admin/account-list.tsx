@@ -81,6 +81,7 @@ function facts(account: Connected): { label: string; value: string; href?: strin
     { label: "Alarms", value: `${account.alarmsOn} on of ${account.alarms}` },
     { label: "Devices", value: String(account.devices) },
     { label: "Questions", value: String(account.questions) },
+    { label: "Crossings opened", value: account.opens.toLocaleString("en-US") },
     { label: "Language", value: account.locale === "es" ? "Spanish" : account.locale === "en" ? "English" : "Not chosen" },
   ];
 }
@@ -166,7 +167,15 @@ function FilterGroup<T extends string>({
 
 const PAGE = 25;
 
-export function AccountList({ accounts, now }: { accounts: Connected[]; now: number }) {
+export function AccountList({
+  accounts,
+  now,
+  portLabels,
+}: {
+  accounts: Connected[];
+  now: number;
+  portLabels: Record<string, string>;
+}) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<AccountFilter>(DEFAULT_ACCOUNT_FILTER);
   const [sort, setSort] = useState<AccountSort>("active");
@@ -356,6 +365,25 @@ export function AccountList({ accounts, now }: { accounts: Connected[]; now: num
                         </div>
                       ))}
                     </dl>
+
+                    <div className="mt-4">
+                      <p className="text-[12px] text-muted">Opened most</p>
+                      {account.topBridges.length === 0 ? (
+                        <p className="mt-0.5 text-[14px] text-muted">No crossing opened yet.</p>
+                      ) : (
+                        <ul className="mt-1 flex flex-col gap-1">
+                          {account.topBridges.map((bridge) => (
+                            <li key={bridge.portNumber} className="flex items-baseline justify-between gap-3 text-[14px]">
+                              <span className="font-medium">{portLabels[bridge.portNumber] ?? bridge.portNumber}</span>
+                              <span className="shrink-0 text-muted tabular-nums">
+                                {plural(bridge.opens, "open", "opens")}
+                                {bridge.lastOpenedAt ? `, last ${formatAgo(bridge.lastOpenedAt, now)}` : ""}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
 
                     <ul className="mt-4 flex flex-col gap-1.5">
                       {STEPS.map((key) => (

@@ -30,6 +30,7 @@ import {
 } from "@/lib/routes";
 import { walletStore } from "@/lib/wallet-store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { trackPortView } from "@/lib/port-view";
 import { useReducedMotion } from "motion/react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -309,6 +310,10 @@ export function WalletApp({
     routePort && items.some((i) => i.port.portNumber === routePort.portNumber)
       ? routePort.portNumber
       : null;
+  // Opening a card is a view of that crossing. Closing it, or the minute refetch, is not.
+  useEffect(() => {
+    if (expandedId) trackPortView(expandedId);
+  }, [expandedId]);
   // While a notification card is open, the stack behind it is that notification's bridges.
   const viewItems =
     focus &&

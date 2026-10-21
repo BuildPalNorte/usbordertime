@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/admin/sign-out-button";
 import { formatAgo, formatMoment } from "@/lib/admin-time";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
 import type { AdminCamera, AdminData, AdminFeedGroup, AdminViewer } from "@/lib/admin.server";
+import { OFTEN_OPENS } from "@/lib/analytics";
 import { USAGE_KINDS, USAGE_LABEL } from "@/lib/usage";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
@@ -167,9 +168,43 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         <AdminTabs
           overview={
             <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
-              <Section title="Journey" hint="How far accounts get, from sign-in to asking a question.">
-                <Funnel steps={insights.funnel} />
-              </Section>
+              <div className="flex flex-col gap-10">
+                <Section title="Journey" hint="How far accounts get, from sign-in to asking a question.">
+                  <Funnel steps={insights.funnel} />
+                </Section>
+
+                <Section
+                  title="Arrivals"
+                  hint="Browsers that opened the sign-in screen, and how many went on to sign in. Counted since this was turned on."
+                >
+                  {data.arrivals === null || data.arrivals.total === 0 ? (
+                    <p className="text-[15px] text-muted">No arrivals counted yet.</p>
+                  ) : (
+                    <Rows>
+                      {(
+                        [
+                          ["All time", data.arrivals.total, data.arrivals.registered],
+                          ["Last 7 days", data.arrivals.weekTotal, data.arrivals.weekRegistered],
+                        ] as const
+                      ).map(([label, total, registered]) => (
+                        <li key={label} className="px-4 py-3">
+                          <div className={LINE}>
+                            <p className="text-[15px] font-medium">{label}</p>
+                            <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                              {total.toLocaleString("en-US")}
+                            </p>
+                          </div>
+                          <p className="mt-1 flex gap-x-2 text-[13px] whitespace-nowrap text-muted">
+                            <span>{registered.toLocaleString("en-US")} signed in</span>
+                            <span>{(total - registered).toLocaleString("en-US")} did not</span>
+                            <span>{percent(total === 0 ? 0 : registered / total)} signed in</span>
+                          </p>
+                        </li>
+                      ))}
+                    </Rows>
+                  )}
+                </Section>
+              </div>
 
               <div className="flex flex-col gap-10">
                 <Section title="Growth">
@@ -230,7 +265,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                 {insights.accounts.length === 0 ? (
                   <p className="text-[15px] text-muted">No accounts yet.</p>
                 ) : (
-                  <AccountList accounts={insights.accounts} now={now} />
+                  <AccountList accounts={insights.accounts} now={now} portLabels={data.portLabels} />
                 )}
                 {data.accountTotal > insights.accounts.length && (
                   <p className="mt-3 text-[13px] text-muted">
@@ -277,7 +312,8 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                         <div>
                           <p className="text-[15px] font-medium">{crossing.label}</p>
                           <p className="text-[13px] text-muted">
-                            {crossing.saved} saved, {crossing.alerts} alerts, {crossing.alarms} alarms
+                            {crossing.saved} saved, {crossing.alerts} alerts, {crossing.alarms} alarms,{" "}
+                            {crossing.opens} {crossing.opens === 1 ? "open" : "opens"} by {crossing.viewers}
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
@@ -288,6 +324,32 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                             {crossing.waitMinutes === null ? "No wait data" : `${crossing.waitMinutes} min now`}
                           </p>
                         </div>
+                      </li>
+                    ))}
+                  </MoreRows>
+                )}
+              </Section>
+
+              <Section
+                title="Opened often, no alert"
+                hint={`Accounts that opened a crossing ${OFTEN_OPENS} or more times with no alert or alarm on it.`}
+              >
+                {insights.often.length === 0 ? (
+                  <p className="text-[15px] text-muted">No one yet.</p>
+                ) : (
+                  <MoreRows noun="people">
+                    {insights.often.map((row) => (
+                      <li key={`${row.userId}:${row.portNumber}`} className="px-4 py-3">
+                        <div className={LINE}>
+                          <p className="text-[15px] font-medium">{row.name}</p>
+                          <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                            {row.opens.toLocaleString("en-US")} {row.opens === 1 ? "open" : "opens"}
+                          </p>
+                        </div>
+                        <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
+                          {data.portLabels[row.portNumber] ?? row.portNumber}
+                          {row.lastOpenedAt ? `, last ${formatAgo(row.lastOpenedAt, now)}` : ""}
+                        </p>
                       </li>
                     ))}
                   </MoreRows>

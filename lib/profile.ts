@@ -1,4 +1,6 @@
+import { VISITOR_COOKIE } from "@/lib/analytics";
 import { database } from "@/lib/db.server";
+import { claimVisitor } from "@/lib/visitor.server";
 import { INVITE_COOKIE, isUserId } from "@/lib/invite";
 import { type GeoPoint } from "@/lib/port-locations";
 import { isReferral, type Referral } from "@/lib/referral";
@@ -64,6 +66,20 @@ async function referrerFromVisit(userId: string): Promise<string | null> {
  * `referred_by` is written only on the insert. A later visit does not change it.
  */
 export async function ensureProfile(
+  identity: ProfileIdentity,
+): Promise<{ referralPending: boolean; locationPending: boolean }> {
+  const result = await saveProfile(identity);
+  // The profile exists now, so the sign-in screen this browser saw can be tied to it. Best effort.
+  try {
+    const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value ?? null;
+    await claimVisitor(visitorId, identity.id, identity.email);
+  } catch (error) {
+    console.error("visitor claim", error);
+  }
+  return result;
+}
+
+async function saveProfile(
   identity: ProfileIdentity,
 ): Promise<{ referralPending: boolean; locationPending: boolean }> {
   await ensureProfileColumns();
