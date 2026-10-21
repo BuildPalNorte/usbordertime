@@ -3,6 +3,8 @@
 import { useLocale } from "@/components/locale-provider";
 import { authClient } from "@/lib/auth/client";
 import { haptic, type Haptic } from "@/lib/haptics";
+import { dropCampaignParam, rememberCampaign } from "@/lib/campaign";
+import { detectInAppBrowser } from "@/lib/in-app-browser";
 import { rememberInvite, dropInviteParam } from "@/lib/invite";
 import { GUIDE_INDEX_PATH } from "@/lib/guide-paths";
 import { currentCallbackURL } from "@/lib/routes";
@@ -47,7 +49,11 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
 
   useLayoutEffect(() => {
     rememberInvite(window.location.search);
+    rememberCampaign(window.location.search);
     dropInviteParam();
+    // An in-app browser's cookie does not follow them into Safari. Leave `c` on the
+    // address so Copy link and Open in browser still carry the campaign.
+    if (!detectInAppBrowser(navigator.userAgent)) dropCampaignParam();
   }, []);
 
   useEffect(() => {
@@ -75,6 +81,7 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
     setBusy(true);
     setFailed(false);
     rememberInvite(window.location.search);
+    rememberCampaign(window.location.search);
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: currentCallbackURL(),

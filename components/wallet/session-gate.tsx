@@ -1,6 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth/client";
+import { clearCampaignCookie, dropCampaignParam } from "@/lib/campaign";
 import { clearInviteCookie, dropInviteParam } from "@/lib/invite";
 import { useLayoutEffect, useSyncExternalStore, type ReactNode } from "react";
 import { SignInScreen } from "./sign-in-screen";
@@ -12,6 +13,8 @@ function InviteClaim() {
   useLayoutEffect(() => {
     dropInviteParam();
     clearInviteCookie();
+    dropCampaignParam();
+    clearCampaignCookie();
   }, []);
   return null;
 }

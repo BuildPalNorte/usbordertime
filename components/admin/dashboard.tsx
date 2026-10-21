@@ -1,6 +1,7 @@
 import { AccountList } from "@/components/admin/account-list";
 import { AdminTabs } from "@/components/admin/admin-tabs";
 import { AnnouncementModal } from "@/components/admin/announcement-modal";
+import { Campaigns } from "@/components/admin/campaigns";
 import { GrowthChart } from "@/components/admin/growth-chart";
 import { MoreRows } from "@/components/admin/more-rows";
 import { SignOutButton } from "@/components/admin/sign-out-button";
@@ -265,7 +266,12 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                 {insights.accounts.length === 0 ? (
                   <p className="text-[15px] text-muted">No accounts yet.</p>
                 ) : (
-                  <AccountList accounts={insights.accounts} now={now} portLabels={data.portLabels} />
+                  <AccountList
+                    accounts={insights.accounts}
+                    now={now}
+                    portLabels={data.portLabels}
+                    campaignNames={Object.fromEntries(data.campaigns.map((campaign) => [campaign.slug, campaign.name]))}
+                  />
                 )}
                 {data.accountTotal > insights.accounts.length && (
                   <p className="mt-3 text-[13px] text-muted">
@@ -275,7 +281,10 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                 )}
               </Section>
 
-              <Section title="Invites" hint="Who brought people in, and how many of them did something.">
+              <div className="flex flex-col gap-10">
+                <Campaigns initial={data.campaigns} />
+
+                <Section title="Invites" hint="Who brought people in, and how many of them did something.">
                 {insights.inviters.length === 0 ? (
                   <p className="text-[15px] text-muted">No one has brought someone in yet.</p>
                 ) : (
@@ -298,6 +307,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                   </MoreRows>
                 )}
               </Section>
+              </div>
             </div>
           }
           crossings={

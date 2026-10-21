@@ -1,4 +1,6 @@
 import { VISITOR_COOKIE } from "@/lib/analytics";
+import { CAMPAIGN_COOKIE, campaignQuery } from "@/lib/campaign";
+import { knownCampaign } from "@/lib/campaign.server";
 import { database } from "@/lib/db.server";
 import { claimVisitor } from "@/lib/visitor.server";
 import { INVITE_COOKIE, isUserId } from "@/lib/invite";
@@ -27,6 +29,7 @@ export function ensureProfileColumns(): Promise<void> {
         add column if not exists referral text,
         add column if not exists referral_pending boolean not null default false,
         add column if not exists referred_by text,
+        add column if not exists campaign text,
         add column if not exists location_pending boolean not null default false,
         add column if not exists latitude double precision,
         add column if not exists longitude double precision
@@ -35,6 +38,11 @@ export function ensureProfileColumns(): Promise<void> {
         create index if not exists profile_referred_by_idx
         on profile (referred_by)
         where referred_by is not null
+      `;
+      await sql`
+        create index if not exists profile_campaign_idx
+        on profile (campaign)
+        where campaign is not null
       `;
     })().catch((error: unknown) => {
       ensuring = null;
@@ -46,6 +54,20 @@ export function ensureProfileColumns(): Promise<void> {
 
 function pendingFrom(value: unknown): boolean {
   return value === true || value === "t" || value === "true" || value === 1;
+}
+
+/**
+ * The campaign stored before sign-in, when that code is one an admin created.
+ * A missing or unknown code does not block the new profile.
+ */
+async function campaignFromVisit(): Promise<string | null> {
+  try {
+    const value = (await cookies()).get(CAMPAIGN_COOKIE)?.value ?? null;
+    return await knownCampaign(campaignQuery(value));
+  } catch (error) {
+    console.error("campaign", error);
+    return null;
+  }
 }
 
 /**
@@ -63,7 +85,7 @@ async function referrerFromVisit(userId: string): Promise<string | null> {
 /**
  * Creates the profile on first sign-in and refreshes name, email, and photo when they change.
  * A returning visit with nothing new is a read, not a write.
- * `referred_by` is written only on the insert. A later visit does not change it.
+ * `referred_by` and `campaign` are written only on the insert. A later visit does not change them.
  */
 export async function ensureProfile(
   identity: ProfileIdentity,
@@ -107,9 +129,10 @@ async function saveProfile(
     };
   }
   const referredBy = row ? null : await referrerFromVisit(identity.id);
+  const campaign = row ? null : await campaignFromVisit();
   const rows = await sql`
-    insert into profile (id, email, name, image, referral_pending, location_pending, referred_by)
-    values (${identity.id}, ${identity.email}, ${identity.name}, ${identity.image}, true, true, ${referredBy})
+    insert into profile (id, email, name, image, referral_pending, location_pending, referred_by, campaign)
+    values (${identity.id}, ${identity.email}, ${identity.name}, ${identity.image}, true, true, ${referredBy}, ${campaign})
     on conflict (id) do update
     set email = excluded.email,
         name = excluded.name,

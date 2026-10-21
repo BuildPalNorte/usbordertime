@@ -171,10 +171,12 @@ export function AccountList({
   accounts,
   now,
   portLabels,
+  campaignNames,
 }: {
   accounts: Connected[];
   now: number;
   portLabels: Record<string, string>;
+  campaignNames: Record<string, string>;
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<AccountFilter>(DEFAULT_ACCOUNT_FILTER);
@@ -408,6 +410,14 @@ export function AccountList({
                               : "joined before we asked"}
                         </span>
                       </p>
+                      {account.campaign && (
+                        <p>
+                          Campaign:{" "}
+                          <span className="text-foreground">
+                            {campaignNames[account.campaign] ?? account.campaign}
+                          </span>
+                        </p>
+                      )}
                       {account.invitedBy && (
                         <p>
                           Came from{" "}

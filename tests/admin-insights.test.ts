@@ -21,6 +21,7 @@ function profile(id: string, extra: Partial<RawFacts["profiles"][number]> = {}) 
     referral: null,
     referralPending: false,
     referredBy: null,
+    campaign: null,
     location: null,
     ...extra,
   };
@@ -43,7 +44,7 @@ describe("buildInsights", () => {
       {
         ...EMPTY,
         profiles: [
-          profile("a", { referral: "friend", location: { lat: 25.9, lng: -97.5 } }),
+          profile("a", { referral: "friend", campaign: "fall", location: { lat: 25.9, lng: -97.5 } }),
           profile("b", { referral: "whatsapp", referredBy: "a" }),
           profile("c", { referralPending: true }),
         ],
@@ -60,6 +61,7 @@ describe("buildInsights", () => {
     const a = insights.accounts.find((row) => row.id === "a")!;
     expect(a.depth).toBe(6);
     expect(a.location).toEqual({ lat: 25.9, lng: -97.5 });
+    expect(a.campaign).toBe("fall");
     expect(a.invited).toEqual([{ id: "b", name: "b", activated: true }]);
 
     const b = insights.accounts.find((row) => row.id === "b")!;
@@ -155,6 +157,7 @@ function account(id: string, extra: Partial<Connected> = {}): Connected {
     sourceState: "unknown",
     invitedBy: null,
     invited: [],
+    campaign: null,
     locale: null,
     location: null,
     saved: 0,

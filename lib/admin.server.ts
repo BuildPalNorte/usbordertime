@@ -2,6 +2,8 @@ import { getAuth } from "@/lib/auth/server";
 import { buildInsights, type Insights, type RawFacts } from "@/lib/admin-insights";
 import { listAnnouncements } from "@/lib/announcement.server";
 import type { Announcement } from "@/lib/announcement";
+import { listCampaigns } from "@/lib/campaign.server";
+import type { Campaign } from "@/lib/campaign";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { FEED_GROUPS, type FeedKind } from "@/lib/camera-feeds";
 import { defaultMode, laneFor, listedCameras, portName } from "@/lib/ports";
@@ -95,6 +97,8 @@ export type AdminData = {
   feedGroups: AdminFeedGroup[];
   feed: { fetchedAt: string; ports: number } | null;
   announcements: Announcement[];
+  /** Campaign links and how many accounts and browsers each one brought. */
+  campaigns: Campaign[];
   /** Browsers that opened the sign-in screen, or null when the table could not be read. */
   arrivals: Arrivals | null;
   /** Display name for every crossing in the feed, by port number. */
@@ -211,7 +215,12 @@ async function readDashboard(): Promise<AdminData> {
     return null;
   });
 
-  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals] =
+  const campaignsQuery = listCampaigns().catch((error: unknown) => {
+    mark(error, true);
+    return [];
+  });
+
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, campaigns] =
     await Promise.all([
     factsQuery,
     accountsQuery.then(
@@ -265,6 +274,7 @@ async function readDashboard(): Promise<AdminData> {
     usageQuery,
     announcementsQuery,
     arrivalsQuery,
+    campaignsQuery,
   ]);
 
   const out = new Set(facts.profiles.filter((row) => isExcludedFromAnalytics(row.email)).map((row) => row.id));
@@ -326,6 +336,7 @@ async function readDashboard(): Promise<AdminData> {
     feedGroups: feedGroupsFrom(feeds),
     feed: feed ? { fetchedAt: feed.fetchedAt, ports: feed.ports.length } : null,
     announcements,
+    campaigns,
     arrivals,
     portLabels,
     problem,
@@ -441,12 +452,13 @@ async function readFacts(mark: (error: unknown, quietWhenMissing: boolean) => vo
       referral: string | null;
       referral_pending: unknown;
       referred_by: string | null;
+      campaign: string | null;
       latitude: unknown;
       longitude: unknown;
     }>(
       sql`
         select id, name, email, created_at, updated_at, referral, referral_pending, referred_by,
-               latitude, longitude
+               campaign, latitude, longitude
         from profile
         order by created_at desc
         limit ${ACCOUNT_LIMIT}
@@ -490,6 +502,7 @@ async function readFacts(mark: (error: unknown, quietWhenMissing: boolean) => vo
           referral: row.referral,
           referralPending: row.referral_pending === true || row.referral_pending === "t",
           referredBy: row.referred_by,
+          campaign: typeof row.campaign === "string" ? row.campaign : null,
           location: geoPointFrom(row.latitude, row.longitude),
         },
       ];

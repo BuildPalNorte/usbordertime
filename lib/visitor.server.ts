@@ -19,6 +19,12 @@ export function ensureVisitorTable(): Promise<void> {
           user_id text references profile (id) on delete cascade
         )
       `;
+      await sql`alter table visitor add column if not exists campaign text`;
+      await sql`
+        create index if not exists visitor_campaign_idx
+        on visitor (campaign)
+        where campaign is not null
+      `;
     })().catch((error: unknown) => {
       ensuring = null;
       throw error;
@@ -29,15 +35,17 @@ export function ensureVisitorTable(): Promise<void> {
 
 /**
  * Notes one more sign-in screen from this browser. Returns the id to keep in the cookie: the one
- * it already had, or a new one.
+ * it already had, or a new one. A campaign code sticks on the first visit that had one.
  */
-export async function recordVisitor(existing: string | null): Promise<string> {
+export async function recordVisitor(existing: string | null, campaign: string | null): Promise<string> {
   await ensureVisitorTable();
   const sql = database();
   const id = isVisitorId(existing) ? existing : randomUUID();
   await sql`
-    insert into visitor (id) values (${id})
-    on conflict (id) do update set last_seen = now()
+    insert into visitor (id, campaign) values (${id}, ${campaign})
+    on conflict (id) do update
+    set last_seen = now(),
+        campaign = coalesce(visitor.campaign, excluded.campaign)
   `;
   return id;
 }

@@ -13,6 +13,8 @@ export type RawProfile = {
   referral: string | null;
   referralPending: boolean;
   referredBy: string | null;
+  /** Campaign code they signed up from, or null. */
+  campaign: string | null;
   /** Latitude and longitude they shared, or null when they picked bridges by hand. */
   location: GeoPoint | null;
 };
@@ -53,6 +55,8 @@ export type Connected = {
   sourceState: "answered" | "choosing" | "unknown";
   invitedBy: { id: string; name: string } | null;
   invited: { id: string; name: string; activated: boolean }[];
+  /** Campaign code they signed up from, or null. */
+  campaign: string | null;
   locale: string | null;
   /** Latitude and longitude they shared, or null when they picked bridges by hand. */
   location: GeoPoint | null;
@@ -250,6 +254,7 @@ export function buildInsights(raw: RawFacts, now: Date = new Date(), growthDays 
       lastActive: maxIso(usage?.lastActive ?? null, streak?.lastDay ? `${streak.lastDay}T12:00:00.000Z` : null),
       source,
       sourceState: source ? "answered" : profile.referralPending ? "choosing" : "unknown",
+      campaign: profile.campaign,
       invitedBy: inviter ? { id: inviter.id, name: inviter.name.trim() || inviter.email } : null,
       invited: (children.get(profile.id) ?? []).map((id) => {
         const child = byId.get(id)!;

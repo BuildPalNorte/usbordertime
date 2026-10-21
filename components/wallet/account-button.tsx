@@ -5,6 +5,7 @@ import { ArrowDownTrayIcon } from "@heroicons-animated/react/arrow-down-tray";
 import { authClient } from "@/lib/auth/client";
 import { haptic } from "@/lib/haptics";
 import { installStore } from "@/lib/install-store";
+import { rememberCampaign } from "@/lib/campaign";
 import { rememberInvite } from "@/lib/invite";
 import { nextMilestone, streakLevel } from "@/lib/streak";
 import { signOutAndReload } from "@/lib/sign-out";
@@ -111,6 +112,7 @@ export function AccountButton({ className }: { className?: string }) {
     setBusy(true);
     setFailed(false);
     rememberInvite(window.location.search);
+    rememberCampaign(window.location.search);
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: currentCallbackURL(),
