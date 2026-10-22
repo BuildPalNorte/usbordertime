@@ -419,7 +419,7 @@ function SignInCard({
           {copy.signInWithGoogle}
         </span>
       </button>
-      <p aria-hidden className={cn("mt-3 text-[14px] leading-none font-medium text-muted", notice && "max-lg:hidden")}>
+      <p aria-hidden className={cn("mt-3 text-[14px] leading-none font-medium text-muted", notice ? "max-lg:hidden" : false)}>
         {copy.signInSwipe}
       </p>
     </motion.div>
