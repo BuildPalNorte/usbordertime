@@ -3,7 +3,8 @@
  * Client-safe: it only reads a user-agent string.
  *
  * Those views keep their own cookies, cannot be added to the Home Screen, and cannot receive web
- * push, and Google may refuse sign-in there. The sign-in screen asks the rider to leave first.
+ * push. Google sign-in stays available. The sign-in screen suggests opening the page in the
+ * phone's browser, where alerts and the Home Screen app work.
  */
 
 export type InAppApp = "facebook" | "instagram" | "tiktok";

@@ -17,6 +17,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react";
 import { HapticPad } from "./haptic-pad";
 import { InAppNotice, useInAppBrowser } from "./in-app-notice";
@@ -121,8 +122,7 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
 
       <main
         className={cn(
-          "mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6",
-          !inApp && "max-lg:pb-[calc(var(--sign-card-h)+0.5rem)]",
+          "mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6 max-lg:pb-[calc(var(--sign-card-h)+0.5rem)]",
         )}>
         <div
           aria-hidden
@@ -186,27 +186,26 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
           <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.04em] text-balance">
             {copy.signInHeadline}
           </h1>
+          <p className="mx-auto mt-3 max-w-[30ch] text-[15px] leading-relaxed text-muted">{copy.signInBody}</p>
           {inApp ? (
-            <InAppNotice browser={inApp} />
-          ) : (
-            <>
-              <p className="mx-auto mt-3 max-w-[30ch] text-[15px] leading-relaxed text-muted">{copy.signInBody}</p>
+            <div className="max-lg:hidden">
+              <InAppNotice browser={inApp} titleId="in-app-title-wide" className="mt-5" />
+            </div>
+          ) : null}
 
-              <motion.button
-                type="button"
-                onClick={() => void signIn()}
-                disabled={busy}
-                aria-busy={busy}
-                whileTap={reduce || busy ? undefined : { scale: 0.97 }}
-                transition={SPRING.snap}
-                className="relative mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-full bg-surface px-6 text-[16px] font-semibold text-foreground disabled:opacity-70 max-lg:hidden"
-              >
-                <HapticPad />
-                <GoogleMark />
-                {copy.signInWithGoogle}
-              </motion.button>
-            </>
-          )}
+          <motion.button
+            type="button"
+            onClick={() => void signIn()}
+            disabled={busy}
+            aria-busy={busy}
+            whileTap={reduce || busy ? undefined : { scale: 0.97 }}
+            transition={SPRING.snap}
+            className="relative mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-full bg-surface px-6 text-[16px] font-semibold text-foreground disabled:opacity-70 max-lg:hidden"
+          >
+            <HapticPad />
+            <GoogleMark />
+            {copy.signInWithGoogle}
+          </motion.button>
 
           <p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] font-medium text-muted">
             <Link href={GUIDE_INDEX_PATH[locale]}>{copy.guidesLink}</Link>
@@ -222,7 +221,12 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
         </div>
       </main>
 
-      {!inApp && <SignInCard swipe={swipe} busy={busy} onTap={() => void signIn()} />}
+      <SignInCard
+        swipe={swipe}
+        busy={busy}
+        onTap={() => void signIn()}
+        notice={inApp ? <InAppNotice browser={inApp} className="mb-3" /> : null}
+      />
       <SignInHandoff busy={busy} reduce={!!reduce} />
     </div>
   );
@@ -380,10 +384,12 @@ function SignInCard({
   swipe,
   busy,
   onTap,
+  notice,
 }: {
   swipe: ReturnType<typeof usePageSwipe>;
   busy: boolean;
   onTap: () => void;
+  notice?: ReactNode;
 }) {
   const { copy } = useLocale();
   return (
@@ -395,6 +401,7 @@ function SignInCard({
       className={cn("sign-in-card", swipe.held && "is-held")}
     >
       <span aria-hidden className="sign-in-card-light" />
+      {notice}
       <span aria-hidden className="sign-in-chevrons">
         <ChevronUp />
         <ChevronUp />
@@ -412,7 +419,7 @@ function SignInCard({
           {copy.signInWithGoogle}
         </span>
       </button>
-      <p aria-hidden className="mt-3 text-[14px] leading-none font-medium text-muted">
+      <p aria-hidden className={cn("mt-3 text-[14px] leading-none font-medium text-muted", notice && "max-lg:hidden")}>
         {copy.signInSwipe}
       </p>
     </motion.div>

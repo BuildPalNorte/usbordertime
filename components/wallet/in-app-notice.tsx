@@ -9,6 +9,7 @@ import {
   type InAppBrowser,
 } from "@/lib/in-app-browser";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { cn } from "@/lib/cn";
 import { HapticPad } from "./haptic-pad";
 
 let cached: InAppBrowser | null | undefined;
@@ -26,11 +27,19 @@ export function useInAppBrowser(): InAppBrowser | null {
 }
 
 /**
- * Shown in place of the Google button inside Facebook, Instagram, and TikTok's own browser.
- * Android gets a button that hands this exact address to the phone's browser. An iPhone has no
- * way for a page to leave an app's browser, so it gets the one gesture that does.
+ * A suggestion beside Google sign-in inside Facebook, Instagram, and TikTok's own browser.
+ * Android gets a link that hands this exact address to the phone's browser. An iPhone has no
+ * way for a page to leave an app's browser, so the suggestion names the one gesture that does.
  */
-export function InAppNotice({ browser }: { browser: InAppBrowser }) {
+export function InAppNotice({
+  browser,
+  titleId = "in-app-title",
+  className,
+}: {
+  browser: InAppBrowser;
+  titleId?: string;
+  className?: string;
+}) {
   const { copy } = useLocale();
   const [copied, setCopied] = useState(false);
   const timer = useRef(0);
@@ -51,48 +60,34 @@ export function InAppNotice({ browser }: { browser: InAppBrowser }) {
   };
 
   return (
-    <section
-      aria-labelledby="in-app-title"
-      className="mt-6 w-full max-w-sm rounded-3xl bg-surface p-5 text-left"
-    >
-      <h2 id="in-app-title" className="text-[17px] leading-tight font-semibold tracking-[-0.02em]">
+    <section aria-labelledby={titleId} className={cn("w-full max-w-[32ch] text-center", className)}>
+      <h2 id={titleId} className="text-[15px] leading-snug font-semibold tracking-[-0.02em]">
         {copy.inAppTitle(IN_APP_LABEL[browser.app])}
       </h2>
-      <p className="mt-2 text-[14px] leading-snug text-muted">{copy.inAppBody}</p>
-
-      {intent ? (
-        <a
-          href={intent}
-          onClick={() => haptic("selection")}
-          className="relative mt-4 flex h-12 w-full items-center justify-center rounded-full bg-accent text-[16px] font-semibold text-accent-ink active:opacity-80"
+      <p className="mt-1.5 text-[13px] leading-snug text-muted">{copy.inAppBody}</p>
+      {browser.platform === "ios" ? (
+        <p className="mt-1.5 text-[13px] leading-snug text-muted">{copy.inAppHintIos}</p>
+      ) : null}
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4">
+        {intent ? (
+          <a
+            href={intent}
+            onClick={() => haptic("selection")}
+            className="relative inline-flex h-8 items-center text-[15px] font-semibold text-accent active:opacity-60"
+          >
+            <HapticPad />
+            {copy.inAppOpen}
+          </a>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => void copyLink()}
+          className="relative inline-flex h-8 items-center text-[14px] font-medium text-muted active:opacity-60"
         >
           <HapticPad />
-          {copy.inAppOpen}
-        </a>
-      ) : (
-        <ol className="mt-4 space-y-3">
-          {copy.inAppStepsIos.map((step, index) => (
-            <li key={step} className="flex items-start gap-3">
-              <span
-                aria-hidden
-                className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-semibold text-accent-ink"
-              >
-                {index + 1}
-              </span>
-              <span className="text-[15px] leading-snug">{step}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-
-      <button
-        type="button"
-        onClick={() => void copyLink()}
-        className="relative mt-3 h-10 w-full rounded-full text-[14px] font-medium text-muted active:opacity-60"
-      >
-        <HapticPad />
-        <span role="status">{copied ? copy.inAppCopied : copy.inAppCopy}</span>
-      </button>
+          <span role="status">{copied ? copy.inAppCopied : copy.inAppCopy}</span>
+        </button>
+      </div>
     </section>
   );
 }
