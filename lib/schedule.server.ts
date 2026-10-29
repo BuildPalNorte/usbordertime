@@ -196,7 +196,7 @@ export async function claimSend(id: string, date: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-/** Nobody could be reached. Let the next minute inside the window try again. */
+/** Nobody could be reached. Let the next cron run inside the window try again. */
 export async function releaseSend(id: string): Promise<void> {
   const sql = database();
   await sql`update schedule set last_sent_on = null, updated_at = now() where id = ${id}`;

@@ -20,7 +20,7 @@ export type AlertCheck = { checked: number; notified: number };
 
 /**
  * Compares every alert with the cached CBP snapshot and sends one notification each time a lane
- * crosses from at-or-above its threshold to under it. Called once a minute by the cron route.
+ * crosses from at-or-above its threshold to under it. Called every 15 minutes by the cron route.
  *
  * `below` is the memory. It flips true when the notification goes out and back to false only after
  * the wait climbs `REARM_SLACK` past the threshold, or the lane closes.
@@ -60,7 +60,7 @@ export async function runAlertCheck(): Promise<AlertCheck> {
       // Of two overlapping runs, only one wins the claim.
       if (!(await claimBelow(alert))) return false;
       const delivered = await notify(alert, port, minutes, await devicesFor(alert.userId));
-      // Nobody could be reached. Try again next minute instead of losing the drop.
+      // Nobody could be reached. Try again on the next run instead of losing the drop.
       if (!delivered) await setBelow(alert, false);
       return delivered;
     }

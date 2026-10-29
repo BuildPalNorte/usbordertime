@@ -528,7 +528,7 @@ export const COPY: Record<Locale, Copy> = {
     termsOfUse: "Terms of use",
     admin: "Admin",
     privacyTitle: "Privacy policy",
-    privacyUpdated: "Updated October 21, 2026",
+    privacyUpdated: "Updated October 29, 2026",
     privacyLead:
       "Border Time shows live wait times at U.S. land ports. This page is what we keep.",
     privacySections: [
@@ -550,7 +550,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Wait alerts",
-        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about once a minute and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make an alarm, we also save its time, days, time zone, lane, bridges, and any name you gave it with your account, and send one notification with the current waits at that time. If you named it, that name is the notification's title. Deleting an alarm deletes it. Signing out removes this device's push address.",
+        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about every 15 minutes and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make an alarm, we also save its time, days, time zone, lane, bridges, and any name you gave it with your account, and send one notification with the current waits around that time. If you named it, that name is the notification's title. Deleting an alarm deletes it. Signing out removes this device's push address.",
       },
       {
         heading: "Visit streak",
@@ -1049,7 +1049,7 @@ export const COPY: Record<Locale, Copy> = {
     termsOfUse: "Términos de uso",
     admin: "Admin",
     privacyTitle: "Política de privacidad",
-    privacyUpdated: "Actualizada el 21 de octubre de 2026",
+    privacyUpdated: "Actualizada el 29 de octubre de 2026",
     privacyLead:
       "Border Time muestra los tiempos de espera en vivo de los puertos terrestres de Estados Unidos. Esta página dice qué guardamos.",
     privacySections: [
@@ -1071,7 +1071,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Alertas de espera",
-        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada minuto y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas una alarma, también guardamos con tu cuenta su hora, días, zona horaria, carril, puentes y el nombre que le hayas puesto, y enviamos una notificación con las esperas actuales a esa hora. Si le pusiste nombre, ese nombre es el título de la notificación. Al eliminar una alarma, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
+        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada 15 minutos y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas una alarma, también guardamos con tu cuenta su hora, días, zona horaria, carril, puentes y el nombre que le hayas puesto, y enviamos una notificación con las esperas actuales alrededor de esa hora. Si le pusiste nombre, ese nombre es el título de la notificación. Al eliminar una alarma, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
       },
       {
         heading: "Racha de visitas",

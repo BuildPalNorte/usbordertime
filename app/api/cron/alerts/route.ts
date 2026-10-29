@@ -14,8 +14,9 @@ function authorized(request: Request): boolean {
 }
 
 /**
- * Once a minute: compare every wait alert with the cached CBP snapshot and send what is due,
- * then send the scheduled summaries whose time has come. One failing does not stop the other.
+ * Every 15 minutes: compare every wait alert with the cached CBP snapshot and send what is due,
+ * and send the scheduled summaries whose time has come. One failing does not stop the other.
+ * The gap is longer than Neon's 5-minute scale-to-zero, so the database can suspend between runs.
  */
 export async function GET(request: Request) {
   if (!authorized(request)) {

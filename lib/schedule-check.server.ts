@@ -18,8 +18,8 @@ const BATCH = 10;
 export type ScheduleCheck = { checked: number; sent: number };
 
 /**
- * Sends the scheduled summaries that are due. Called once a minute by the cron route, after the
- * wait alerts. A schedule is due for a few minutes after its time, and only once per local day.
+ * Sends the scheduled summaries that are due. Called every 15 minutes by the cron route, with the
+ * wait alerts. A schedule stays due through `SEND_WINDOW`, and only once per local day.
  */
 export async function runScheduleCheck(): Promise<ScheduleCheck> {
   const schedules = await listRunningSchedules();
@@ -40,7 +40,7 @@ export async function runScheduleCheck(): Promise<ScheduleCheck> {
     if (ports.length === 0) return false;
 
     const delivered = await deliver(schedule, ports, today);
-    // Nobody could be reached. Try again next minute instead of losing the morning.
+    // Nobody could be reached. Try again on the next run instead of losing the morning.
     if (!delivered) await releaseSend(schedule.id);
     return delivered;
   };

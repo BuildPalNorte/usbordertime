@@ -30,10 +30,13 @@ export const MAX_SCHEDULE_NAME = 40;
 /** The time step offers minutes in steps this size, and a saved schedule has to land on one. */
 export const SCHEDULE_STEP = 5;
 /**
- * A schedule can still send this long after its time, in case a cron run was late.
- * Past that, the day is skipped instead of sending a stale morning report at noon.
+ * A schedule can still send this long after its time.
+ * The alerts cron in `vercel.json` runs every 15 minutes. Neon suspends a free-plan
+ * compute after 5 idle minutes, so a shorter cron keeps the database awake all month.
+ * This window covers two of those ticks: the one that first reaches the time, and the
+ * next one if that push reached no device. Past this, the day is skipped.
  */
-export const SEND_WINDOW = 5;
+export const SEND_WINDOW = 30;
 
 export const ALL_DAYS: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
 export const WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5];

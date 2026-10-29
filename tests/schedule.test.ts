@@ -24,13 +24,15 @@ describe("isDue", () => {
   const monday = (time: string) => new Date(`2026-03-02T${time}:00Z`); // Chicago is UTC-6 here
 
   it("is due inside the send window", () => {
-    expect(isDue(schedule, null, monday("13:00"))).toBe(true);
-    expect(isDue(schedule, null, monday(`13:0${SEND_WINDOW - 1}`))).toBe(true);
+    const start = monday("13:00");
+    expect(isDue(schedule, null, start)).toBe(true);
+    expect(isDue(schedule, null, new Date(start.getTime() + (SEND_WINDOW - 1) * 60_000))).toBe(true);
   });
 
   it("is not due before the time or after the window", () => {
+    const start = monday("13:00");
     expect(isDue(schedule, null, monday("12:59"))).toBe(false);
-    expect(isDue(schedule, null, monday(`13:0${SEND_WINDOW}`))).toBe(false);
+    expect(isDue(schedule, null, new Date(start.getTime() + SEND_WINDOW * 60_000))).toBe(false);
   });
 
   it("is not due twice in one local day", () => {
