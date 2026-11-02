@@ -102,7 +102,7 @@ function TrendChart({ points }: { points: readonly TrendPoint[] }) {
   const drag = useRef<{ x: number; y: number; locked: boolean; pointer: number } | null>(null);
 
   const unit = useMemo(
-    () => new Intl.NumberFormat(tag, { minimumFractionDigits: 2, maximumFractionDigits: 4 }),
+    () => new Intl.NumberFormat(tag, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     [tag],
   );
   const percentFormat = useMemo(
