@@ -2,6 +2,7 @@
 
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
+import { trackExchange } from "@/lib/exchange-use";
 import { haptic } from "@/lib/haptics";
 import type { Copy } from "@/lib/i18n";
 import {
@@ -27,6 +28,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import {
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -233,6 +235,21 @@ export function ExchangePane({ ownsHeader }: Props) {
   // A rate that never loaded is a dash, not a zero someone could read as a result.
   const resultText = result !== null ? money.format(result) : rate ? money.format(0) : "-";
   const when = rate ? quoteWhen(rate, tag, copy) : null;
+
+  // Count what they settle on, not every key: the amount must sit still for a moment. The
+  // untouched starting amount and a repeat of the last one are not counted.
+  const lastTracked = useRef(`USD:${START_AMOUNT}`);
+  const rateMxn = rate?.mxn ?? null;
+  useEffect(() => {
+    if (!ownsHeader || value === null || value <= 0 || rateMxn === null) return;
+    const key = `${from}:${amount}`;
+    if (key === lastTracked.current) return;
+    const timer = setTimeout(() => {
+      lastTracked.current = key;
+      trackExchange(from, value, from === "USD" ? value : value / rateMxn);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [ownsHeader, from, amount, value, rateMxn]);
 
   function swap() {
     haptic("selection");

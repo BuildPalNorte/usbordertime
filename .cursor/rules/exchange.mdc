@@ -19,3 +19,7 @@ The free feed is 15 minutes late. After the chart, one line follows Google's quo
 The "Rates by Exchangerate.dev" credit linking to https://exchangerate.dev must stay visible. It is required on the free plan. Do not redistribute the rates.
 
 `/exchange` is also a public address. Its title, description, and the signed-out explanation name the converter, when the rate was updated, and the chart. They never include a rate. The number stays in the browser.
+
+## Usage analytics
+
+When a signed-in rider's amount sits still for 2 seconds (and is not the untouched starting `1` USD or a repeat), `ExchangePane` calls `trackExchange` (`lib/exchange-use.ts`), which posts `{ from, amount, usd }` to `POST /api/exchange-use`. The route needs a session, validates the values, skips `ANALYTICS_EXCLUDED_EMAILS`, and inserts a row in `exchange_use` (`lib/exchange-use.server.ts`, created on first use, cascades from `profile`). The admin Crossings tab's Exchange section reads one SQL summary (`readExchangeSummary`): people, conversions, last 7 days, median and largest amount in dollars, and which currency they started from. The rate stays in the browser; only the amount is sent.
