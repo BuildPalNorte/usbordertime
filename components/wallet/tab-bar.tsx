@@ -3,6 +3,7 @@
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/cn";
 import { notePadTick } from "@/lib/haptics";
+import { BanknotesIcon, type BanknotesIconHandle } from "@heroicons-animated/react/banknotes";
 import { ClockIcon, type ClockIconHandle } from "@heroicons-animated/react/clock";
 import { WalletIcon, type WalletIconHandle } from "@heroicons-animated/react/wallet";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -14,7 +15,7 @@ import {
   type QuestionMarkCircleIconHandle,
 } from "./question-mark-circle-icon";
 
-export type Tab = "wallet" | "browse" | "schedules" | "ask";
+export type Tab = "wallet" | "browse" | "schedules" | "exchange" | "ask";
 
 type Props = {
   tab: Tab;
@@ -30,11 +31,20 @@ export function TabBar({ tab, onChange }: Props) {
   const reduce = useReducedMotion();
   const wallet = useRef<WalletIconHandle>(null);
   const clock = useRef<ClockIconHandle>(null);
+  const banknotes = useRef<BanknotesIconHandle>(null);
   const question = useRef<QuestionMarkCircleIconHandle>(null);
 
   function select(next: Tab) {
     if (!reduce && next !== tab) {
-      (next === "wallet" ? wallet : next === "schedules" ? clock : question).current?.startAnimation();
+      const icon =
+        next === "wallet"
+          ? wallet
+          : next === "schedules"
+            ? clock
+            : next === "exchange"
+              ? banknotes
+              : question;
+      icon.current?.startAnimation();
     }
     onChange(next);
   }
@@ -57,6 +67,14 @@ export function TabBar({ tab, onChange }: Props) {
           data-tour="tab-schedules"
         >
           <ClockIcon ref={clock} size={22} aria-hidden />
+        </TabButton>
+        <TabButton
+          active={tab === "exchange"}
+          label={copy.exchange}
+          onClick={() => select("exchange")}
+          data-tour="tab-exchange"
+        >
+          <BanknotesIcon ref={banknotes} size={22} aria-hidden />
         </TabButton>
         <TabButton
           active={tab === "ask"}
@@ -141,7 +159,7 @@ function TabButton({
       transition={SPRING.snap}
       className={cn(
         "relative z-[1] flex h-12 cursor-pointer touch-manipulation items-center justify-center rounded-full text-[15px] font-semibold whitespace-nowrap",
-        active ? "px-5 text-foreground" : "px-[18px] text-muted",
+        active ? "px-[18px] text-foreground" : "px-[15px] text-muted",
       )}
     >
       {!active && <HapticPad />}

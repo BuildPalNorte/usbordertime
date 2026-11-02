@@ -13,10 +13,12 @@ import {
   ADMIN_PATH,
   ASK_PATH,
   currentCallbackURL,
+  EXCHANGE_PATH,
   EXPLORE_PATH,
   SCHEDULES_PATH,
 } from "@/lib/routes";
 import { QuestionMarkCircleIcon } from "@/components/wallet/question-mark-circle-icon";
+import { BanknotesIcon } from "@heroicons-animated/react/banknotes";
 import { ClockIcon } from "@heroicons-animated/react/clock";
 import { MapIcon } from "@heroicons-animated/react/map";
 import { tourSignal } from "@/lib/tour-signal";
@@ -72,6 +74,7 @@ export function AccountButton({ className }: { className?: string }) {
   const pathname = usePathname();
   const onSchedules = pathname === SCHEDULES_PATH;
   const onAsk = pathname === ASK_PATH;
+  const onExchange = pathname === EXCHANGE_PATH;
   const admin = useAdminAccess();
 
   useEffect(() => {
@@ -287,6 +290,26 @@ export function AccountButton({ className }: { className?: string }) {
                     <ClockIcon size={20} aria-hidden className="shrink-0" />
                   )}
                   {onSchedules ? copy.browse : copy.schedules}
+                </Link>
+                <Link
+                  href={onExchange ? EXPLORE_PATH : EXCHANGE_PATH}
+                  role="menuitem"
+                  onClick={() => {
+                    haptic("selection");
+                    setOpen(false);
+                  }}
+                  className="hidden h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium lg:flex"
+                >
+                  {onExchange ? (
+                    <MapIcon
+                      size={20}
+                      aria-hidden
+                      className="shrink-0 [perspective:48px]"
+                    />
+                  ) : (
+                    <BanknotesIcon size={20} aria-hidden className="shrink-0" />
+                  )}
+                  {onExchange ? copy.browse : copy.exchange}
                 </Link>
                 <Link
                   href={onAsk ? EXPLORE_PATH : ASK_PATH}

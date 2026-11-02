@@ -197,6 +197,18 @@ body {
   box-shadow: none;
 }
 
+/* The row around the amount tints while it has focus, so the field draws no ring of its own. */
+input[inputmode="decimal"] {
+  border: 0;
+}
+
+input[inputmode="decimal"]:focus,
+input[inputmode="decimal"]:focus-visible {
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
 }
