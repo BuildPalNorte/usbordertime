@@ -10,6 +10,12 @@ export const metadata: Metadata = {
 };
 
 export default async function CameraLabPage() {
+  // `getCameraFeeds` is cached, so a throw during prerender fails the build even when caught.
+  // A deploy without DATABASE_URL keeps the addresses from code.
+  if (!process.env.DATABASE_URL) {
+    return <CameraLab addresses={fallbackFeedAddresses()} />;
+  }
+
   let addresses: Record<string, string>;
   try {
     addresses = await getCameraFeeds();
