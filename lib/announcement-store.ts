@@ -12,7 +12,23 @@ import type { Announcement } from "@/lib/announcement";
 
 const STORAGE_KEY = "usbordertime.announcement.seen.v1";
 
+const seenListeners = new Set<() => void>();
+/** Set on dismiss so a failed write still hides the broadcast for this visit. */
+let remembered: string | null | undefined;
+
+function emitSeen(): void {
+  seenListeners.forEach((listener) => listener());
+}
+
+export function subscribeSeenAnnouncement(listener: () => void): () => void {
+  seenListeners.add(listener);
+  return () => {
+    seenListeners.delete(listener);
+  };
+}
+
 export function lastSeenAnnouncementId(): string | null {
+  if (remembered !== undefined) return remembered;
   try {
     return window.localStorage.getItem(STORAGE_KEY);
   } catch {
@@ -21,11 +37,13 @@ export function lastSeenAnnouncementId(): string | null {
 }
 
 export function markAnnouncementSeen(id: string): void {
+  remembered = id;
   try {
     window.localStorage.setItem(STORAGE_KEY, id);
   } catch {
     // Private mode or full storage: it just shows again next visit.
   }
+  emitSeen();
 }
 
 let preview: Announcement | null = null;

@@ -7,10 +7,11 @@ import {
   announcementPreview,
   lastSeenAnnouncementId,
   markAnnouncementSeen,
+  subscribeSeenAnnouncement,
 } from "@/lib/announcement-store";
 import { XMarkIcon } from "@heroicons-animated/react/x-mark";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 
@@ -33,11 +34,11 @@ export function useShownAnnouncement(announcement: Announcement | null, hydrated
     announcementPreview.getSnapshot,
     announcementPreview.getServerSnapshot,
   );
-  const [seenId, setSeenId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!hydrated) return;
-    setSeenId(lastSeenAnnouncementId());
-  }, [hydrated]);
+  const seenId = useSyncExternalStore(
+    subscribeSeenAnnouncement,
+    lastSeenAnnouncementId,
+    () => null,
+  );
 
   const current = preview ?? announcement;
   const visible = hydrated && current !== null && (preview !== null || current.id !== seenId);
@@ -49,7 +50,6 @@ export function useShownAnnouncement(announcement: Announcement | null, hydrated
     }
     if (!announcement) return;
     markAnnouncementSeen(announcement.id);
-    setSeenId(announcement.id);
   };
 
   return { shown: visible ? current : null, dismiss };
