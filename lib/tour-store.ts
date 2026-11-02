@@ -1,13 +1,17 @@
 /**
- * Whether this browser has finished (or skipped) the welcome tour. One flag, not per-step:
- * finishing or skipping both count as seen, and either stops the tour from starting again
- * on its own. `components/wallet/tour.tsx` is the player; this is only the "seen it" flag.
+ * Whether this browser has finished (or skipped) the welcome tour, and whether that tour is
+ * on screen right now. One seen flag, not per-step: finishing or skipping both count, and
+ * either stops the tour from starting again on its own. `playing` is memory only — it covers
+ * the overlay and its exit, including a replay — so the announcement can wait until the tour
+ * is actually gone. `components/wallet/tour.tsx` is the player.
  */
 
 const STORAGE_KEY = "usbordertime.tour.v1";
 
 let seen = false;
 let loaded = false;
+/** True from the moment a run is requested until the overlay has finished leaving. */
+let playing = false;
 const listeners = new Set<() => void>();
 
 function load() {
@@ -65,6 +69,14 @@ export const tourStore = {
     } catch {
       // Nothing to clean up if storage never held it.
     }
+    emit();
+  },
+  isPlaying(): boolean {
+    return playing;
+  },
+  setPlaying(next: boolean) {
+    if (playing === next) return;
+    playing = next;
     emit();
   },
 };

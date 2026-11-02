@@ -9,6 +9,7 @@ import {
   markAnnouncementSeen,
   subscribeSeenAnnouncement,
 } from "@/lib/announcement-store";
+import { tourStore } from "@/lib/tour-store";
 import { XMarkIcon } from "@heroicons-animated/react/x-mark";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
@@ -25,8 +26,11 @@ function pointsOf(body: string): string[] | null {
 }
 
 /**
- * The broadcast on screen, if this device has not dismissed it. A development preview stands in
- * for a real row and is forgotten on dismiss, without marking a real broadcast seen.
+ * The broadcast on screen, if this device has not dismissed it and the welcome tour is out of
+ * the way. A first visit has not seen the tour, so the broadcast stays hidden until that run
+ * finishes or is skipped. A replay hides it again until the overlay has left. A development
+ * preview stands in for a real row and is forgotten on dismiss, without marking a real
+ * broadcast seen. It waits on the tour the same way.
  */
 export function useShownAnnouncement(announcement: Announcement | null, hydrated: boolean) {
   const preview = useSyncExternalStore(
@@ -39,9 +43,12 @@ export function useShownAnnouncement(announcement: Announcement | null, hydrated
     lastSeenAnnouncementId,
     () => null,
   );
+  const tourSeen = useSyncExternalStore(tourStore.subscribe, tourStore.getSnapshot, tourStore.getServerSnapshot);
+  const tourPlaying = useSyncExternalStore(tourStore.subscribe, tourStore.isPlaying, () => false);
 
   const current = preview ?? announcement;
-  const visible = hydrated && current !== null && (preview !== null || current.id !== seenId);
+  const tourClear = tourSeen && !tourPlaying;
+  const visible = hydrated && tourClear && current !== null && (preview !== null || current.id !== seenId);
 
   const dismiss = () => {
     if (preview) {

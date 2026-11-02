@@ -79,7 +79,8 @@ export async function listAnnouncements(): Promise<Announcement[]> {
 /**
  * The single most recent broadcast, for the in-app banner or modal every signed-in rider sees on
  * their next open - not only the devices that had push permission on when it went out.
- * `AnnouncementNotice` decides whether this one has already been dismissed on this device.
+ * `AnnouncementNotice` waits until the welcome tour on this browser is finished and off
+ * screen, then decides whether this one has already been dismissed on this device.
  */
 export async function latestAnnouncement(): Promise<Announcement | null> {
   await ensureTable();

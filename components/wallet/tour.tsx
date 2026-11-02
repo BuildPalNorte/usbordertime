@@ -171,6 +171,7 @@ export function Tour({
   const [cardSize, setCardSize] = useState({ width: CARD_WIDTH, height: 180 });
   const cardRef = useRef<HTMLDivElement>(null);
   const autoStarted = useRef(false);
+  const activeRef = useRef(false);
   const dialogId = useId();
 
   const requestId = useSyncExternalStore(
@@ -182,6 +183,8 @@ export function Tour({
 
   const begin = useCallback(() => {
     haptic("light");
+    // Hide the announcement for the whole run, including the frames before the overlay paints.
+    tourStore.setPlaying(true);
     onGoHome();
     // Two frames: one for the route to settle, one for the layout it changes to paint,
     // so the first measurement already matches the clean wallet view.
@@ -206,6 +209,22 @@ export function Tour({
       });
     });
   }, [onGoHome, savedCount]);
+
+  activeRef.current = active;
+
+  // A real unmount (sign-out mid-run) drops `playing`. Strict mode's fake unmount remounts
+  // before the microtask, so a run that is still going is left alone. A normal finish
+  // clears `playing` from the overlay's own exit instead.
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      queueMicrotask(() => {
+        if (!mounted.current) tourStore.setPlaying(false);
+      });
+    };
+  }, []);
 
   // A new sign-in, on a plain wallet view, that has never seen the tour.
   useEffect(() => {
@@ -412,6 +431,10 @@ export function Tour({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
+          onExitComplete={() => {
+            // A replay can ask to start again before this overlay finishes leaving.
+            if (!activeRef.current) tourStore.setPlaying(false);
+          }}
         >
           {spotlight ? (
             interactive ? (
