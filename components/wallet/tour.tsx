@@ -421,7 +421,12 @@ export function Tour({
   const vh = typeof window !== "undefined" ? window.innerHeight : 0;
 
   return (
-    <AnimatePresence>
+    <AnimatePresence
+      onExitComplete={() => {
+        // A replay can ask to start again before this overlay finishes leaving.
+        if (!activeRef.current) tourStore.setPlaying(false);
+      }}
+    >
       {active && (
         <motion.div
           className="fixed inset-0 z-[70]"
@@ -431,10 +436,6 @@ export function Tour({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          onExitComplete={() => {
-            // A replay can ask to start again before this overlay finishes leaving.
-            if (!activeRef.current) tourStore.setPlaying(false);
-          }}
         >
           {spotlight ? (
             interactive ? (
