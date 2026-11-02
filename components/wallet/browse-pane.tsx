@@ -598,7 +598,7 @@ function CrossingRow({
             <div className="grid grid-cols-2 gap-2">
               {lanes.map((id) => {
                 const lane = readLane(port, id);
-                const average = shownAverage(
+                const usual = shownAverage(
                   averages.data,
                   id,
                   port.time,
@@ -633,8 +633,8 @@ function CrossingRow({
                       )}
                     </span>
                     <AverageWait
-                      minutes={average}
-                      className="mt-1 block text-[11px] leading-none font-medium text-muted tabular-nums"
+                      wait={usual}
+                      className="mt-1 block text-[11px] leading-tight font-medium text-muted tabular-nums"
                     />
                     <span className="mt-1 block truncate text-[11px] leading-none text-muted">
                       {lanesLabel(lane, copy)}

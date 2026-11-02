@@ -1,6 +1,6 @@
 "use client";
 
-import { averageForHour, hourFromClock, type LaneAverages } from "@/lib/lane-averages";
+import { hourFromClock, usualForHour, type LaneAverages, type UsualWait } from "@/lib/lane-averages";
 import type { Mode } from "@/lib/ports";
 import { useQuery } from "@tanstack/react-query";
 
@@ -19,12 +19,13 @@ export function useLaneAverages(portNumber: string | null) {
   });
 }
 
+/** Usual wait for the lane on screen, plus the high for that same hour. */
 export function shownAverage(
   data: LaneAverages | undefined,
   mode: Mode,
   time: string,
   available: boolean,
-): number | null {
+): UsualWait | null {
   if (!available) return null;
-  return averageForHour(data?.hours[mode], hourFromClock(time));
+  return usualForHour(data?.hours[mode], data?.high[mode], hourFromClock(time));
 }

@@ -76,6 +76,33 @@ export function quietestWindow(hours: readonly (number | null)[] | undefined): Q
   return { start, end, minutes: Math.round(sum / (end - start + 1)), flat: false };
 }
 
+/** Usual wait for one hour, and the high CBP lists when it sits above that usual wait. */
+export type UsualWait = {
+  minutes: number;
+  high: number | null;
+};
+
+/**
+ * The usual wait for this hour, with the high for that same hour.
+ * CBP leaves later hours blank, so a missing hour uses the latest earlier one.
+ * `0` is a real average and is kept. A high that is not above the usual wait is left off.
+ */
+export function usualForHour(
+  hours: readonly (number | null)[] | undefined,
+  high: readonly (number | null)[] | undefined,
+  hour: number | null,
+): UsualWait | null {
+  if (!hours || hour === null) return null;
+  const start = Math.min(23, Math.max(0, hour));
+  for (let index = start; index >= 0; index -= 1) {
+    const value = hours[index];
+    if (value == null) continue;
+    const peak = high?.[index];
+    return { minutes: value, high: peak != null && peak > value ? peak : null };
+  }
+  return null;
+}
+
 /**
  * The usual wait for this hour. CBP leaves later hours blank, so a missing
  * hour uses the latest earlier one. `0` is a real average and is kept.
@@ -84,13 +111,7 @@ export function averageForHour(
   hours: readonly (number | null)[] | undefined,
   hour: number | null,
 ): number | null {
-  if (!hours || hour === null) return null;
-  const start = Math.min(23, Math.max(0, hour));
-  for (let index = start; index >= 0; index -= 1) {
-    const value = hours[index];
-    if (value != null) return value;
-  }
-  return null;
+  return usualForHour(hours, undefined, hour)?.minutes ?? null;
 }
 
 /** Hour from a CBP clock such as `19:13:19`. Null when the clock is missing. */

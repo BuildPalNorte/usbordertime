@@ -37,7 +37,7 @@ export function CardFace({
   const name = portName(port);
   const reading = readLane(port, mode);
   const averages = useLaneAverages(port.portNumber);
-  const average = shownAverage(averages.data, mode, port.time, reading.available);
+  const usual = shownAverage(averages.data, mode, port.time, reading.available);
   const light = palette.ink === "light";
 
   // Pointer-tracked sheen lives in motion values so moving the mouse never re-renders React.
@@ -121,8 +121,8 @@ export function CardFace({
                 {copy.tone[reading.tone]}
               </p>
               <AverageWait
-                minutes={average}
-                className="mt-1.5 block text-right text-[12px] leading-none font-medium tabular-nums opacity-[0.72]"
+                wait={usual}
+                className="mt-1.5 block max-w-44 text-right text-[12px] leading-tight font-medium tabular-nums opacity-[0.72]"
               />
             </>
           ) : (
@@ -131,8 +131,8 @@ export function CardFace({
                 {waitLabel(reading, copy)}
               </p>
               <AverageWait
-                minutes={average}
-                className="mt-1.5 block text-right text-[12px] leading-none font-medium tabular-nums opacity-[0.72]"
+                wait={usual}
+                className="mt-1.5 block max-w-44 text-right text-[12px] leading-tight font-medium tabular-nums opacity-[0.72]"
               />
             </>
           )}

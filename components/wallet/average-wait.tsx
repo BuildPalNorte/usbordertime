@@ -2,21 +2,27 @@
 
 import { useLocale } from "@/components/locale-provider";
 
-/** The usual wait for this lane at this hour. Blank when CBP has no average. */
+/** The usual wait for this lane at this hour, up to the high when CBP lists one. Blank when there is no average. */
 export function AverageWait({
-  minutes,
+  wait,
   className,
 }: {
-  minutes: number | null;
+  wait: { minutes: number; high: number | null } | null;
   className?: string;
 }) {
   const { copy } = useLocale();
-  if (minutes === null) return null;
+  if (!wait) return null;
+  const { minutes, high } = wait;
+  const ranged = high != null;
 
   return (
     <span className={className}>
-      <span className="sr-only">{copy.averageLabel(minutes)}</span>
-      <span aria-hidden>{copy.averageShort(minutes)}</span>
+      <span className="sr-only">
+        {ranged ? copy.averageRangeLabel(minutes, high) : copy.averageLabel(minutes)}
+      </span>
+      <span aria-hidden>
+        {ranged ? copy.averageRangeShort(minutes, high) : copy.averageShort(minutes)}
+      </span>
     </span>
   );
 }

@@ -194,7 +194,9 @@ export type Copy = {
   minutes: (count: number) => string;
   minuteWait: (count: number) => string;
   averageShort: (count: number) => string;
+  averageRangeShort: (low: number, high: number) => string;
   averageLabel: (count: number) => string;
+  averageRangeLabel: (low: number, high: number) => string;
   usualFlat: (count: number) => string;
   usualQuietAt: (time: string, count: number) => string;
   usualQuietFrom: (start: string, end: string, count: number) => string;
@@ -413,6 +415,20 @@ export function formatDuration(
   if (hours === 0) return `${minutes} ${minuteUnit}`;
   if (minutes === 0) return `${hours} ${hourUnit}`;
   return `${hours} ${hourUnit} ${minutes} ${minuteUnit}`;
+}
+
+/** Compact span: "20–45 min", "1–2 hr", "45 min–1 hr 15 min". */
+function formatDurationRange(
+  lowMinutes: number,
+  highMinutes: number,
+  hourUnit: string,
+  minuteUnit: string,
+): string {
+  const low = durationParts(lowMinutes);
+  const high = durationParts(highMinutes);
+  if (low.hours === 0 && high.hours === 0) return `${low.minutes}–${high.minutes} ${minuteUnit}`;
+  if (low.minutes === 0 && high.minutes === 0) return `${low.hours}–${high.hours} ${hourUnit}`;
+  return `${formatDuration(lowMinutes, hourUnit, minuteUnit)}–${formatDuration(highMinutes, hourUnit, minuteUnit)}`;
 }
 
 /** Sentence form: "45 minutes", "1 hour", "1 hour 30 minutes". */
@@ -697,8 +713,12 @@ export const COPY: Record<Locale, Copy> = {
       return `${hours} hour ${minutes} minute wait`;
     },
     averageShort: (count) => `avg ${formatDuration(count, "hr", "min")}`,
+    averageRangeShort: (low, high) =>
+      `avg ${formatDurationRange(low, high, "hr", "min")}`,
     averageLabel: (count) =>
       `Average wait at this hour, ${durationSpoken(count, "hour", "hours", "minute", "minutes")}`,
+    averageRangeLabel: (low, high) =>
+      `Average wait at this hour, ${durationSpoken(low, "hour", "hours", "minute", "minutes")} to ${durationSpoken(high, "hour", "hours", "minute", "minutes")}`,
     usualFlat: (count) =>
       `About the same all day, ${formatDuration(count, "hr", "min")}`,
     usualQuietAt: (time, count) =>
@@ -1250,8 +1270,12 @@ export const COPY: Record<Locale, Copy> = {
     minuteWait: (count) =>
       `espera de ${durationSpoken(count, "hora", "horas", "minuto", "minutos")}`,
     averageShort: (count) => `promedio ${formatDuration(count, "h", "min")}`,
+    averageRangeShort: (low, high) =>
+      `promedio ${formatDurationRange(low, high, "h", "min")}`,
     averageLabel: (count) =>
       `Espera promedio a esta hora, ${durationSpoken(count, "hora", "horas", "minuto", "minutos")}`,
+    averageRangeLabel: (low, high) =>
+      `Espera promedio a esta hora, de ${durationSpoken(low, "hora", "horas", "minuto", "minutos")} a ${durationSpoken(high, "hora", "horas", "minuto", "minutos")}`,
     usualFlat: (count) =>
       `Casi igual todo el día, ${formatDuration(count, "h", "min")}`,
     usualQuietAt: (time, count) =>

@@ -76,7 +76,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
       >
         {lanes.map((id, index) => {
           const reading = readLane(port, id);
-          const average = shownAverage(averages.data, id, port.time, reading.available);
+          const usual = shownAverage(averages.data, id, port.time, reading.available);
           const active = id === mode;
           return (
             <motion.button
@@ -123,8 +123,8 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
                 )}
               </span>
               <AverageWait
-                minutes={average}
-                className="mt-1.5 block text-[12px] leading-none font-medium text-muted tabular-nums"
+                wait={usual}
+                className="mt-1.5 block text-[12px] leading-tight font-medium text-muted tabular-nums"
               />
               <span className="mt-1.5 block truncate text-[12px] leading-none text-muted">
                 {reading.available ? lanesLabel(reading, copy) : copy.notPublished}
