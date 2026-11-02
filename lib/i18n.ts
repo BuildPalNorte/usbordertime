@@ -252,6 +252,12 @@ export type Copy = {
   askVoiceFailed: string;
   askNoSpeech: string;
   exchange: string;
+  exchangeSeoTitle: string;
+  exchangeSeoDescription: string;
+  exchangeSeoUpdatedTitle: string;
+  exchangeSeoUpdatedBody: string;
+  exchangeSeoMoveTitle: string;
+  exchangeSeoMoveBody: string;
   exchangeSubtitle: string;
   exchangeHave: string;
   exchangeGet: string;
@@ -776,6 +782,15 @@ export const COPY: Record<Locale, Copy> = {
     askVoiceFailed: "Could not hear that. Try again or type it.",
     askNoSpeech: "No voice came through. Try again.",
     exchange: "Exchange",
+    exchangeSeoTitle: "Dollar to peso exchange",
+    exchangeSeoDescription:
+      "Convert US dollars to Mexican pesos and pesos back to dollars. See the rate, when it was updated, and how it has moved. A reference rate for the border.",
+    exchangeSeoUpdatedTitle: "When the rate was updated",
+    exchangeSeoUpdatedBody:
+      "The converter shows the date, the time, and the time zone of the rate it is using. On a weekend that line names the daily rate instead of a clock time.",
+    exchangeSeoMoveTitle: "How the peso has moved",
+    exchangeSeoMoveBody:
+      "A chart shows pesos per dollar over the last 7 and 30 days. One point per business day. Higher means a dollar buys more pesos.",
     exchangeSubtitle: "Dollars and pesos",
     exchangeHave: "You have",
     exchangeGet: "You get",
@@ -1323,6 +1338,15 @@ export const COPY: Record<Locale, Copy> = {
     askVoiceFailed: "No se pudo escuchar. Intenta de nuevo o escríbelo.",
     askNoSpeech: "No se oyó tu voz. Intenta de nuevo.",
     exchange: "Cambio",
+    exchangeSeoTitle: "Tipo de cambio de dólar a peso",
+    exchangeSeoDescription:
+      "Convierte dólares de EE. UU. a pesos mexicanos y pesos a dólares. Mira el tipo de cambio, cuándo se actualizó y cómo se ha movido. Un tipo de cambio de referencia para la frontera.",
+    exchangeSeoUpdatedTitle: "Cuándo se actualizó",
+    exchangeSeoUpdatedBody:
+      "El convertidor muestra la fecha, la hora y la zona horaria del tipo de cambio que está usando. En fin de semana esa línea nombra el tipo de cambio del día, no una hora.",
+    exchangeSeoMoveTitle: "Cómo se ha movido el peso",
+    exchangeSeoMoveBody:
+      "Una gráfica muestra los pesos por dólar en los últimos 7 y 30 días. Un punto por día hábil. Más alto significa que un dólar compra más pesos.",
     exchangeSubtitle: "Dólares y pesos",
     exchangeHave: "Tienes",
     exchangeGet: "Recibes",

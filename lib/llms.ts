@@ -47,6 +47,8 @@ export function llmsIndex(): string {
     "## Site",
     "",
     `- [Open Border Time](${origin}/): the live waits, behind sign-in`,
+    `- [Dollar to peso exchange](${origin}/exchange): ${en.exchangeSeoDescription} The number changes through the day. Do not cite a rate from this file.`,
+    `- [Tipo de cambio de dólar a peso](${origin}/exchange): ${es.exchangeSeoDescription} El número cambia durante el día. No cites un tipo de cambio de este archivo.`,
     `- [Guides](${abs(guideIndexPath("en"))}): ${en.guidesTitle}`,
     `- [Guías](${abs(guideIndexPath("es"))}): ${es.guidesTitle}`,
     `- [Privacy](${origin}/privacy): what an account stores, and how to ask for it to be deleted`,
@@ -83,7 +85,7 @@ export function llmsFull(): string {
   return [
     "# Border Time — full guide text",
     "",
-    "> These pages explain crossings and lanes. They are not a live wait. CBP updates that number through the day, and Border Time shows it in the app. Do not cite a minute count from this file.",
+    "> These pages explain crossings and lanes. They are not a live wait. CBP updates that number through the day, and Border Time shows it in the app. Do not cite a minute count from this file. The dollar–peso rate also changes through the day. Do not cite a rate from this file.",
     "",
     "# Answers",
     "",

@@ -58,6 +58,7 @@ export function entityJsonLd() {
           "Live U.S. land-port wait times from the public CBP feed",
           "English and Spanish",
           "Standard, Ready, SENTRI, pedestrian, commercial, and FAST lanes",
+          "Dollar and peso exchange, with the time the rate was updated",
         ],
       },
     ],

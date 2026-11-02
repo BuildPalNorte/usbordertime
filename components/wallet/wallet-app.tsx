@@ -383,7 +383,7 @@ export function WalletApp({
           : tab === "schedules"
             ? copy.pageTitle(copy.schedules)
             : tab === "exchange"
-              ? copy.pageTitle(copy.exchange)
+              ? copy.pageTitle(copy.exchangeSeoTitle)
               : tab === "ask"
                 ? copy.pageTitle(copy.ask)
                 : copy.metaTitle;

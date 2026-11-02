@@ -7,9 +7,11 @@ import { dropCampaignParam, rememberCampaign } from "@/lib/campaign";
 import { detectInAppBrowser } from "@/lib/in-app-browser";
 import { rememberInvite, dropInviteParam } from "@/lib/invite";
 import { GUIDE_INDEX_PATH } from "@/lib/guide-paths";
+import { EXCHANGE_PATH } from "@/lib/routes";
 import { currentCallbackURL } from "@/lib/routes";
 import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from "motion/react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   useEffect,
   useLayoutEffect,
@@ -43,6 +45,7 @@ let noted = false;
 
 export function SignInScreen({ problem }: { problem?: "profile" }) {
   const { locale, copy } = useLocale();
+  const exchange = usePathname() === EXCHANGE_PATH;
   const reduce = useReducedMotion();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -184,9 +187,11 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
 
         <div className="rise mt-10 flex flex-col items-center text-center max-lg:mt-7" style={{ "--i": 4 } as CSSProperties}>
           <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.04em] text-balance">
-            {copy.signInHeadline}
+            {exchange ? copy.exchangeSeoTitle : copy.signInHeadline}
           </h1>
-          <p className="mx-auto mt-3 max-w-[30ch] text-[15px] leading-relaxed text-muted">{copy.signInBody}</p>
+          <p className="mx-auto mt-3 max-w-[34ch] text-[15px] leading-relaxed text-muted">
+            {exchange ? copy.exchangeSeoDescription : copy.signInBody}
+          </p>
           {inApp ? (
             <div className="max-lg:hidden">
               <InAppNotice browser={inApp} titleId="in-app-title-wide" className="mt-5" />
