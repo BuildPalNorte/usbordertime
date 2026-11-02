@@ -1,0 +1,25 @@
+---
+description: The Exchange (Cambio) tab and the USD/MXN rate behind it
+globs: components/wallet/exchange-pane.tsx,lib/rate.ts,lib/rate-store.ts,app/(app)/exchange/**
+alwaysApply: false
+---
+
+# Exchange
+
+`/exchange` is the fourth tab, before Ask. `ExchangePane` converts dollars and pesos. Nothing goes through our server: the browser calls `https://api.exchangerate.dev/v1/latest?base=USD&symbols=MXN` directly (keyless, CORS open).
+
+`lib/rate.ts` is client-safe and holds the pure logic: `parseRate` (rejects anything outside 1 to 1000), `cleanAmount`, `parseAmount`, `convert`, `amountField`. `lib/rate-store.ts` caches the last good rate in localStorage (`usbordertime.rate.v1`), loaded once like `walletStore`, so a failed refresh still shows a number.
+
+The query runs only while the tab is active (`enabled: ownsHeader`), is fresh for 5 minutes, refetches every 10, and does not retry. The free plan is capped at 100 requests an hour per IP, and many riders share a border-town IP, so do not poll from other tabs.
+
+Below the converter, `RateTrend` draws pesos per dollar through time. `lib/rate-trend.ts` holds the pure logic and `lib/rate-trend-store.ts` caches the series (`usbordertime.rate-trend.v1`). One call to `GET /v1/range` returns the daily rates. The keyless plan reaches back 30 days (a larger window is a 403 `plan_gated`), so `trendUrl` asks for 29 days back. The series has one point per business day and no weekends. It is fetched once and again every 6 hours, only while the tab is open. A live quote replaces or extends the last point (`withLatest`) so the line ends on the converter's number. The 7 and 30 day spans are slices of that one series, not new calls. Points sit by date, and the line is scaled to its own highs and lows, so the percent chip carries the size of the move. Do not draw the line with `pathLength` or dashes: `vector-effect: non-scaling-stroke` makes dash lengths read in screen pixels.
+
+The free feed is 15 minutes late. After the chart, one line follows Google's quote footer: `{date, time, zone} · Rates by Exchangerate.dev · Disclaimer`. Disclaimer opens the note that banks and exchange houses give less. On weekends the feed returns the ECB daily fix (`live: false`), and that first clause is "Daily rate for {date}" instead of the clock time.
+
+The "Rates by Exchangerate.dev" credit linking to https://exchangerate.dev must stay visible. It is required on the free plan. Do not redistribute the rates.
+
+`/exchange` is also a public address. Its title, description, and the signed-out explanation name the converter, when the rate was updated, and the chart. They never include a rate. The number stays in the browser.
+
+## Usage analytics
+
+When a signed-in rider's amount sits still for 2 seconds (and is not the untouched starting `1` USD or a repeat), `ExchangePane` calls `trackExchange` (`lib/exchange-use.ts`), which posts `{ from, amount, usd }` to `POST /api/exchange-use`. The route needs a session, validates the values, skips `ANALYTICS_EXCLUDED_EMAILS`, and inserts a row in `exchange_use` (`lib/exchange-use.server.ts`, created on first use, cascades from `profile`). The admin Crossings tab's Exchange section reads one SQL summary (`readExchangeSummary`): people, conversions, last 7 days, median and largest amount in dollars, and which currency they started from. The rate stays in the browser; only the amount is sent.

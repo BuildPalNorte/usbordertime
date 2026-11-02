@@ -22,6 +22,7 @@ import {
   ASK_PATH,
   crossingPath,
   crossingSharePath,
+  EXCHANGE_PATH,
   EXPLORE_PATH,
   parseAppPath,
   parseRoutesFocus,
@@ -57,6 +58,7 @@ const Tour = dynamic(() => import("./tour").then((m) => m.Tour), { ssr: false })
 // Ask (chat, markdown, voice) and Alarmas (sheet, tour) are separate chunks. They still render on
 // the server, so the pane is there at first paint; only their script waits for hydration.
 const AskPane = dynamic(() => import("./ask-pane").then((m) => m.AskPane));
+const ExchangePane = dynamic(() => import("./exchange-pane").then((m) => m.ExchangePane));
 const SchedulesPane = dynamic(() => import("./schedules-pane").then((m) => m.SchedulesPane));
 import {
   MobilePaneHeader,
@@ -68,11 +70,12 @@ import { WalletPane } from "./wallet-pane";
 const NAV = { scroll: false } as const;
 
 /** Left to right in the tab bar, so a pane slides in from the side you moved toward. */
-const TAB_ORDER: readonly Tab[] = ["wallet", "browse", "schedules", "ask"];
+const TAB_ORDER: readonly Tab[] = ["wallet", "browse", "schedules", "exchange", "ask"];
 const TAB_PATH: Record<Tab, string> = {
   wallet: "/",
   browse: EXPLORE_PATH,
   schedules: SCHEDULES_PATH,
+  exchange: EXCHANGE_PATH,
   ask: ASK_PATH,
 };
 
@@ -366,6 +369,7 @@ export function WalletApp({
     router.prefetch("/");
     router.prefetch(EXPLORE_PATH);
     router.prefetch(SCHEDULES_PATH);
+    router.prefetch(EXCHANGE_PATH);
     router.prefetch(ASK_PATH);
   }, [router]);
 
@@ -378,9 +382,11 @@ export function WalletApp({
           ? copy.pageTitle(copy.browse)
           : tab === "schedules"
             ? copy.pageTitle(copy.schedules)
-            : tab === "ask"
-              ? copy.pageTitle(copy.ask)
-              : copy.metaTitle;
+            : tab === "exchange"
+              ? copy.pageTitle(copy.exchangeSeoTitle)
+              : tab === "ask"
+                ? copy.pageTitle(copy.ask)
+                : copy.metaTitle;
   }, [openItem, tab, copy, routesLabel]);
 
   useEffect(() => {
@@ -471,9 +477,11 @@ export function WalletApp({
         ? EXPLORE_PATH
         : tab === "schedules"
           ? SCHEDULES_PATH
-          : tab === "ask"
-            ? ASK_PATH
-            : "/";
+          : tab === "exchange"
+            ? EXCHANGE_PATH
+            : tab === "ask"
+              ? ASK_PATH
+              : "/";
     go(path);
   }, [go, tab]);
 
@@ -713,9 +721,11 @@ export function WalletApp({
       ? copy.crossings
       : tab === "schedules"
         ? copy.schedules
-        : tab === "ask"
-          ? copy.ask
-          : copy.wallet;
+        : tab === "exchange"
+          ? copy.exchange
+          : tab === "ask"
+            ? copy.ask
+            : copy.wallet;
   const headerAction: PaneAction =
     tab === "wallet" &&
     (expandedId !== null || routesRow !== null || routesMissing)
@@ -819,7 +829,7 @@ export function WalletApp({
                 // On a desktop the right column holds Browse, or Schedules or Ask while that tab is open.
                 className={cn(
                   "pane",
-                  (tab === "schedules" || tab === "ask") && "lg:hidden",
+                  (tab === "schedules" || tab === "exchange" || tab === "ask") && "lg:hidden",
                 )}
                 data-active={tab === "browse"}
                 style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
@@ -860,6 +870,15 @@ export function WalletApp({
                   onBrowse={() => changeTab("browse")}
                   ownsHeader={tab === "schedules"}
                 />
+              </section>
+
+              <section
+                className={cn("pane", tab !== "exchange" && "lg:hidden")}
+                data-active={tab === "exchange"}
+                style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
+                aria-label={copy.exchange}
+              >
+                <ExchangePane ownsHeader={tab === "exchange"} />
               </section>
 
               <section

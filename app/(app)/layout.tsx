@@ -44,7 +44,14 @@ async function GatedHome({ children }: { children: ReactNode }) {
   const headerList = await headers();
   const session = await getAuth().api.getSession({ headers: headerList });
   const user = session?.user;
-  if (!user?.id || !user.email) return <SignInScreen />;
+  if (!user?.id || !user.email) {
+    return (
+      <>
+        <SignInScreen />
+        {children}
+      </>
+    );
+  }
 
   // Start the shared reads now so they run alongside the profile lookup, not after it.
   const live = loadLive();
@@ -90,7 +97,7 @@ async function GatedHome({ children }: { children: ReactNode }) {
         <PreferenceSync userId={user.id} initial={preference} ready={preferenceReady} />
         <AlertSync />
         <StreakSync />
-        <LiveWallet userId={user.id} live={live}>{children}</LiveWallet>
+        <LiveWallet userId={user.id} live={live} />
       </SessionGate>
     </AdminAccess>
   );
@@ -120,22 +127,11 @@ async function loadLive(): Promise<Live> {
   };
 }
 
-async function LiveWallet({
-  userId,
-  live,
-  children,
-}: {
-  userId: string;
-  live: Promise<Live>;
-  children: ReactNode;
-}) {
+async function LiveWallet({ userId, live }: { userId: string; live: Promise<Live> }) {
   const { snapshot, streams, announcement } = await live;
   return (
-    <>
-      <Suspense fallback={<ShellSkeleton wordless />}>
-        <WalletApp initial={snapshot} streams={streams} userId={userId} announcement={announcement} />
-      </Suspense>
-      {children}
-    </>
+    <Suspense fallback={<ShellSkeleton wordless />}>
+      <WalletApp initial={snapshot} streams={streams} userId={userId} announcement={announcement} />
+    </Suspense>
   );
 }

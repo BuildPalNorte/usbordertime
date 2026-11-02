@@ -13,6 +13,7 @@ import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
 import { readUsageTotals, type UsageTotals } from "@/lib/usage.server";
 import { database } from "@/lib/db.server";
 import { ANALYTICS_EXCLUDED_EMAILS, isExcludedFromAnalytics } from "@/lib/analytics";
+import { readExchangeSummary, type ExchangeSummary } from "@/lib/exchange-use.server";
 import { readPortViews } from "@/lib/port-view.server";
 import { readArrivals, type Arrivals } from "@/lib/visitor.server";
 import { headers } from "next/headers";
@@ -101,6 +102,7 @@ export type AdminData = {
   campaigns: Campaign[];
   /** Browsers that opened the sign-in screen, or null when the table could not be read. */
   arrivals: Arrivals | null;
+  exchange: ExchangeSummary | null;
   /** Display name for every crossing in the feed, by port number. */
   portLabels: Record<string, string>;
   problem: boolean;
@@ -215,12 +217,17 @@ async function readDashboard(): Promise<AdminData> {
     return null;
   });
 
+  const exchangeQuery = readExchangeSummary().catch((error: unknown) => {
+    mark(error, true);
+    return null;
+  });
+
   const campaignsQuery = listCampaigns().catch((error: unknown) => {
     mark(error, true);
     return [];
   });
 
-  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, campaigns] =
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, campaigns, exchange] =
     await Promise.all([
     factsQuery,
     accountsQuery.then(
@@ -275,6 +282,7 @@ async function readDashboard(): Promise<AdminData> {
     announcementsQuery,
     arrivalsQuery,
     campaignsQuery,
+    exchangeQuery,
   ]);
 
   const out = new Set(facts.profiles.filter((row) => isExcludedFromAnalytics(row.email)).map((row) => row.id));
@@ -338,6 +346,7 @@ async function readDashboard(): Promise<AdminData> {
     announcements,
     campaigns,
     arrivals,
+    exchange,
     portLabels,
     problem,
   };

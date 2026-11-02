@@ -251,6 +251,31 @@ export type Copy = {
   askBusy: string;
   askVoiceFailed: string;
   askNoSpeech: string;
+  exchange: string;
+  exchangeSeoTitle: string;
+  exchangeSeoDescription: string;
+  exchangeSeoUpdatedTitle: string;
+  exchangeSeoUpdatedBody: string;
+  exchangeSeoMoveTitle: string;
+  exchangeSeoMoveBody: string;
+  exchangeSubtitle: string;
+  exchangeHave: string;
+  exchangeGet: string;
+  exchangeSwap: string;
+  exchangeDaily: (date: string) => string;
+  exchangeDisclaimer: string;
+  exchangeStale: string;
+  exchangeError: string;
+  exchangeNote: string;
+  exchangeCredit: string;
+  exchangeTrend: string;
+  exchangeTrendHint: string;
+  exchangeTrendChart: string;
+  exchangeTrendAt: (day: string, value: string) => string;
+  exchangeTrendError: string;
+  exchangeSpan7: string;
+  exchangeSpan30: string;
+  exchangeSpanLabel: string;
   askMicDenied: string;
   askMicUnsupported: string;
   scheduleEmptyTitle: string;
@@ -756,6 +781,35 @@ export const COPY: Record<Locale, Copy> = {
     askBusy: "Too many questions. Wait a minute and try again.",
     askVoiceFailed: "Could not hear that. Try again or type it.",
     askNoSpeech: "No voice came through. Try again.",
+    exchange: "Exchange",
+    exchangeSeoTitle: "Dollar to peso exchange",
+    exchangeSeoDescription:
+      "Convert US dollars to Mexican pesos and pesos back to dollars. See the rate, when it was updated, and how it has moved. A reference rate for the border.",
+    exchangeSeoUpdatedTitle: "When the rate was updated",
+    exchangeSeoUpdatedBody:
+      "The converter shows the date, the time, and the time zone of the rate it is using. On a weekend that line names the daily rate instead of a clock time.",
+    exchangeSeoMoveTitle: "How the peso has moved",
+    exchangeSeoMoveBody:
+      "A chart shows pesos per dollar over the last 7 and 30 days. One point per business day. Higher means a dollar buys more pesos.",
+    exchangeSubtitle: "Dollars and pesos",
+    exchangeHave: "You have",
+    exchangeGet: "You get",
+    exchangeSwap: "Swap dollars and pesos",
+    exchangeDaily: (date) => `Daily rate for ${date}`,
+    exchangeDisclaimer: "Disclaimer",
+    exchangeStale: "Can't refresh right now. Showing the last rate.",
+    exchangeError: "Couldn't load the exchange rate.",
+    exchangeNote:
+      "Reference rate. Exchange houses and banks give you less.",
+    exchangeCredit: "Rates by Exchangerate.dev",
+    exchangeTrend: "Pesos per dollar",
+    exchangeTrendHint: "Higher means your dollars buy more pesos. One rate per business day.",
+    exchangeTrendChart: "Pesos per dollar over time",
+    exchangeTrendAt: (day, value) => `${day}: ${value} pesos per dollar`,
+    exchangeTrendError: "Couldn't load the price history.",
+    exchangeSpan7: "7 days",
+    exchangeSpan30: "30 days",
+    exchangeSpanLabel: "Time span",
     askMicDenied:
       "Microphone is blocked. Allow it for this site in your browser settings.",
     askMicUnsupported:
@@ -1283,6 +1337,36 @@ export const COPY: Record<Locale, Copy> = {
     askBusy: "Demasiadas preguntas. Espera un minuto e intenta de nuevo.",
     askVoiceFailed: "No se pudo escuchar. Intenta de nuevo o escríbelo.",
     askNoSpeech: "No se oyó tu voz. Intenta de nuevo.",
+    exchange: "Cambio",
+    exchangeSeoTitle: "Tipo de cambio de dólar a peso",
+    exchangeSeoDescription:
+      "Convierte dólares de EE. UU. a pesos mexicanos y pesos a dólares. Mira el tipo de cambio, cuándo se actualizó y cómo se ha movido. Un tipo de cambio de referencia para la frontera.",
+    exchangeSeoUpdatedTitle: "Cuándo se actualizó",
+    exchangeSeoUpdatedBody:
+      "El convertidor muestra la fecha, la hora y la zona horaria del tipo de cambio que está usando. En fin de semana esa línea nombra el tipo de cambio del día, no una hora.",
+    exchangeSeoMoveTitle: "Cómo se ha movido el peso",
+    exchangeSeoMoveBody:
+      "Una gráfica muestra los pesos por dólar en los últimos 7 y 30 días. Un punto por día hábil. Más alto significa que un dólar compra más pesos.",
+    exchangeSubtitle: "Dólares y pesos",
+    exchangeHave: "Tienes",
+    exchangeGet: "Recibes",
+    exchangeSwap: "Invertir dólares y pesos",
+    exchangeDaily: (date) => `Tipo de cambio del ${date}`,
+    exchangeDisclaimer: "Aviso",
+    exchangeStale: "No se pudo actualizar. Se muestra el último tipo de cambio.",
+    exchangeError: "No se pudo cargar el tipo de cambio.",
+    exchangeNote:
+      "Tipo de cambio de referencia. Las casas de cambio y los bancos te dan menos.",
+    exchangeCredit: "Rates by Exchangerate.dev",
+    exchangeTrend: "Pesos por dólar",
+    exchangeTrendHint:
+      "Más alto significa que tus dólares rinden más pesos. Un tipo de cambio por día hábil.",
+    exchangeTrendChart: "Pesos por dólar a lo largo del tiempo",
+    exchangeTrendAt: (day, value) => `${day}: ${value} pesos por dólar`,
+    exchangeTrendError: "No se pudo cargar el historial de precios.",
+    exchangeSpan7: "7 días",
+    exchangeSpan30: "30 días",
+    exchangeSpanLabel: "Periodo",
     askMicDenied:
       "El micrófono está bloqueado. Permítelo para este sitio en los ajustes del navegador.",
     askMicUnsupported:

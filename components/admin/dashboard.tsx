@@ -13,6 +13,10 @@ import { USAGE_KINDS, USAGE_LABEL } from "@/lib/usage";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
+function usd(value: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+}
+
 function percent(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
@@ -388,6 +392,31 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                   </Rows>
                 )}
               </Section>
+
+              {data.exchange && data.exchange.conversions > 0 && (
+                <Section title="Exchange" hint="Amounts riders settled on in the converter, in dollars.">
+                  <Rows>
+                    {(
+                      [
+                        ["People", data.exchange.people.toLocaleString("en-US")],
+                        ["Conversions", data.exchange.conversions.toLocaleString("en-US")],
+                        ["Last 7 days", data.exchange.last7.toLocaleString("en-US")],
+                        ["Typical amount", usd(data.exchange.medianUsd)],
+                        ["Largest amount", usd(data.exchange.maxUsd)],
+                        [
+                          "Started from",
+                          `${data.exchange.fromUsd.toLocaleString("en-US")} USD · ${data.exchange.fromMxn.toLocaleString("en-US")} MXN`,
+                        ],
+                      ] as const
+                    ).map(([label, value]) => (
+                      <li key={label} className={`${LINE} px-4 py-3`}>
+                        <p className="text-[15px] font-medium">{label}</p>
+                        <p className="shrink-0 text-[15px] font-semibold tabular-nums">{value}</p>
+                      </li>
+                    ))}
+                  </Rows>
+                </Section>
+              )}
             </div>
           }
           cameras={

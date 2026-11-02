@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     { url: origin },
+    { url: abs("/exchange") },
     ...entry(guideIndexPath("en"), guideIndexPath("es")),
     ...GUIDES.flatMap((guide) => entry(guidePath("en", guide), guidePath("es", guide))),
     { url: abs("/privacy") },

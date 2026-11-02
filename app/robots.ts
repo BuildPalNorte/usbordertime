@@ -27,7 +27,7 @@ const AI_CRAWLERS = [
   "cohere-ai",
 ];
 
-const PUBLIC = ["/", "/guides", "/es/guias", "/privacy", "/terms", "/llms.txt", "/llms-full.txt"];
+const PUBLIC = ["/", "/exchange", "/guides", "/es/guias", "/privacy", "/terms", "/llms.txt", "/llms-full.txt"];
 const PRIVATE = ["/api/", "/og/", "/admin"];
 
 export default function robots(): MetadataRoute.Robots {
