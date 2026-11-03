@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    // Google profile photos shown in the account button.
+    // Google profile photos shown beside the name in the account menu.
     remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" }],
   },
   partialPrefetching: true,

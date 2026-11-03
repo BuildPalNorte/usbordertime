@@ -23,6 +23,7 @@ import { ClockIcon } from "@heroicons-animated/react/clock";
 import { MapIcon } from "@heroicons-animated/react/map";
 import { tourSignal } from "@/lib/tour-signal";
 import { SparklesIcon } from "@heroicons-animated/react/sparkles";
+import { UserIcon } from "@heroicons-animated/react/user";
 import { cn } from "@/lib/cn";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
@@ -177,28 +178,7 @@ export function AccountButton({ className }: { className?: string }) {
         className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-surface text-foreground disabled:opacity-70"
       >
         <HapticPad />
-        {user ? (
-          photo ? (
-            // Served through the Next image proxy (lh3.googleusercontent.com is allowlisted),
-            // so the browser sends no third-party cookies and gets a right-sized WebP.
-            <Image
-              src={photo}
-              alt=""
-              width={20}
-              height={20}
-              sizes="20px"
-              referrerPolicy="no-referrer"
-              onError={() => setImageFailed(true)}
-              className="size-5 rounded-full object-cover"
-            />
-          ) : (
-            <span className="flex size-5 items-center justify-center rounded-full bg-muted/40 text-[10px] font-semibold leading-none">
-              {initial}
-            </span>
-          )
-        ) : (
-          <GoogleMark />
-        )}
+        {user ? <UserIcon size={20} aria-hidden /> : <GoogleMark />}
       </motion.button>
 
       <AnimatePresence>
@@ -221,12 +201,34 @@ export function AccountButton({ className }: { className?: string }) {
             )}
             {user && open && (
               <>
-                <p className="truncate px-3 pt-2 text-[14px] font-semibold">
-                  {user.name}
-                </p>
-                <p className="truncate px-3 pb-2 text-[12px] text-muted">
-                  {user.email}
-                </p>
+                <div className="flex items-center gap-3 px-3 py-2">
+                  {photo ? (
+                    // Served through the Next image proxy (lh3.googleusercontent.com is allowlisted),
+                    // so the browser sends no third-party cookies and gets a right-sized WebP.
+                    <Image
+                      src={photo}
+                      alt=""
+                      width={36}
+                      height={36}
+                      sizes="36px"
+                      referrerPolicy="no-referrer"
+                      onError={() => setImageFailed(true)}
+                      className="size-9 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted/40 text-[14px] font-semibold leading-none">
+                      {initial}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-semibold">
+                      {user.name}
+                    </p>
+                    <p className="truncate text-[12px] text-muted">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
                 {streak && streak.current > 0 && (
                   <div
                     className="mx-2 mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5"
