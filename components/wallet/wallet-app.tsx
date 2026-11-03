@@ -29,6 +29,7 @@ import {
   SCHEDULES_PATH,
   withRoutesFocus,
 } from "@/lib/routes";
+import { viewerUpdatedAt } from "@/lib/snapshot-clock";
 import { walletStore } from "@/lib/wallet-store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trackPortView } from "@/lib/port-view";
@@ -679,7 +680,8 @@ export function WalletApp({
     );
   }, [suggested]);
 
-  const updatedAt = ports[0]?.time ? ports[0].time.slice(0, 5) : null;
+  // Shown only after hydration, so this uses the viewer's zone and not the server's.
+  const updatedAt = data ? viewerUpdatedAt(data, locale) : null;
 
   // Manual refresh only. The minute poll should not scramble numbers someone is reading.
   // Held long enough that a fast response still shows the digits flip.
