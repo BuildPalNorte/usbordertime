@@ -33,7 +33,7 @@ import { HapticPad } from "./haptic-pad";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { UsualDay } from "./usual-day";
 import { haptic } from "@/lib/haptics";
-import { usePublishPaneChrome } from "./pane-header";
+import { PaneTitle, usePublishPaneChrome } from "./pane-header";
 import {
   BookmarkIcon,
   type BookmarkIconHandle,
@@ -213,13 +213,8 @@ export function BrowsePane({
 
   return (
     <div>
-      <header className="hidden min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:flex">
-        <div>
-          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">
-            {copy.crossings}
-          </h2>
-          <p className="mt-2 text-[14px] leading-none text-muted">{subtitle}</p>
-        </div>
+      <header className="hidden pb-5 lg:block">
+        <PaneTitle title={copy.crossings} subtitle={subtitle} />
       </header>
 
       <div className="pane-body">

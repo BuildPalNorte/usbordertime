@@ -21,7 +21,7 @@ import {
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { HeaderActions, usePublishPaneChrome, type PaneAction } from "./pane-header";
+import { HeaderActions, PaneTitle, usePublishPaneChrome, type PaneAction } from "./pane-header";
 import { HapticPad } from "./haptic-pad";
 import { REDUCED, SPRING } from "./motion";
 import { scheduleTourSignal } from "@/lib/schedule-tour-signal";
@@ -99,12 +99,8 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: 
 
   return (
     <div>
-      <header className="hidden min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:flex">
-        <div className="min-w-0">
-          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.schedules}</h2>
-          <p className="mt-2 truncate text-[14px] leading-none text-muted">{subtitle}</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <header className="hidden pb-5 lg:block">
+        <PaneTitle title={copy.schedules} subtitle={subtitle}>
           <HeaderActions
             action={action}
             checking={false}
@@ -113,7 +109,7 @@ export function SchedulesPane({ ports, items, hydrated, onBrowse, ownsHeader }: 
             onDone={() => {}}
             onAdd={() => open(null)}
           />
-        </div>
+        </PaneTitle>
       </header>
 
       <div className="pane-body">

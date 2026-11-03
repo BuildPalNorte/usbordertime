@@ -148,10 +148,10 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
           <AccountButton />
         </div>
       </div>
-      <div className="flex min-w-0 items-end justify-between gap-4">
+      <div className="flex min-w-0 items-center justify-between gap-4">
         <div className="grid min-w-0">
           {reduce ? (
-            <Heading title={title} subtitle={chrome.subtitle} />
+            <TitleWords title={title} subtitle={chrome.subtitle} />
           ) : (
             <AnimatePresence initial={false}>
               <motion.div
@@ -162,13 +162,13 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
                 transition={SWAP}
                 className="col-start-1 row-start-1 min-w-0"
               >
-                <Heading title={title} subtitle={chrome.subtitle} />
+                <TitleWords title={title} subtitle={chrome.subtitle} />
               </motion.div>
             </AnimatePresence>
           )}
         </div>
 
-        <div className="relative flex h-11 shrink-0 items-center justify-end gap-2">
+        <TitleActions>
           <HeaderActions
             action={chrome.action}
             checking={chrome.checking}
@@ -177,7 +177,7 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
             onDone={() => run("onDone")}
             onAdd={() => run("onAdd")}
           />
-        </div>
+        </TitleActions>
       </div>
     </header>
   );
@@ -212,12 +212,54 @@ export function DesktopBrandBar() {
   );
 }
 
-function Heading({ title, subtitle }: { title: string; subtitle: string }) {
+const titleClass = "truncate text-[34px] leading-none font-bold tracking-[-0.035em]";
+
+/**
+ * The page name and the line under it. The gap is tight so the status reads as part of the title.
+ * The buttons center on both lines together.
+ */
+function TitleWords({
+  title,
+  subtitle,
+  as = "h1",
+}: {
+  title: string;
+  subtitle: string;
+  as?: "h1" | "h2";
+}) {
+  const Title = as;
   return (
-    <>
-      <h1 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{title}</h1>
-      <p className="mt-2 truncate text-[14px] leading-none text-muted">{subtitle}</p>
-    </>
+    <div className="min-w-0">
+      <Title className={titleClass}>{title}</Title>
+      <p className="mt-1 truncate text-[15px] leading-none text-muted">{subtitle}</p>
+    </div>
+  );
+}
+
+/** The page controls, held at 44px so a parent can center them on the title and the status. */
+function TitleActions({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative flex h-11 shrink-0 items-center justify-end gap-2">{children}</div>
+  );
+}
+
+/** Desktop copy of the phone's page title. The phone header owns the crossfade. */
+export function PaneTitle({
+  title,
+  subtitle,
+  as = "h2",
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  as?: "h1" | "h2";
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-4">
+      <TitleWords title={title} subtitle={subtitle} as={as} />
+      {children ? <TitleActions>{children}</TitleActions> : null}
+    </div>
   );
 }
 

@@ -7,7 +7,7 @@ import type { Mode } from "@/lib/ports";
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { motion, useReducedMotion } from "motion/react";
 import { forwardRef, useRef, useState } from "react";
-import { HeaderActions, usePublishPaneChrome, type PaneAction } from "./pane-header";
+import { HeaderActions, PaneTitle, usePublishPaneChrome, type PaneAction } from "./pane-header";
 import { CardStack, type StackItem } from "./card-stack";
 import { RouteRow } from "./route-row";
 import { HapticPad } from "./haptic-pad";
@@ -100,13 +100,8 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
 
   return (
     <div>
-      <header ref={headerRef} className="hidden min-h-[4.5rem] items-end justify-between gap-4 pb-5 lg:flex">
-        <div className="min-w-0">
-          <h1 className="text-[34px] leading-none font-bold tracking-[-0.035em]">{copy.wallet}</h1>
-          <p className="mt-2 truncate text-[14px] leading-none text-muted">{subtitle}</p>
-        </div>
-
-        <div className="relative flex h-11 items-center justify-end gap-2">
+      <header ref={headerRef} className="hidden pb-5 lg:block">
+        <PaneTitle title={copy.wallet} subtitle={subtitle} as="h1">
           <HeaderActions
             action={action}
             checking={checking}
@@ -118,7 +113,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
             }}
             onAdd={onBrowse}
           />
-        </div>
+        </PaneTitle>
       </header>
 
       <div className="pane-body">

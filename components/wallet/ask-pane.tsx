@@ -19,7 +19,7 @@ import {
 import { AskMarkdown } from "./ask-markdown";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
-import { usePublishPaneChrome } from "./pane-header";
+import { PaneTitle, usePublishPaneChrome } from "./pane-header";
 
 type Message = { role: "user" | "assistant"; content: string };
 type Status = "idle" | "listening" | "thinking";
@@ -343,15 +343,8 @@ export function AskPane({ ownsHeader }: Props) {
 
   return (
     <div className="max-lg:flex max-lg:flex-1 max-lg:flex-col">
-      <header className="hidden min-h-[4.5rem] shrink-0 items-end justify-between gap-4 pb-5 lg:flex">
-        <div className="min-w-0">
-          <h2 className="text-[34px] leading-none font-bold tracking-[-0.035em]">
-            {copy.ask}
-          </h2>
-          <p className="mt-2 truncate text-[14px] leading-none text-muted">
-            {copy.askSubtitle}
-          </p>
-        </div>
+      <header className="hidden shrink-0 pb-5 lg:block">
+        <PaneTitle title={copy.ask} subtitle={copy.askSubtitle} />
       </header>
 
       <div className="pane-body flex flex-col gap-3 max-lg:flex-1">
