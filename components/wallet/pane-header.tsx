@@ -20,7 +20,6 @@ import { AccountButton } from "./account-button";
 import { BrandLockup } from "./brand-lockup";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
-import { StreakChip } from "./streak-chip";
 
 /** What the right-hand header control is on this tab. "none" leaves the streak and account where they are. */
 export type PaneAction = "refresh" | "done" | "add" | "none";
@@ -146,7 +145,6 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
       <div className="flex items-center justify-between gap-3">
         <BrandLockup />
         <div className="flex shrink-0 items-center gap-2">
-          <StreakChip />
           <AccountButton />
         </div>
       </div>
@@ -208,7 +206,6 @@ export function DesktopBrandBar() {
       />
       <BrandLockup />
       <div className="flex shrink-0 items-center gap-2">
-        <StreakChip />
         <AccountButton />
       </div>
     </header>

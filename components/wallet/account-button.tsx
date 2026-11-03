@@ -46,7 +46,7 @@ import { useAdminAccess } from "./admin-access";
 import { DevAnnouncementPreview } from "./dev-announcement-preview";
 import { DevLocationReplay } from "./dev-location-replay";
 import { DevStreakPicker } from "./dev-streak-picker";
-import { LEVEL_COLOR, LevelIcon, useIconLoop } from "./streak-chip";
+import { LEVEL_COLOR, LevelIcon, StreakBadge, useIconLoop } from "./streak-chip";
 import { useStreak } from "./use-streak";
 
 export function AccountButton({ className }: { className?: string }) {
@@ -136,8 +136,12 @@ export function AccountButton({ className }: { className?: string }) {
     await signOutAndReload();
   };
 
+  const who = user?.name || user?.email || "";
+  const streakLabel = streak && streak.current > 0 ? copy.streakDays(streak.current) : null;
   const label = user
-    ? copy.signedInAs(user.name || user.email)
+    ? streakLabel
+      ? `${streakLabel}. ${copy.signedInAs(who)}`
+      : copy.signedInAs(who)
     : copy.signInWithGoogle;
   const initial = (user?.name || user?.email || "?")
     .trim()
@@ -180,6 +184,7 @@ export function AccountButton({ className }: { className?: string }) {
         <HapticPad />
         {user ? <UserIcon size={20} aria-hidden /> : <GoogleMark />}
       </motion.button>
+      {user && <StreakBadge />}
 
       <AnimatePresence>
         {(open && user) || failed ? (
