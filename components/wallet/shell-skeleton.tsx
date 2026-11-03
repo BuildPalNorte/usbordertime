@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/locale-provider";
+import { BrandLockup } from "./brand-lockup";
 import { CARD_H, PEEK } from "./motion";
 
 /** Placeholder shown while CBP data streams in. Matches the final stack's footprint. */
@@ -12,6 +13,16 @@ export function ShellSkeleton({ wordless = false }: { wordless?: boolean }) {
       aria-busy
       className="mx-auto w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-32 sm:px-6 lg:max-w-6xl lg:pb-16"
     >
+      <div className="mb-6 lg:mb-8">
+        {wordless ? (
+          <div className="flex flex-col items-start gap-1">
+            <div className="shimmer h-5 w-12 rounded-full" />
+            <div className="shimmer h-3 w-24 rounded-full" />
+          </div>
+        ) : (
+          <BrandLockup />
+        )}
+      </div>
       <div className="lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14">
         <div>
           <div className="flex min-h-[4.5rem] items-end pb-5">

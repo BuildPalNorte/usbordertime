@@ -61,6 +61,7 @@ const AskPane = dynamic(() => import("./ask-pane").then((m) => m.AskPane));
 const ExchangePane = dynamic(() => import("./exchange-pane").then((m) => m.ExchangePane));
 const SchedulesPane = dynamic(() => import("./schedules-pane").then((m) => m.SchedulesPane));
 import {
+  DesktopBrandBar,
   MobilePaneHeader,
   PaneChromeProvider,
   type PaneAction,
@@ -767,6 +768,7 @@ export function WalletApp({
             )}
           >
             <MobilePaneHeader tab={tab} title={headerTitle} />
+            <DesktopBrandBar />
             <div
               className={cn(
                 "max-lg:flex max-lg:flex-1 max-lg:flex-col lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14 xl:gap-20",
@@ -774,7 +776,7 @@ export function WalletApp({
               )}
             >
               <section
-                className="pane no-scrollbar lg:sticky lg:top-6 lg:-mx-3 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6 h-full"
+                className="pane no-scrollbar lg:sticky lg:top-20 lg:-mx-3 lg:max-h-[calc(100dvh-6.5rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:pb-6 h-full"
                 data-active={tab === "wallet"}
                 style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
                 aria-label={copy.wallet}

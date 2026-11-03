@@ -21,6 +21,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
+import { BrandBar } from "./brand-lockup";
 import { HapticPad } from "./haptic-pad";
 import { InAppNotice, useInAppBrowser } from "./in-app-notice";
 import { LanguageSwitch } from "./language-switch";
@@ -118,10 +119,10 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
 
   return (
     <div className="flex min-h-[100dvh] flex-col">
-      <header className="flex justify-end gap-2 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
+      <BrandBar>
         <ThemeSwitch />
         <LanguageSwitch />
-      </header>
+      </BrandBar>
 
       <main
         className={cn(

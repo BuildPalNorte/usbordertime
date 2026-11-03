@@ -105,6 +105,7 @@ export type Copy = {
   languageToEnglish: string;
   themeToLight: string;
   themeToDark: string;
+  brandName: string;
   signInTitle: string;
   signInBody: string;
   signInWithGoogle: string;
@@ -535,6 +536,7 @@ export const COPY: Record<Locale, Copy> = {
     languageToEnglish: "Switch to English",
     themeToLight: "Switch to light mode",
     themeToDark: "Switch to dark mode",
+    brandName: "US Border Time",
     signInTitle: "Border Time",
     signInBody: "Sign in with Google to see the bridges you cross.",
     signInWithGoogle: "Sign in with Google",
@@ -1079,6 +1081,7 @@ export const COPY: Record<Locale, Copy> = {
     languageToEnglish: "Switch to English",
     themeToLight: "Cambiar a modo claro",
     themeToDark: "Cambiar a modo oscuro",
+    brandName: "US Border Time",
     signInTitle: "Border Time",
     signInBody: "Inicia sesión con Google para ver los puentes que cruzas.",
     signInWithGoogle: "Iniciar sesión con Google",

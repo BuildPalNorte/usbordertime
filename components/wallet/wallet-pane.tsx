@@ -4,8 +4,6 @@ import { useLocale } from "@/components/locale-provider";
 import type { Announcement } from "@/lib/announcement";
 import type { PortWaitTime } from "@/lib/border-wait-times";
 import type { Mode } from "@/lib/ports";
-import { AccountButton } from "./account-button";
-import { StreakChip } from "./streak-chip";
 import { PlusIcon } from "@heroicons-animated/react/plus";
 import { motion, useReducedMotion } from "motion/react";
 import { forwardRef, useRef, useState } from "react";
@@ -120,8 +118,6 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
             }}
             onAdd={onBrowse}
           />
-          <StreakChip />
-          <AccountButton />
         </div>
       </header>
 

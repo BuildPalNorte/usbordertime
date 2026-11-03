@@ -12,6 +12,7 @@ import { walletStore } from "@/lib/wallet-store";
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useState, type CSSProperties } from "react";
+import { BrandBar } from "./brand-lockup";
 import { HapticPad } from "./haptic-pad";
 import { LanguageSwitch } from "./language-switch";
 import { SPRING } from "./motion";
@@ -147,10 +148,10 @@ export function LocationPrompt({ ports }: { ports: PortWaitTime[] }) {
 
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex shrink-0 justify-end gap-2 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
+      <BrandBar>
         <ThemeSwitch />
         <LanguageSwitch />
-      </header>
+      </BrandBar>
 
       <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
         <div className="rise shrink-0" style={{ "--i": 0 } as CSSProperties}>
@@ -231,10 +232,10 @@ function Found({
 
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex shrink-0 justify-end gap-2 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
+      <BrandBar>
         <ThemeSwitch />
         <LanguageSwitch />
-      </header>
+      </BrandBar>
 
       <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
         <div

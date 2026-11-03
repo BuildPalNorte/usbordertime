@@ -17,6 +17,7 @@ import {
   type RefObject,
 } from "react";
 import { AccountButton } from "./account-button";
+import { BrandLockup } from "./brand-lockup";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 import { StreakChip } from "./streak-chip";
@@ -106,8 +107,9 @@ const SWAP = {
 };
 
 /**
- * Phone header. It stays mounted across tabs, so the streak and the account button never travel.
- * The title and subtitle crossfade, because those words change. The body below slides on its own.
+ * Phone header. It stays mounted across tabs, so the brand, the streak, and the account
+ * button never travel. The title and subtitle crossfade, because those words change.
+ * The body below slides on its own.
  */
 export function MobilePaneHeader({ tab, title }: { tab: string; title: string }) {
   const reduce = useReducedMotion();
@@ -130,7 +132,7 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-20 -mx-4 flex min-h-[calc(4rem+max(1.25rem,env(safe-area-inset-top)))] shrink-0 items-end justify-between gap-4 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 sm:-mx-6 sm:px-6 lg:hidden"
+      className="sticky top-0 z-20 -mx-4 flex shrink-0 flex-col gap-3 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 sm:-mx-6 sm:px-6 lg:hidden"
     >
       {/* The blur sits on its own layer: a backdrop-filter on the header itself would make it the
           backdrop root and stop the glass menus inside from blurring the page behind them.
@@ -141,34 +143,71 @@ export function MobilePaneHeader({ tab, title }: { tab: string; title: string })
         data-lifted={lifted ? "true" : undefined}
         className="header-scrim pointer-events-none absolute inset-0 -z-10"
       />
-      <div className="grid min-w-0">
-        {reduce ? (
-          <Heading title={title} subtitle={chrome.subtitle} />
-        ) : (
-          <AnimatePresence initial={false}>
-            <motion.div
-              key={tab}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={SWAP}
-              className="col-start-1 row-start-1 min-w-0"
-            >
-              <Heading title={title} subtitle={chrome.subtitle} />
-            </motion.div>
-          </AnimatePresence>
-        )}
+      <div className="flex items-center justify-between gap-3">
+        <BrandLockup />
+        <div className="flex shrink-0 items-center gap-2">
+          <StreakChip />
+          <AccountButton />
+        </div>
       </div>
+      <div className="flex min-w-0 items-end justify-between gap-4">
+        <div className="grid min-w-0">
+          {reduce ? (
+            <Heading title={title} subtitle={chrome.subtitle} />
+          ) : (
+            <AnimatePresence initial={false}>
+              <motion.div
+                key={tab}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={SWAP}
+                className="col-start-1 row-start-1 min-w-0"
+              >
+                <Heading title={title} subtitle={chrome.subtitle} />
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </div>
 
-      <div className="relative flex h-11 shrink-0 items-center justify-end gap-2">
-        <HeaderActions
-          action={chrome.action}
-          checking={chrome.checking}
-          refreshing={chrome.refreshing}
-          onRefresh={() => run("onRefresh")}
-          onDone={() => run("onDone")}
-          onAdd={() => run("onAdd")}
-        />
+        <div className="relative flex h-11 shrink-0 items-center justify-end gap-2">
+          <HeaderActions
+            action={chrome.action}
+            checking={chrome.checking}
+            refreshing={chrome.refreshing}
+            onRefresh={() => run("onRefresh")}
+            onDone={() => run("onDone")}
+            onAdd={() => run("onAdd")}
+          />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/** Wide-window copy of the phone brand row. The wash appears only once the page scrolls under it. */
+export function DesktopBrandBar() {
+  const [lifted, setLifted] = useState(false);
+
+  useEffect(() => {
+    const sync = () => {
+      const next = window.scrollY > 0;
+      setLifted((current) => (current === next ? current : next));
+    };
+    sync();
+    window.addEventListener("scroll", sync, { passive: true });
+    return () => window.removeEventListener("scroll", sync);
+  }, []);
+
+  return (
+    <header className="sticky top-0 z-30 -mx-4 -mt-[max(1.25rem,env(safe-area-inset-top))] mb-6 hidden items-center justify-between gap-4 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 sm:-mx-6 sm:px-6 lg:flex">
+      <div
+        aria-hidden
+        data-lifted={lifted ? "true" : undefined}
+        className="header-scrim pointer-events-none absolute inset-0 -z-10"
+      />
+      <BrandLockup />
+      <div className="flex shrink-0 items-center gap-2">
         <StreakChip />
         <AccountButton />
       </div>
