@@ -4,6 +4,7 @@ import { isLocale } from "@/lib/i18n";
 import { ensurePreferenceTable } from "@/lib/preference.server";
 import { isMode } from "@/lib/ports";
 import { database } from "@/lib/db.server";
+import { refreshNotifyExpectation } from "@/lib/notify-refresh.server";
 
 
 let ensuring: Promise<void> | null = null;
@@ -99,6 +100,7 @@ export async function saveAlert(
         below = excluded.below,
         updated_at = now()
   `;
+  refreshNotifyExpectation();
   return true;
 }
 
@@ -113,6 +115,7 @@ export async function deleteAlert(
     delete from wait_alert
     where user_id = ${userId} and port_number = ${portNumber} and mode = ${mode}
   `;
+  refreshNotifyExpectation();
 }
 
 /**
@@ -137,13 +140,15 @@ export async function savePushDevice(
         device_key = coalesce(excluded.device_key, push_subscription.device_key),
         updated_at = now()
   `;
-  if (!deviceKey) return;
-  await sql`
-    delete from push_subscription
-    where user_id = ${userId}
-      and endpoint <> ${device.endpoint}
-      and (device_key is null or device_key = ${deviceKey})
-  `;
+  if (deviceKey) {
+    await sql`
+      delete from push_subscription
+      where user_id = ${userId}
+        and endpoint <> ${device.endpoint}
+        and (device_key is null or device_key = ${deviceKey})
+    `;
+  }
+  refreshNotifyExpectation();
 }
 
 /** Only the owner can drop a device. Another account's endpoint is left alone. */
@@ -153,6 +158,7 @@ export async function deletePushDevice(userId: string, endpoint: string): Promis
   await sql`
     delete from push_subscription where endpoint = ${endpoint} and user_id = ${userId}
   `;
+  refreshNotifyExpectation();
 }
 
 /** The push service said this address is gone. */
@@ -160,6 +166,7 @@ export async function forgetPushDevice(endpoint: string): Promise<void> {
   await ensureTables();
   const sql = database();
   await sql`delete from push_subscription where endpoint = ${endpoint}`;
+  refreshNotifyExpectation();
 }
 
 export async function listPushDevices(userId: string): Promise<PushDevice[]> {
@@ -211,6 +218,8 @@ export async function setBelow(alert: ArmedAlert, below: boolean): Promise<void>
     set below = ${below}, updated_at = now()
     where user_id = ${alert.userId} and port_number = ${alert.portNumber} and mode = ${alert.mode}
   `;
+  // The cron compares rules with the live waits from a cached copy of `below`.
+  refreshNotifyExpectation();
 }
 
 /**
@@ -228,5 +237,7 @@ export async function claimBelow(alert: ArmedAlert): Promise<boolean> {
       and below = false
     returning 1 as claimed
   `) as unknown[];
-  return rows.length > 0;
+  if (rows.length === 0) return false;
+  refreshNotifyExpectation();
+  return true;
 }

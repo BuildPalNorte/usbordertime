@@ -11,12 +11,17 @@ import {
   type ScheduleInput,
 } from "@/lib/schedule";
 import { database } from "@/lib/db.server";
+import { refreshNotifyExpectation } from "@/lib/notify-refresh.server";
 import { randomUUID } from "node:crypto";
 
 
 let ensuring: Promise<void> | null = null;
 
 /** `schedule` belongs to a profile, like `wait_alert`, and is created on first use. */
+export function ensureScheduleTable(): Promise<void> {
+  return ensureTable();
+}
+
 function ensureTable(): Promise<void> {
   if (!ensuring) {
     const sql = database();
@@ -123,9 +128,9 @@ export async function saveSchedule(userId: string, input: ScheduleInput): Promis
       where id = ${input.id} and user_id = ${userId}
       returning id
     `) as unknown[];
-    return rows.length > 0
-      ? { status: "ok", schedule: { ...input, id: input.id } }
-      : { status: "missing" };
+    if (rows.length === 0) return { status: "missing" };
+    refreshNotifyExpectation();
+    return { status: "ok", schedule: { ...input, id: input.id } };
   }
 
   const count = (await sql`
@@ -139,6 +144,7 @@ export async function saveSchedule(userId: string, input: ScheduleInput): Promis
     values (${id}, ${userId}, ${input.minute}, ${mask}, ${input.timeZone}, ${input.mode},
             ${ports}::jsonb, ${input.name}, ${input.enabled}, ${sentToday})
   `;
+  refreshNotifyExpectation();
   return { status: "ok", schedule: { ...input, id } };
 }
 
@@ -146,6 +152,7 @@ export async function deleteSchedule(userId: string, id: string): Promise<void> 
   await ensureTable();
   const sql = database();
   await sql`delete from schedule where id = ${id} and user_id = ${userId}`;
+  refreshNotifyExpectation();
 }
 
 export type DueCandidate = Schedule & {
