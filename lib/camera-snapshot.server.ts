@@ -9,12 +9,14 @@ import { FEED_GROUPS, PROXY_HOSTS, type Feed } from "@/lib/camera-feeds";
  * - A camera is re-fetched at most every `CHECK_EVERY_MS`; concurrent opens share one request.
  * - How old the picture is comes from the source's `Last-Modified` when it sends one. Otherwise it is
  *   the last time the bytes' hash changed, so a frozen camera or a static placeholder goes stale.
- * - Health is saved to `camera_snapshot`, so a restart or another instance keeps the history.
+ * - Health is saved to `camera_snapshot` when its status changes, and otherwise every 30 minutes,
+ *   so a restart or another instance keeps the history without holding the database open.
  * - The picture bytes are only kept in memory. Nothing is stored in the database but the hash.
  */
 
 const CHECK_EVERY_MS = 45_000;
 const STALE_AFTER_MS = 10 * 60_000;
+const SAVE_EVERY_MS = 30 * 60_000;
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
@@ -30,7 +32,15 @@ export type SnapshotHealth = {
   hash: string | null;
 };
 
-type Entry = { bytes: Uint8Array | null; type: string; health: SnapshotHealth; checkedMs: number };
+type Entry = {
+  bytes: Uint8Array | null;
+  type: string;
+  health: SnapshotHealth;
+  checkedMs: number;
+  /** When the saved row was last written, and the status it holds. */
+  savedMs: number;
+  savedStatus: SnapshotStatus | null;
+};
 
 const store = globalThis as typeof globalThis & {
   __snapshotCache?: Map<string, Entry>;
@@ -67,13 +77,18 @@ function ensureTable(): Promise<void> {
   return store.__snapshotTable;
 }
 
-type Saved = { hash: string | null; changed_at: string | null };
+type Saved = {
+  hash: string | null;
+  changed_at: string | null;
+  checked_at: string | null;
+  status: string | null;
+};
 
 async function readSaved(id: string): Promise<Saved | null> {
   try {
     await ensureTable();
     const rows = (await database()`
-      select hash, changed_at from camera_snapshot where id = ${id}
+      select hash, changed_at, checked_at, status from camera_snapshot where id = ${id}
     `) as Saved[];
     return rows[0] ?? null;
   } catch {
@@ -98,6 +113,28 @@ async function writeSaved(health: SnapshotHealth): Promise<void> {
   }
 }
 
+/**
+ * The row only helps a cold server remember when the picture last changed. Writing it on every
+ * check kept Neon awake for as long as a camera was on screen, so it is saved when the status
+ * changes and otherwise at most every `SAVE_EVERY_MS`. The memory copy is what viewers see.
+ */
+async function persist(
+  health: SnapshotHealth,
+  now: number,
+  savedMs: number,
+  savedStatus: SnapshotStatus | null,
+): Promise<{ savedMs: number; savedStatus: SnapshotStatus | null }> {
+  if (savedStatus === health.status && now - savedMs < SAVE_EVERY_MS) {
+    return { savedMs, savedStatus };
+  }
+  await writeSaved(health);
+  return { savedMs: now, savedStatus: health.status };
+}
+
+function isStatus(value: string | null | undefined): value is SnapshotStatus {
+  return value === "live" || value === "stale" || value === "down";
+}
+
 async function refresh(feed: Feed, previous: Entry | undefined): Promise<Entry> {
   const now = Date.now();
   // The shared address wins over the one in code, like the saved camera streams.
@@ -108,6 +145,9 @@ async function refresh(feed: Feed, previous: Entry | undefined): Promise<Entry> 
   const saved = previous ? null : await readSaved(feed.id);
   const knownHash = previous?.health.hash ?? saved?.hash ?? null;
   const knownChanged = previous?.health.changedAt ?? saved?.changed_at ?? null;
+  const savedAt = saved?.checked_at ? Date.parse(String(saved.checked_at)) : NaN;
+  const savedMs = previous?.savedMs ?? (Number.isFinite(savedAt) ? savedAt : 0);
+  const savedStatus = previous?.savedStatus ?? (isStatus(saved?.status) ? saved.status : null);
 
   let upstream: Response | null = null;
   try {
@@ -127,6 +167,8 @@ async function refresh(feed: Feed, previous: Entry | undefined): Promise<Entry> 
       bytes: previous?.bytes ?? null,
       type: previous?.type ?? "image/jpeg",
       checkedMs: now,
+      savedMs,
+      savedStatus,
       health: {
         id: feed.id,
         status: "down",
@@ -135,7 +177,7 @@ async function refresh(feed: Feed, previous: Entry | undefined): Promise<Entry> 
         hash: knownHash,
       },
     };
-    await writeSaved(entry.health);
+    Object.assign(entry, await persist(entry.health, now, savedMs, savedStatus));
     return entry;
   }
 
@@ -153,6 +195,8 @@ async function refresh(feed: Feed, previous: Entry | undefined): Promise<Entry> 
     bytes,
     type,
     checkedMs: now,
+    savedMs,
+    savedStatus,
     health: {
       id: feed.id,
       status: now - changedMs > STALE_AFTER_MS ? "stale" : "live",
@@ -161,7 +205,7 @@ async function refresh(feed: Feed, previous: Entry | undefined): Promise<Entry> 
       hash,
     },
   };
-  await writeSaved(entry.health);
+  Object.assign(entry, await persist(entry.health, now, savedMs, savedStatus));
   return entry;
 }
 
