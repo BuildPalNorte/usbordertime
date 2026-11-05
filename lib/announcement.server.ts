@@ -11,6 +11,7 @@ import {
 } from "@/lib/announcement";
 import { database } from "@/lib/db.server";
 import { sendPush } from "@/lib/push.server";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { randomUUID } from "node:crypto";
 
 let ensuring: Promise<void> | null = null;
@@ -82,7 +83,7 @@ export async function listAnnouncements(): Promise<Announcement[]> {
  * `AnnouncementNotice` waits until the welcome tour on this browser is finished and off
  * screen, then decides whether this one has already been dismissed on this device.
  */
-export async function latestAnnouncement(): Promise<Announcement | null> {
+async function readLatestAnnouncement(): Promise<Announcement | null> {
   await ensureTable();
   const sql = database();
   const rows = (await sql`
@@ -93,6 +94,18 @@ export async function latestAnnouncement(): Promise<Announcement | null> {
   `) as Row[];
   return rows[0] ? fromRow(rows[0]) : null;
 }
+
+const LATEST_ANNOUNCEMENT_TAG = "latest-announcement";
+
+/**
+ * Every signed-in page load asks for this, and a broadcast is rare, so the answer is cached
+ * across requests. `unstable_cache` survives between serverless instances; `use cache` would not.
+ * `sendAnnouncement` is the only writer and drops it, and the hour is only a safety net.
+ */
+export const latestAnnouncement = unstable_cache(readLatestAnnouncement, ["latest-announcement"], {
+  tags: [LATEST_ANNOUNCEMENT_TAG],
+  revalidate: 60 * 60,
+});
 
 export type SendAnnouncement =
   | { status: "ok"; announcement: Announcement }
@@ -151,6 +164,9 @@ export async function sendAnnouncement(
     values (${id}, ${title}, ${body}, ${url}, ${surface}, ${adminUserId}, ${sent})
     returning id, title, body, url, surface, recipients, created_at
   `) as Row[];
+
+  // The next page load must see this one, not the cached previous broadcast.
+  revalidateTag(LATEST_ANNOUNCEMENT_TAG, { expire: 0 });
 
   return { status: "ok", announcement: fromRow(row) };
 }
