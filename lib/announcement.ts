@@ -18,6 +18,8 @@ export type Announcement = {
   url: string;
   /** Banner sits under the bridges header. Modal covers the screen until it is closed. */
   surface: AnnouncementSurface;
+  /** An inactive broadcast is kept in the history but no longer shows in the app. The push already went out. */
+  active: boolean;
   sentAt: string;
   recipients: number;
 };
@@ -56,4 +58,13 @@ export function parseAnnouncementInput(value: unknown): AnnouncementInput | null
   const url = isAnnouncementUrl(record.url) ? record.url : "/";
   const surface = isAnnouncementSurface(record.surface) ? record.surface : "modal";
   return { title: record.title, body: record.body, url, surface };
+}
+
+/** What `PATCH /api/admin/announcements` accepts. */
+export function parseAnnouncementActive(value: unknown): { id: string; active: boolean } | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.id !== "string" || record.id.length === 0 || record.id.length > 64) return null;
+  if (typeof record.active !== "boolean") return null;
+  return { id: record.id, active: record.active };
 }

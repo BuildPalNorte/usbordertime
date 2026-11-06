@@ -12,6 +12,7 @@ const MOCK: Announcement = {
   body: "• Cuenta nueva: ubicación, cruces a 40 millas • O elige los puentes a mano • 43 cámaras: Nogales, Laredo y más • Desliza la foto para cambiar de vista",
   url: "/",
   surface: "modal",
+  active: true,
   sentAt: new Date(0).toISOString(),
   recipients: 0,
 };

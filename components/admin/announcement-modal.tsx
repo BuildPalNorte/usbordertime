@@ -6,7 +6,7 @@ import type { Announcement } from "@/lib/announcement";
 import { MegaphoneIcon } from "@heroicons-animated/react/megaphone";
 import { XMarkIcon } from "@heroicons-animated/react/x-mark";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { createPortal } from "react-dom";
 
 const SPRING_MOVE = { type: "spring" as const, bounce: 0, duration: 0.5 };
@@ -17,6 +17,9 @@ const SPRING_MOVE = { type: "spring" as const, bounce: 0, duration: 0.5 };
  */
 export function AnnouncementModal({ initial }: { initial: Announcement[] }) {
   const [open, setOpen] = useState(false);
+  // Lives here, not in the dialog: the dialog unmounts on close, and reopening it must show what
+  // was just sent or switched, not the list the page was rendered with.
+  const [history, setHistory] = useState(initial);
 
   return (
     <>
@@ -26,17 +29,25 @@ export function AnnouncementModal({ initial }: { initial: Announcement[] }) {
           haptic("light");
           setOpen(true);
         }}
-        className="inline-flex h-10 items-center gap-2 rounded-full bg-surface px-4 text-[14px] font-medium text-foreground active:scale-95"
+        className="inline-flex h-11 items-center gap-2 rounded-full bg-foreground px-5 text-[14px] font-semibold text-background transition-transform duration-150 ease-out active:scale-95"
       >
         <MegaphoneIcon size={18} aria-hidden />
         Notify
       </button>
-      {open && <AnnouncementDialog initial={initial} onClose={() => setOpen(false)} />}
+      {open && <AnnouncementDialog history={history} setHistory={setHistory} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function AnnouncementDialog({ initial, onClose }: { initial: Announcement[]; onClose: () => void }) {
+function AnnouncementDialog({
+  history,
+  setHistory,
+  onClose,
+}: {
+  history: Announcement[];
+  setHistory: Dispatch<SetStateAction<Announcement[]>>;
+  onClose: () => void;
+}) {
   const reduce = useReducedMotion();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -73,10 +84,10 @@ function AnnouncementDialog({ initial, onClose }: { initial: Announcement[]; onC
         animate={reduce ? { opacity: 1 } : { y: 0 }}
         exit={reduce ? { opacity: 0 } : { y: "100%" }}
         transition={reduce ? { duration: 0.12 } : SPRING_MOVE}
-        className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[28px] border border-line bg-background outline-none sm:rounded-[28px]"
+        className="flex max-h-[92dvh] w-full max-w-md flex-col sm:max-w-3xl overflow-hidden rounded-t-[28px] border border-line bg-background outline-none sm:rounded-[28px]"
         style={{ boxShadow: "inset 0 1px 0 var(--glass-highlight), 0 30px 80px -20px rgb(10 14 28 / 0.55)" }}
       >
-        <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 px-5 pt-5">
+        <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 px-5 pt-5 sm:px-8 sm:pt-7">
           <span />
           <h2 id={titleId} className="truncate text-center text-[17px] font-semibold tracking-[-0.02em]">
             Notify everyone
@@ -93,11 +104,11 @@ function AnnouncementDialog({ initial, onClose }: { initial: Announcement[]; onC
             <XMarkIcon size={18} aria-hidden />
           </button>
         </div>
-        <p className="mt-1 px-5 text-center text-[13px] text-muted">
+        <p className="mt-1 px-5 text-center sm:px-8 text-[13px] text-muted">
           One push to every device with notifications on, for a change worth knowing about.
         </p>
-        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5">
-          <AnnouncementComposer initial={initial} />
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5 sm:px-8 sm:pt-6 sm:pb-8">
+          <AnnouncementComposer history={history} setHistory={setHistory} />
         </div>
       </motion.div>
     </motion.div>,

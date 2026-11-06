@@ -5,7 +5,7 @@ import { Campaigns } from "@/components/admin/campaigns";
 import { GrowthChart } from "@/components/admin/growth-chart";
 import { MoreRows } from "@/components/admin/more-rows";
 import { SignOutButton } from "@/components/admin/sign-out-button";
-import { formatAgo, formatMoment } from "@/lib/admin-time";
+import { formatAgo } from "@/lib/admin-time";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
 import type { AdminCamera, AdminData, AdminFeedGroup, AdminViewer } from "@/lib/admin.server";
 import { OFTEN_OPENS } from "@/lib/analytics";
@@ -127,19 +127,32 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full min-w-0 max-w-5xl flex-col overflow-x-clip px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-6">
       <header className="flex items-center justify-between gap-3">
-        <Link href="/" className="inline-flex min-h-11 items-center text-[15px] font-medium text-muted">
-          Back
+        <Link
+          href="/"
+          className="-ml-2 inline-flex min-h-11 items-center rounded-full px-2 text-[15px] font-medium text-muted transition-colors hover:text-foreground active:text-foreground"
+        >
+          Back to app
         </Link>
-        <div className="flex items-center gap-3">
-          <AnnouncementModal initial={data.announcements} />
+        <div className="flex items-center gap-2">
           <ThemeSwitch />
           <SignOutButton />
         </div>
       </header>
 
-      <div className="rise mt-10 min-w-0" style={{ "--i": 0 } as CSSProperties}>
-        <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.04em]">Admin</h1>
-        <p className="mt-2 truncate text-[15px] text-muted">{viewer.email}</p>
+      <div
+        className="rise mt-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-5 sm:mt-10"
+        style={{ "--i": 0 } as CSSProperties}
+      >
+        <div className="min-w-0">
+          <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.04em]">Admin</h1>
+          <p className="mt-2 truncate text-[15px] text-muted">{viewer.email}</p>
+          <p className={`mt-0.5 text-[13px] ${data.feed ? "text-muted" : "text-danger"}`}>
+            {data.feed
+              ? `CBP feed updated ${formatAgo(data.feed.fetchedAt, now)}, ${data.feed.ports.toLocaleString("en-US")} crossings`
+              : "The CBP feed did not answer."}
+          </p>
+        </div>
+        <AnnouncementModal initial={data.announcements} />
       </div>
 
       {data.problem && (
@@ -148,13 +161,13 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         </p>
       )}
 
-      <dl className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {data.stats.map((stat, index) => (
-          <div
-            key={stat.label}
-            className="rise rounded-3xl border border-line bg-surface px-4 py-4"
-            style={{ "--i": index + 1 } as CSSProperties}
-          >
+      {/* One surface, hairline cells: four separate cards weighed more than the numbers inside them. */}
+      <dl
+        className="rise mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-line bg-line lg:grid-cols-4"
+        style={{ "--i": 1 } as CSSProperties}
+      >
+        {data.stats.map((stat) => (
+          <div key={stat.label} className="bg-surface px-4 py-4">
             <dt className="text-[13px] font-medium text-muted">{stat.label}</dt>
             <dd className="mt-2 text-[32px] leading-none font-bold tracking-[-0.04em] tabular-nums">
               {stat.value.toLocaleString("en-US")}
@@ -164,20 +177,11 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         ))}
       </dl>
 
-      <p className="mt-4 text-[14px] text-muted">
-        {insights.recent.toLocaleString("en-US")} of {data.accountTotal.toLocaleString("en-US")} accounts were active in
-        the last 7 days. {insights.idle.toLocaleString("en-US")} have not done anything beyond signing in.
-      </p>
-
-      <div className="mt-10 min-w-0">
+      <div className="mt-8 min-w-0">
         <AdminTabs
           overview={
             <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
               <div className="flex flex-col gap-10">
-                <Section title="Journey" hint="How far accounts get, from sign-in to asking a question.">
-                  <Funnel steps={insights.funnel} />
-                </Section>
-
                 <Section
                   title="Arrivals"
                   hint="Browsers that opened the sign-in screen, and how many went on to sign in. Counted since this was turned on."
@@ -209,6 +213,13 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                     </Rows>
                   )}
                 </Section>
+
+                <Section
+                  title="Journey"
+                  hint={`How far accounts get, from sign-in to asking a question. ${insights.recent.toLocaleString("en-US")} of ${data.accountTotal.toLocaleString("en-US")} were active in the last 7 days, and ${insights.idle.toLocaleString("en-US")} have done nothing beyond signing in.`}
+                >
+                  <Funnel steps={insights.funnel} />
+                </Section>
               </div>
 
               <div className="flex flex-col gap-10">
@@ -219,7 +230,12 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                     now={now}
                   />
                 </Section>
-
+              </div>
+            </div>
+          }
+          acquisition={
+            <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+              <div className="flex flex-col gap-10">
                 <Section title="Where they came from" hint="Each source with how many came back and set something up.">
                   {insights.sources.length === 0 ? (
                     <p className="text-[15px] text-muted">No accounts yet.</p>
@@ -244,77 +260,58 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                   )}
                 </Section>
 
-                <Section title="Wait times">
-                  <div className="rounded-3xl border border-line bg-surface px-4 py-4">
-                    {data.feed ? (
-                      <>
-                        <p className="text-[15px] font-medium">Updated {formatAgo(data.feed.fetchedAt, now)}</p>
-                        <p className="mt-1 text-[13px] text-muted">
-                          {data.feed.ports.toLocaleString("en-US")} crossings, read {formatMoment(data.feed.fetchedAt, now)}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-[15px] text-muted">The CBP feed did not answer.</p>
-                    )}
-                  </div>
+                <Section title="Invites" hint="Who brought people in, and how many of them did something.">
+                  {insights.inviters.length === 0 ? (
+                    <p className="text-[15px] text-muted">No one has brought someone in yet.</p>
+                  ) : (
+                    <MoreRows noun="people">
+                      {insights.inviters.map((inviter) => (
+                        <li key={inviter.id} className="px-4 py-3">
+                          <div className={LINE}>
+                            <p className="text-[15px] font-medium">{inviter.name}</p>
+                            <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                              {inviter.invited.length.toLocaleString("en-US")}
+                            </p>
+                          </div>
+                          <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
+                            {inviter.activated} of {inviter.invited.length} set up crossings:{" "}
+                            {inviter.invited.slice(0, 3).map((child) => child.name).join(", ")}
+                            {inviter.invited.length > 3 ? ` and ${inviter.invited.length - 3} more` : ""}
+                          </p>
+                        </li>
+                      ))}
+                    </MoreRows>
+                  )}
                 </Section>
               </div>
+
+              <Campaigns initial={data.campaigns} />
             </div>
           }
           accounts={
-            <div className="grid min-w-0 gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-14">
-              <Section
-                title="Accounts"
-                hint="Open one to see everything it has done, and follow invites between people."
-              >
-                {insights.accounts.length === 0 ? (
-                  <p className="text-[15px] text-muted">No accounts yet.</p>
-                ) : (
-                  <AccountList
-                    accounts={insights.accounts}
-                    now={now}
-                    portLabels={data.portLabels}
-                    campaignNames={Object.fromEntries(data.campaigns.map((campaign) => [campaign.slug, campaign.name]))}
-                  />
-                )}
-                {data.accountTotal > insights.accounts.length && (
-                  <p className="mt-3 text-[13px] text-muted">
-                    Showing the latest {insights.accounts.length.toLocaleString("en-US")} of{" "}
-                    {data.accountTotal.toLocaleString("en-US")}.
-                  </p>
-                )}
-              </Section>
-
-              <div className="flex flex-col gap-10">
-                <Campaigns initial={data.campaigns} />
-
-                <Section title="Invites" hint="Who brought people in, and how many of them did something.">
-                {insights.inviters.length === 0 ? (
-                  <p className="text-[15px] text-muted">No one has brought someone in yet.</p>
-                ) : (
-                  <MoreRows noun="people">
-                    {insights.inviters.map((inviter) => (
-                      <li key={inviter.id} className="px-4 py-3">
-                        <div className={LINE}>
-                          <p className="text-[15px] font-medium">{inviter.name}</p>
-                          <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                            {inviter.invited.length.toLocaleString("en-US")}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
-                          {inviter.activated} of {inviter.invited.length} set up crossings:{" "}
-                          {inviter.invited.slice(0, 3).map((child) => child.name).join(", ")}
-                          {inviter.invited.length > 3 ? ` and ${inviter.invited.length - 3} more` : ""}
-                        </p>
-                      </li>
-                    ))}
-                  </MoreRows>
-                )}
-              </Section>
-              </div>
-            </div>
+            <Section
+              title="Accounts"
+              hint="Open one to see everything it has done, and follow invites between people."
+            >
+              {insights.accounts.length === 0 ? (
+                <p className="text-[15px] text-muted">No accounts yet.</p>
+              ) : (
+                <AccountList
+                  accounts={insights.accounts}
+                  now={now}
+                  portLabels={data.portLabels}
+                  campaignNames={Object.fromEntries(data.campaigns.map((campaign) => [campaign.slug, campaign.name]))}
+                />
+              )}
+              {data.accountTotal > insights.accounts.length && (
+                <p className="mt-3 text-[13px] text-muted">
+                  Showing the latest {insights.accounts.length.toLocaleString("en-US")} of{" "}
+                  {data.accountTotal.toLocaleString("en-US")}.
+                </p>
+              )}
+            </Section>
           }
-          crossings={
+          usage={
             <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
               <Section title="Crossings" hint="Who saved, watches, or schedules each crossing, next to its wait right now.">
                 {data.crossings.length === 0 ? (
@@ -344,79 +341,81 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                 )}
               </Section>
 
-              <Section
-                title="Opened often, no alert"
-                hint={`Accounts that opened a crossing ${OFTEN_OPENS} or more times with no alert or alarm on it.`}
-              >
-                {insights.often.length === 0 ? (
-                  <p className="text-[15px] text-muted">No one yet.</p>
-                ) : (
-                  <MoreRows noun="people">
-                    {insights.often.map((row) => (
-                      <li key={`${row.userId}:${row.portNumber}`} className="px-4 py-3">
-                        <div className={LINE}>
-                          <p className="text-[15px] font-medium">{row.name}</p>
-                          <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                            {row.opens.toLocaleString("en-US")} {row.opens === 1 ? "open" : "opens"}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
-                          {data.portLabels[row.portNumber] ?? row.portNumber}
-                          {row.lastOpenedAt ? `, last ${formatAgo(row.lastOpenedAt, now)}` : ""}
-                        </p>
-                      </li>
-                    ))}
-                  </MoreRows>
-                )}
-              </Section>
-
-              <Section title="Usage">
-                {data.usage.active === 0 ? (
-                  <p className="text-[15px] text-muted">No activity yet.</p>
-                ) : (
-                  <Rows>
-                    <li className={`${LINE} px-4 py-3`}>
-                      <p className="text-[15px] font-medium">Active accounts</p>
-                      <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                        {data.usage.active.toLocaleString("en-US")}
-                      </p>
-                    </li>
-                    {USAGE_KINDS.map((kind) => (
-                      <li key={kind} className={`${LINE} px-4 py-3`}>
-                        <p className="text-[15px] font-medium">{USAGE_LABEL[kind]}</p>
+              <div className="flex flex-col gap-10">
+                <Section title="Feature use" hint="Everything riders have done, counted per action.">
+                  {data.usage.active === 0 ? (
+                    <p className="text-[15px] text-muted">No activity yet.</p>
+                  ) : (
+                    <Rows>
+                      <li className={`${LINE} px-4 py-3`}>
+                        <p className="text-[15px] font-medium">Active accounts</p>
                         <p className="shrink-0 text-[15px] font-semibold tabular-nums">
-                          {data.usage.byKind[kind].toLocaleString("en-US")}
+                          {data.usage.active.toLocaleString("en-US")}
                         </p>
                       </li>
-                    ))}
-                  </Rows>
-                )}
-              </Section>
-
-              {data.exchange && data.exchange.conversions > 0 && (
-                <Section title="Exchange" hint="Amounts riders settled on in the converter, in dollars.">
-                  <Rows>
-                    {(
-                      [
-                        ["People", data.exchange.people.toLocaleString("en-US")],
-                        ["Conversions", data.exchange.conversions.toLocaleString("en-US")],
-                        ["Last 7 days", data.exchange.last7.toLocaleString("en-US")],
-                        ["Typical amount", usd(data.exchange.medianUsd)],
-                        ["Largest amount", usd(data.exchange.maxUsd)],
-                        [
-                          "Started from",
-                          `${data.exchange.fromUsd.toLocaleString("en-US")} USD · ${data.exchange.fromMxn.toLocaleString("en-US")} MXN`,
-                        ],
-                      ] as const
-                    ).map(([label, value]) => (
-                      <li key={label} className={`${LINE} px-4 py-3`}>
-                        <p className="text-[15px] font-medium">{label}</p>
-                        <p className="shrink-0 text-[15px] font-semibold tabular-nums">{value}</p>
-                      </li>
-                    ))}
-                  </Rows>
+                      {USAGE_KINDS.map((kind) => (
+                        <li key={kind} className={`${LINE} px-4 py-3`}>
+                          <p className="text-[15px] font-medium">{USAGE_LABEL[kind]}</p>
+                          <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                            {data.usage.byKind[kind].toLocaleString("en-US")}
+                          </p>
+                        </li>
+                      ))}
+                    </Rows>
+                  )}
                 </Section>
-              )}
+  
+                {data.exchange && data.exchange.conversions > 0 && (
+                  <Section title="Exchange" hint="Amounts riders settled on in the converter, in dollars.">
+                    <Rows>
+                      {(
+                        [
+                          ["People", data.exchange.people.toLocaleString("en-US")],
+                          ["Conversions", data.exchange.conversions.toLocaleString("en-US")],
+                          ["Last 7 days", data.exchange.last7.toLocaleString("en-US")],
+                          ["Typical amount", usd(data.exchange.medianUsd)],
+                          ["Largest amount", usd(data.exchange.maxUsd)],
+                          [
+                            "Started from",
+                            `${data.exchange.fromUsd.toLocaleString("en-US")} USD, ${data.exchange.fromMxn.toLocaleString("en-US")} MXN`,
+                          ],
+                        ] as const
+                      ).map(([label, value]) => (
+                        <li key={label} className={`${LINE} px-4 py-3`}>
+                          <p className="text-[15px] font-medium">{label}</p>
+                          <p className="shrink-0 text-[15px] font-semibold tabular-nums">{value}</p>
+                        </li>
+                      ))}
+                    </Rows>
+                  </Section>
+                )}
+  
+                <Section
+                  title="Opened often, no alert"
+                  hint={`Accounts that opened a crossing ${OFTEN_OPENS} or more times with no alert or alarm on it.`}
+                >
+                  {insights.often.length === 0 ? (
+                    <p className="text-[15px] text-muted">No one yet.</p>
+                  ) : (
+                    <MoreRows noun="people">
+                      {insights.often.map((row) => (
+                        <li key={`${row.userId}:${row.portNumber}`} className="px-4 py-3">
+                          <div className={LINE}>
+                            <p className="text-[15px] font-medium">{row.name}</p>
+                            <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                              {row.opens.toLocaleString("en-US")} {row.opens === 1 ? "open" : "opens"}
+                            </p>
+                          </div>
+                          <p className="mt-1 text-[13px] whitespace-nowrap text-muted">
+                            {data.portLabels[row.portNumber] ?? row.portNumber}
+                            {row.lastOpenedAt ? `, last ${formatAgo(row.lastOpenedAt, now)}` : ""}
+                          </p>
+                        </li>
+                      ))}
+                    </MoreRows>
+                  )}
+                </Section>
+              </div>
             </div>
           }
           cameras={

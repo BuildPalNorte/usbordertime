@@ -5,7 +5,7 @@ import { MAX_ANNOUNCEMENT_BODY, MAX_ANNOUNCEMENT_TITLE } from "@/lib/announcemen
 import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useId, useState } from "react";
+import { useId, useState, type Dispatch, type SetStateAction } from "react";
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -24,21 +24,28 @@ type Problem = "empty" | "no-devices" | "failed";
  * Sends one push notification to every device on file right now - "the app changed, come look" -
  * distinct from a wait alert or a schedule, which are each scoped to one account.
  */
-export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
+export function AnnouncementComposer({
+  history,
+  setHistory,
+}: {
+  history: Announcement[];
+  setHistory: Dispatch<SetStateAction<Announcement[]>>;
+}) {
   const reduce = useReducedMotion();
   const titleId = useId();
   const bodyId = useId();
   const urlId = useId();
   const surfaceId = useId();
+  const historyId = useId();
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("/");
   const [surface, setSurface] = useState<AnnouncementSurface>("modal");
-  const [history, setHistory] = useState(initial);
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [justSentId, setJustSentId] = useState<string | null>(null);
+  const [toggleProblem, setToggleProblem] = useState(false);
 
   const titleLeft = MAX_ANNOUNCEMENT_TITLE - title.length;
   const bodyLeft = MAX_ANNOUNCEMENT_BODY - body.length;
@@ -66,7 +73,7 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
       }
       const data = (await response.json()) as { announcement: Announcement };
       haptic("success");
-      setHistory((current) => [data.announcement, ...current]);
+      setHistory((current) => [data.announcement, ...current.map((entry) => ({ ...entry, active: false }))]);
       setJustSentId(data.announcement.id);
       setTitle("");
       setBody("");
@@ -80,6 +87,29 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
     }
   };
 
+  /** Optimistic: the switch moves at once and goes back if the server says no. */
+  const setActive = async (id: string, active: boolean) => {
+    haptic("selection");
+    setToggleProblem(false);
+    const before = history;
+    // One live at a time: switching one on switches the rest off.
+    setHistory((current) =>
+      current.map((entry) => ({ ...entry, active: entry.id === id ? active : active ? false : entry.active })),
+    );
+    try {
+      const response = await fetch("/api/admin/announcements", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, active }),
+      });
+      if (!response.ok) throw new Error("rejected");
+    } catch {
+      haptic("error");
+      setHistory(before);
+      setToggleProblem(true);
+    }
+  };
+
   const message =
     problem === "empty"
       ? "Title and body can't be empty."
@@ -90,9 +120,9 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
           : null;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="rounded-3xl border border-line bg-surface px-4 py-4">
-        <div className="space-y-4">
+    <div className="grid gap-8 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:items-start md:gap-10">
+      <div className="rounded-3xl border border-line bg-surface px-5 py-5">
+        <div className="space-y-5">
           <div>
             <div className="flex items-baseline justify-between gap-3">
               <label htmlFor={titleId} className="text-[12px] font-semibold tracking-[0.06em] text-muted uppercase">
@@ -228,11 +258,22 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
         </div>
       </div>
 
-      {history.length === 0 ? (
-        <p className="text-[15px] text-muted">Nothing sent yet.</p>
-      ) : (
-        <div className="@container overflow-x-auto overscroll-x-contain rounded-3xl border border-line bg-surface">
-          <ul className="w-max min-w-full divide-y divide-line">
+      <section className="min-w-0" aria-labelledby={historyId}>
+        <h3 id={historyId} className="text-[15px] font-semibold tracking-[-0.01em]">
+          Sent
+        </h3>
+        <p className="mt-1 text-[13px] leading-snug text-muted">
+          Only one shows in the app, the one that is on. To bring back an older one, turn the newest off and the older one on. A push already delivered stays delivered.
+        </p>
+        {toggleProblem && (
+          <p role="alert" className="mt-2 text-[13px] text-danger">
+            That change did not save. Try again.
+          </p>
+        )}
+        {history.length === 0 ? (
+          <p className="mt-3 text-[15px] text-muted">Nothing sent yet.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface">
             <AnimatePresence initial={false}>
               {history.map((entry) => (
                 <motion.li
@@ -241,24 +282,44 @@ export function AnnouncementComposer({ initial }: { initial: Announcement[] }) {
                   initial={entry.id === justSentId && !reduce ? { opacity: 0, y: -8 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={reduce ? { duration: 0.12 } : ENTER}
-                  className="px-4 py-3"
+                  className="flex items-start gap-4 px-4 py-3"
                 >
-                  <div className="flex w-full items-baseline justify-between gap-4 whitespace-nowrap">
+                  <div className={cn("min-w-0 flex-1", !entry.active && "opacity-55")}>
                     <p className="truncate text-[15px] font-medium">{entry.title}</p>
-                    <p className="shrink-0 text-[13px] text-muted tabular-nums">
+                    <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted">{entry.body}</p>
+                    <p className="mt-1 text-[12px] text-muted tabular-nums">
+                      {entry.surface === "banner" ? "Banner" : "Modal"}, {WHEN.format(new Date(entry.sentAt))},{" "}
                       {entry.recipients.toLocaleString("en-US")} {entry.recipients === 1 ? "device" : "devices"}
                     </p>
                   </div>
-                  <p className="mt-1 truncate text-[13px] text-muted">{entry.body}</p>
-                  <p className="mt-1 text-[12px] text-muted">
-                    {entry.surface === "banner" ? "Banner" : "Modal"} · {WHEN.format(new Date(entry.sentAt))}
-                  </p>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={entry.active}
+                    aria-label={`Show "${entry.title}" in the app`}
+                    onClick={() => void setActive(entry.id, !entry.active)}
+                    className="group -my-1 -mr-1 grid size-11 shrink-0 place-items-center"
+                  >
+                    <span
+                      className={cn(
+                        "relative h-[26px] w-[44px] rounded-full transition-colors duration-200",
+                        entry.active ? "bg-accent" : "bg-surface-strong",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "absolute top-[3px] left-[3px] size-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out group-active:scale-90",
+                          entry.active && "translate-x-[18px]",
+                        )}
+                      />
+                    </span>
+                  </button>
                 </motion.li>
               ))}
             </AnimatePresence>
           </ul>
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 }

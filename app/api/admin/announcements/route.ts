@@ -1,6 +1,6 @@
 import { isAdminEmail } from "@/lib/admin.server";
-import { listAnnouncements, sendAnnouncement } from "@/lib/announcement.server";
-import { parseAnnouncementInput } from "@/lib/announcement";
+import { listAnnouncements, sendAnnouncement, setAnnouncementActive } from "@/lib/announcement.server";
+import { parseAnnouncementActive, parseAnnouncementInput } from "@/lib/announcement";
 import { getAuth } from "@/lib/auth/server";
 import { badRequest, NO_STORE, serverError, unauthorized } from "@/lib/session.server";
 import { headers } from "next/headers";
@@ -48,5 +48,28 @@ export async function POST(request: Request) {
     return Response.json({ announcement: result.announcement }, { headers: NO_STORE });
   } catch (error) {
     return serverError("The announcement did not go out.", error);
+  }
+}
+
+/** Turns one broadcast's in-app copy on or off. Does not recall a push that already went out. */
+export async function PATCH(request: Request) {
+  const adminId = await requireAdmin();
+  if (!adminId) return unauthorized();
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("Expected an id and active.");
+  }
+  const input = parseAnnouncementActive(body);
+  if (!input) return badRequest("Expected an id and active.");
+
+  try {
+    const announcement = await setAnnouncementActive(input.id, input.active);
+    if (!announcement) return Response.json({ error: "That announcement is gone." }, { status: 404, headers: NO_STORE });
+    return Response.json({ announcement }, { headers: NO_STORE });
+  } catch (error) {
+    return serverError("Could not update that announcement.", error);
   }
 }
