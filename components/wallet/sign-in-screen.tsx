@@ -117,7 +117,11 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
   ];
 
   return (
-    <div className="flex min-h-[100dvh] flex-col">
+    <div
+      className="flex min-h-[100dvh] flex-col"
+      // The suggestion needs the taller sheet; without it the sheet hugs the button.
+      style={inApp ? ({ "--sign-card-h": "min(40dvh, 22rem)" } as CSSProperties) : undefined}
+    >
       <BrandBar>
         <ThemeSwitch />
         <LanguageSwitch />
@@ -189,19 +193,22 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
             </div>
           ) : null}
 
-          <motion.button
-            type="button"
-            onClick={() => void signIn()}
-            disabled={busy}
-            aria-busy={busy}
-            whileTap={reduce || busy ? undefined : { scale: 0.97 }}
-            transition={SPRING.snap}
-            className="relative mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-full bg-surface px-6 text-[16px] font-semibold text-foreground disabled:opacity-70 max-lg:hidden"
-          >
-            <HapticPad />
-            <GoogleMark />
-            {copy.signInWithGoogle}
-          </motion.button>
+          {/* The wrapper hides it below lg; .sign-in-google sets its own display, so the utility cannot sit on the button. */}
+          <div className="mt-6 flex w-full justify-center max-lg:hidden">
+            <motion.button
+              type="button"
+              onClick={() => void signIn()}
+              disabled={busy}
+              aria-busy={busy}
+              whileTap={reduce || busy ? undefined : { scale: 0.97 }}
+              transition={SPRING.snap}
+              className="sign-in-google"
+            >
+              <HapticPad />
+              <GoogleMark />
+              {copy.signInWithGoogle}
+            </motion.button>
+          </div>
 
           <p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] font-medium text-muted">
             <Link href={GUIDE_INDEX_PATH[locale]}>{copy.guidesLink}</Link>
@@ -373,8 +380,9 @@ function usePageSwipe({
 }
 
 /**
- * A translucent card over the bottom half of the page. It is the swipe area:
- * it follows the finger, and the chevrons above the label show which way to go.
+ * A translucent card over the bottom of the page. It is the swipe area:
+ * it follows the finger. The white button is the tap; the chevrons under it
+ * show that the card also moves up.
  */
 function SignInCard({
   swipe,
@@ -398,26 +406,28 @@ function SignInCard({
     >
       <span aria-hidden className="sign-in-card-light" />
       {notice}
-      <span aria-hidden className="sign-in-chevrons">
-        <ChevronUp />
-        <ChevronUp />
-      </span>
+      {notice ? null : (
+        <span aria-hidden className="sign-in-chevrons">
+          <ChevronUp />
+          <ChevronUp />
+        </span>
+      )}
       <button
         type="button"
         onClick={onTap}
         disabled={busy}
         aria-busy={busy}
-        className="sign-in-card-action"
+        className={cn("sign-in-google", !notice && "sign-in-google-lift")}
       >
         <HapticPad />
         <GoogleMark />
-        <span className="text-[19px] leading-none font-semibold tracking-[-0.02em]">
-          {copy.signInWithGoogle}
-        </span>
+        {copy.signInWithGoogle}
       </button>
-      <p aria-hidden className={cn("mt-3 text-[14px] leading-none font-medium text-muted", notice ? "max-lg:hidden" : false)}>
-        {copy.signInSwipe}
-      </p>
+      {notice ? null : (
+        <p aria-hidden className="mt-3.5 text-[14px] leading-none font-medium text-muted">
+          {copy.signInSwipe}
+        </p>
+      )}
     </motion.div>
   );
 }
@@ -479,7 +489,7 @@ function readVelocity(samples: { v: number; t: number }[]) {
 
 export function GoogleMark() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-5">
+    <svg viewBox="0 0 24 24" aria-hidden className="size-5 shrink-0">
       <path
         fill="#4285F4"
         d="M23.04 12.26c0-.82-.07-1.6-.2-2.36H12v4.47h6.2a5.3 5.3 0 0 1-2.3 3.48v2.89h3.72c2.18-2 3.42-4.96 3.42-8.48Z"
