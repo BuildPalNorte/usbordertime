@@ -1087,7 +1087,7 @@ export const COPY: Record<Locale, Copy> = {
     signInWithGoogle: "Iniciar sesión con Google",
     signInSwipe: "Desliza hacia arriba",
     signInRedirecting: "Iniciando sesión…",
-    signInHeadline: "Sabe antes de cruzar.",
+    signInHeadline: "Conoce antes de cruzar.",
     signInSample: "Ejemplo",
     inAppTitle: (app) => `Estás en ${app}`,
     inAppBody:

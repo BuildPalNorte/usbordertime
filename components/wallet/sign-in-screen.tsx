@@ -30,7 +30,6 @@ import { cardBackground, PALETTES, project, TONE_DOT } from "@/lib/ports";
 import type { CSSProperties } from "react";
 import { CARD_H, PEEK, REDUCED, SPRING, stackHeight } from "./motion";
 import { ThemeSwitch } from "./theme-switch";
-import { WaitDuration } from "./wait-duration";
 
 /** Upward travel that arms sign-in. A flick can still project past it. */
 const COMMIT = 108;
@@ -112,9 +111,9 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
   const pal = (id: string) => PALETTES.find((p) => p.id === id) ?? PALETTES[0];
   // Same anatomy as the wallet: earlier cards peek above, the last one is the front card.
   const cards = [
-    { name: "Nuevo", sub: "Brownsville", wait: 10, tone: "clear" as const, palette: pal("pine") },
-    { name: "Viejo", sub: "Brownsville", wait: 25, tone: "busy" as const, palette: pal("clay") },
-    { name: "De los tomates", sub: "Brownsville", wait: 5, tone: "clear" as const, palette: pal("cobalt") },
+    { name: "Nuevo", sub: "Brownsville", tone: "clear" as const, palette: pal("pine") },
+    { name: "Viejo", sub: "Brownsville", tone: "busy" as const, palette: pal("clay") },
+    { name: "De los tomates", sub: "Brownsville", tone: "clear" as const, palette: pal("cobalt") },
   ];
 
   return (
@@ -162,19 +161,10 @@ export function SignInScreen({ problem }: { problem?: "profile" }) {
                     <p className="truncate text-[19px] leading-[1.15] font-semibold tracking-[-0.02em]">{c.name}</p>
                     <p className="mt-1 truncate text-[13px] leading-none opacity-[0.72]">{c.sub}</p>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <p className="flex items-baseline justify-end">
-                      <WaitDuration
-                        minutes={c.wait}
-                        numberClassName="text-[36px] leading-none font-semibold tracking-[-0.045em]"
-                        unitClassName="text-[13px] font-medium opacity-[0.72]"
-                      />
-                    </p>
-                    <p className="mt-1.5 flex items-center justify-end gap-1.5 text-[12px] leading-none font-medium opacity-[0.85]">
-                      <span className={cn("size-1.5 rounded-full", TONE_DOT[c.tone])} />
-                      {copy.tone[c.tone]}
-                    </p>
-                  </div>
+                  <p className="flex shrink-0 items-center gap-1.5 pt-1.5 text-[12px] leading-none font-medium opacity-[0.85]">
+                    <span className={cn("size-1.5 rounded-full", TONE_DOT[c.tone])} />
+                    {copy.tone[c.tone]}
+                  </p>
                 </div>
                 {front && (
                   <p className="absolute inset-x-[18px] bottom-[18px] text-[12px] leading-none font-medium opacity-[0.72]">
