@@ -3,11 +3,20 @@ import { DISCOVER } from "@/lib/discover";
 import { guideIndexJsonLd, guideJsonLd, jsonLd } from "@/lib/guide-schema";
 import { COPY, type Locale } from "@/lib/i18n";
 import { GUIDES, guideById, guideIndexPath, guidePath, type Guide } from "@/lib/guides";
+import { GuideArt } from "@/components/guides/guide-art";
+import { BandBar, SectionChips, SectionIcon } from "@/components/guides/section-visual";
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
 const OTHER: Record<Locale, Locale> = { en: "es", es: "en" };
+
+/** The first sentence, bolded as the section's key point, and the rest. Null when it would be the whole paragraph. */
+function firstSentence(paragraph: string): [string, string] | null {
+  const match = paragraph.match(/^.+?[.!?](?=\s)/);
+  if (!match || match[0].length > 150 || match[0].length >= paragraph.length - 1) return null;
+  return [match[0], paragraph.slice(match[0].length)];
+}
 
 function JsonLd({ data }: { data: object }) {
   return (
@@ -50,7 +59,13 @@ function GuideTile({
         className,
       )}
     >
-      <span className="font-mono text-[13px] font-medium tracking-[0.08em] opacity-60">{number(guide)}</span>
+      <span className="flex items-start justify-between gap-3">
+        <span className="font-mono text-[13px] font-medium tracking-[0.08em] opacity-60">{number(guide)}</span>
+        <GuideArt
+          id={guide.id}
+          className="h-14 w-24 shrink-0 overflow-hidden rounded-xl bg-surface-strong ring-1 ring-line"
+        />
+      </span>
       <span className="block">
         <span className="block text-[22px] leading-[1.1] font-bold tracking-[-0.03em] text-balance">{text.label}</span>
         <span
@@ -311,17 +326,48 @@ export function GuideArticle({ locale, guide }: { locale: Locale; guide: Guide }
       <JsonLd data={guideJsonLd(locale, guide)} />
       <main>
         <Stage locale={locale} otherHref={guidePath(OTHER[locale], guide)} title={text.title} lead={text.lead}>
-          <article className="mx-auto mt-10 max-w-2xl px-1 sm:mt-20 sm:px-4">
-            {text.sections.map((section) => (
-              <section key={section.heading} className="mt-12 first:mt-0">
-                <h2 className="text-[24px] leading-[1.12] font-bold tracking-[-0.035em] text-balance sm:text-[30px]">
-                  {section.heading}
-                </h2>
-                {section.paragraphs.map((paragraph) => (
-                  <p key={paragraph} className="mt-3 text-[16px] leading-[1.65] text-muted text-pretty sm:mt-4 sm:text-[17px]">
-                    {paragraph}
-                  </p>
-                ))}
+          <GuideArt
+            id={guide.id}
+            className="mx-auto mt-6 block aspect-[8/3] w-full max-w-3xl overflow-hidden rounded-[24px] bg-surface ring-1 ring-line sm:mt-10 sm:rounded-[32px]"
+          />
+          <article className="mx-auto mt-10 max-w-2xl px-1 sm:mt-16 sm:px-4">
+            {text.sections.map((section, index) => (
+              <section
+                key={section.heading}
+                className="rise mt-8 rounded-[24px] bg-surface p-5 ring-1 ring-line first:mt-0 sm:p-7"
+                style={{ "--i": Math.min(index, 4) } as CSSProperties}
+              >
+                <div className="flex items-center gap-3.5 sm:gap-4">
+                  <SectionIcon section={section} index={index} />
+                  <div className="min-w-0">
+                    <p className="font-mono text-[12px] font-semibold tracking-[0.1em] text-accent">
+                      {String(index + 1).padStart(2, "0")} / {String(text.sections.length).padStart(2, "0")}
+                    </p>
+                    <h2 className="mt-0.5 text-[22px] leading-[1.1] font-bold tracking-[-0.035em] text-balance sm:text-[28px]">
+                      {section.heading}
+                    </h2>
+                  </div>
+                </div>
+                <SectionChips section={section} locale={locale} />
+                <BandBar section={section} locale={locale} />
+                {section.paragraphs.map((paragraph, pIndex) => {
+                  const split = pIndex === 0 ? firstSentence(paragraph) : null;
+                  return (
+                    <p
+                      key={paragraph}
+                      className="mt-4 text-[16px] leading-[1.65] text-muted text-pretty sm:text-[17px]"
+                    >
+                      {split ? (
+                        <>
+                          <strong className="font-semibold text-foreground">{split[0]}</strong>
+                          {split[1]}
+                        </>
+                      ) : (
+                        paragraph
+                      )}
+                    </p>
+                  );
+                })}
               </section>
             ))}
 

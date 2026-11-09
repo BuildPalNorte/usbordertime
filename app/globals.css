@@ -727,3 +727,131 @@ input[inputmode="decimal"]:focus-visible {
     animation: none;
   }
 }
+
+/* Guide illustrations. Decorative motion only. */
+.art-car {
+  animation: art-drive 3.2s ease-in-out infinite alternate;
+}
+.art-drive .art-car {
+  animation-name: art-drive-up;
+}
+.art-car-v {
+  animation: art-drive-v 2.8s ease-in-out infinite alternate;
+}
+.art-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: usual-bar 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.art-needle {
+  animation: art-needle 4.5s ease-in-out infinite alternate;
+}
+.art-walker {
+  animation: art-drive 3.6s ease-in-out infinite alternate;
+}
+.art-cloud {
+  animation: art-cloud 14s ease-in-out infinite alternate;
+}
+.art-cloud-slow {
+  animation-duration: 20s;
+}
+.art-flag {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: art-flag 2.4s ease-in-out infinite alternate;
+}
+.art-road {
+  animation: art-road 1.4s linear infinite;
+}
+.art-road-v {
+  animation: art-road 1.4s linear infinite;
+}
+.art-wave {
+  animation: art-wave 3s ease-in-out infinite alternate;
+}
+.art-gate {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: art-gate 4s ease-in-out infinite;
+}
+.band-fill {
+  transform-origin: left;
+  animation: art-band 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes art-drive {
+  to {
+    transform: translateX(26px);
+  }
+}
+@keyframes art-drive-up {
+  to {
+    transform: translate(18px, -6px);
+  }
+}
+@keyframes art-drive-v {
+  to {
+    transform: translateX(10px);
+  }
+}
+@keyframes art-needle {
+  from {
+    transform: rotate(18deg);
+  }
+  to {
+    transform: rotate(152deg);
+  }
+}
+@keyframes art-cloud {
+  to {
+    transform: translateX(40px);
+  }
+}
+@keyframes art-flag {
+  to {
+    transform: skewY(5deg) scaleX(0.94);
+  }
+}
+@keyframes art-road {
+  to {
+    stroke-dashoffset: -38;
+  }
+}
+@keyframes art-wave {
+  to {
+    transform: translateX(14px);
+  }
+}
+@keyframes art-gate {
+  0%,
+  55% {
+    transform: rotate(0);
+  }
+  70%,
+  90% {
+    transform: rotate(-70deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes art-band {
+  from {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .art-car,
+  .art-car-v,
+  .art-bar,
+  .art-needle,
+  .art-walker,
+  .art-cloud,
+  .art-flag,
+  .art-road,
+  .art-road-v,
+  .art-wave,
+  .art-gate,
+  .band-fill {
+    animation: none;
+  }
+}
