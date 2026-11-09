@@ -3,6 +3,7 @@
 import { useLocale } from "@/components/locale-provider";
 import { ArrowDownTrayIcon } from "@heroicons-animated/react/arrow-down-tray";
 import { authClient } from "@/lib/auth/client";
+import { GUIDE_INDEX_PATH } from "@/lib/guide-paths";
 import { haptic } from "@/lib/haptics";
 import { installStore } from "@/lib/install-store";
 import { rememberCampaign } from "@/lib/campaign";
@@ -50,7 +51,7 @@ import { LEVEL_COLOR, LevelIcon, StreakBadge, useIconLoop } from "./streak-chip"
 import { useStreak } from "./use-streak";
 
 export function AccountButton({ className }: { className?: string }) {
-  const { copy } = useLocale();
+  const { copy, locale } = useLocale();
   const reduce = useReducedMotion();
   const install = useInstall();
   const { data: session, isPending } = authClient.useSession();
@@ -395,6 +396,14 @@ export function AccountButton({ className }: { className?: string }) {
                     {copy.admin}
                   </Link>
                 )}
+                <Link
+                  href={GUIDE_INDEX_PATH[locale]}
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex h-10 w-full items-center rounded-xl px-3 text-left text-[14px] font-medium"
+                >
+                  {copy.guidesLink}
+                </Link>
                 <Link
                   href="/privacy"
                   role="menuitem"
