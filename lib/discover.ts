@@ -34,6 +34,12 @@ export const DISCOVER: Record<Locale, DiscoverCopy> = {
           "The numbers come from the public border-wait feed published by U.S. Customs and Border Protection. Border Time does not time the line itself. CBP updates the posted wait through the day, and the app shows that reading.",
       },
       {
+        id: "how-estimate",
+        question: "How does Border Time estimate a wait?",
+        answer:
+          "The number is one stretch: from the back of that lane’s line to the primary inspection booth, the moment you reach the officer. When the queue is long, the back of the line can be in the other country. The drive to the line, the time with the officer, and a second inspection are left out. The average under the live number is the usual length of that same stretch for this hour. Border Time does not time the line.",
+      },
+      {
         id: "official-source",
         question: "Is Border Time the official CBP site?",
         answer:
@@ -63,6 +69,24 @@ export const DISCOVER: Record<Locale, DiscoverCopy> = {
         answer:
           "A blank, “update pending”, or “N/A” means there is no reading. A posted 0 or “no delay” means CBP measured no delay. Pending is a gap in the data, and N/A means that crossing does not offer the lane.",
       },
+      {
+        id: "canada-coverage",
+        question: "Does Border Time include the Canadian border?",
+        answer:
+          "Yes. Border Time shows the U.S. land ports CBP publishes on the Canadian border as well as the Mexican border. The number is the wait to enter the United States. Peace Arch, the Detroit–Windsor crossings, the Buffalo–Niagara bridges, and Champlain are included when CBP lists them.",
+      },
+      {
+        id: "sentri-vs-nexus",
+        question: "What is the difference between SENTRI and NEXUS?",
+        answer:
+          "SENTRI is the trusted-traveler lane on the Mexican border. NEXUS is the trusted-traveler lane on the Canadian border. Border Time labels that lane SENTRI at a Mexican port and NEXUS at a Canadian port. They are separate from Ready Lane.",
+      },
+      {
+        id: "truck-wait",
+        question: "Which border wait should a truck driver read?",
+        answer:
+          "Read the commercial lane, or FAST if the driver and the load are enrolled in FAST. A passenger wait is a different line. Truck crossings such as Otay Mesa, Mariposa, World Trade, Pharr, and the Ambassador Bridge post their own commercial number.",
+      },
     ],
   },
   es: {
@@ -79,6 +103,12 @@ export const DISCOVER: Record<Locale, DiscoverCopy> = {
         question: "¿De dónde salen los tiempos de espera de Border Time?",
         answer:
           "Los números salen del feed público de tiempos de espera que publica la Oficina de Aduanas y Protección Fronteriza de Estados Unidos (CBP). Border Time no mide la fila. CBP actualiza el tiempo publicado a lo largo del día, y la app muestra esa lectura.",
+      },
+      {
+        id: "how-estimate",
+        question: "¿Cómo estima Border Time una espera?",
+        answer:
+          "El número es un solo tramo: del final de la fila de ese carril a la caseta de inspección primaria, el momento en que llegas con el oficial. Si la cola es larga, el final de la fila puede estar en el otro país. El trayecto hasta la fila, el tiempo con el oficial y una segunda revisión quedan fuera. El promedio debajo del número en vivo es el largo usual de ese mismo tramo para esta hora. Border Time no mide la fila.",
       },
       {
         id: "official-source",
@@ -109,6 +139,24 @@ export const DISCOVER: Record<Locale, DiscoverCopy> = {
         question: "¿Qué significa un tiempo de espera en blanco?",
         answer:
           "Un espacio en blanco, “actualización pendiente” o “N/A” significa que no hay lectura. Un 0 publicado o “sin demora” significa que CBP midió que no hay demora. Pendiente es un hueco en los datos, y N/A significa que ese cruce no ofrece el carril.",
+      },
+      {
+        id: "canada-coverage",
+        question: "¿Border Time incluye la frontera con Canadá?",
+        answer:
+          "Sí. Border Time muestra los puertos terrestres de Estados Unidos que publica CBP en la frontera con Canadá y en la frontera con México. El número es la espera para entrar a Estados Unidos. Peace Arch, los cruces de Detroit–Windsor, los puentes de Buffalo–Niagara y Champlain entran cuando CBP los lista.",
+      },
+      {
+        id: "sentri-vs-nexus",
+        question: "¿Cuál es la diferencia entre SENTRI y NEXUS?",
+        answer:
+          "SENTRI es el carril de viajero confiable en la frontera con México. NEXUS es el de la frontera con Canadá. Border Time nombra ese carril SENTRI en un puerto de México y NEXUS en un puerto de Canadá. Los dos son distintos del carril Ready.",
+      },
+      {
+        id: "truck-wait",
+        question: "¿Qué espera debe leer quien maneja un camión?",
+        answer:
+          "Lee el carril comercial, o FAST si el conductor y la carga están inscritos en FAST. La espera de pasajeros es otra fila. Cruces de camiones como Otay Mesa, Mariposa, World Trade, Pharr y el Ambassador Bridge publican su propio número comercial.",
       },
     ],
   },

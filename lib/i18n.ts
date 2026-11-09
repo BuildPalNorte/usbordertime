@@ -456,9 +456,9 @@ export const COPY: Record<Locale, Copy> = {
     guidesTitle: "Border crossing guides",
     guidesLink: "Guides",
     guidesDescription:
-      "Border Time guides to the busiest U.S.–Mexico crossings: which bridge, which lane, how to read the wait CBP posts, and how that wait eases congestion.",
+      "Border Time guides to U.S. land ports on the Mexican and Canadian borders: which crossing, which lane, how to read the wait CBP posts, and how that wait eases congestion.",
     guidesLead:
-      "Which bridge to take, which lane to use, what a posted wait means, and how knowing it eases congestion. For the live number, open Border Time.",
+      "Which bridge to take, which lane to use, what a posted wait means, and how the usual wait is estimated. For the live number, open Border Time.",
     guideStartHere: "Start here",
     guideRelated: "Keep reading",
     guideLiveHeading: "See the wait right now",
@@ -466,7 +466,7 @@ export const COPY: Record<Locale, Copy> = {
       "Waits change every few minutes. Sign in to Border Time to see the live number for these crossings and save the ones you use.",
     guideOpenApp: "Open Border Time",
     guideSourceNote:
-      "Wait times come from U.S. Customs and Border Protection. Which lanes a crossing offers can change, so CBP is the final word. Border Time is not CBP, the Department of Homeland Security, or Mexican customs, and these guides are not official advice.",
+      "Wait times come from U.S. Customs and Border Protection. Which lanes a crossing offers can change, so CBP is the final word. Border Time is not CBP, the Department of Homeland Security, or customs on the other side of the border, and these guides are not official advice.",
     guideOtherLanguage: "Leer en español",
     guideAllGuides: "All guides",
     guideLangName: "English",
@@ -1002,9 +1002,9 @@ export const COPY: Record<Locale, Copy> = {
     guidesTitle: "Guías para cruzar la frontera",
     guidesLink: "Guías",
     guidesDescription:
-      "Guías de Border Time de los cruces más usados entre México y Estados Unidos: qué puente, qué carril, cómo leer el tiempo que publica CBP y cómo esa espera baja la congestión.",
+      "Guías de Border Time de los puertos terrestres de EE. UU. en las fronteras con México y con Canadá: qué cruce, qué carril, cómo leer el tiempo que publica CBP y cómo esa espera baja la congestión.",
     guidesLead:
-      "Qué puente tomar, qué carril usar, qué significa el tiempo publicado y cómo saberlo baja la congestión. Para el número en vivo, abre Border Time.",
+      "Qué puente tomar, qué carril usar, qué significa el tiempo publicado y cómo se estima la espera usual. Para el número en vivo, abre Border Time.",
     guideStartHere: "Empieza aquí",
     guideRelated: "Sigue leyendo",
     guideLiveHeading: "Mira la espera ahora mismo",
@@ -1012,7 +1012,7 @@ export const COPY: Record<Locale, Copy> = {
       "Las esperas cambian cada pocos minutos. Inicia sesión en Border Time para ver el número en vivo de estos cruces y guardar los que usas.",
     guideOpenApp: "Abrir Border Time",
     guideSourceNote:
-      "Los tiempos vienen de la Oficina de Aduanas y Protección Fronteriza de EE. UU. (CBP). Los carriles de cada cruce pueden cambiar, así que CBP tiene la última palabra. Border Time no es CBP, el Departamento de Seguridad Nacional ni la aduana mexicana, y estas guías no son un aviso oficial.",
+      "Los tiempos vienen de la Oficina de Aduanas y Protección Fronteriza de EE. UU. (CBP). Los carriles de cada cruce pueden cambiar, así que CBP tiene la última palabra. Border Time no es CBP, el Departamento de Seguridad Nacional ni la aduana del otro lado, y estas guías no son un aviso oficial.",
     guideOtherLanguage: "Read in English",
     guideAllGuides: "Todas las guías",
     guideLangName: "Español",

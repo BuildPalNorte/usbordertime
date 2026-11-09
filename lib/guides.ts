@@ -32,7 +32,7 @@ export const GUIDES_BASE: Record<Locale, string> = GUIDE_INDEX_PATH;
 export const GUIDES: readonly Guide[] = [
   {
     id: "read-a-wait",
-    related: ["border-congestion", "san-ysidro-otay", "el-paso-juarez"],
+    related: ["estimate", "border-congestion", "san-ysidro-otay"],
     en: {
       slug: "how-to-read-a-border-wait",
       label: "How to read a border wait",
@@ -103,6 +103,122 @@ export const GUIDES: readonly Guide[] = [
           heading: "Mira la espera usual, no solo la actual",
           paragraphs: [
             "El número en vivo te dice cómo está ahora. La espera usual para esta hora te dice si ahora es normal. Border Time muestra las dos en cada cruce, así que 40 minutos en un puente que suele tener 15 es una decisión distinta a 40 en uno que siempre tiene 40.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "estimate",
+    related: ["read-a-wait", "best-time", "border-congestion"],
+    en: {
+      slug: "how-border-wait-estimates-work",
+      label: "How the estimate works",
+      title: "How Border Time estimates a border wait",
+      description:
+        "CBP’s wait runs from the back of the line to the primary inspection booth. The average under the live number is the usual length of that same stretch for this hour.",
+      lead: "A crossing shows two numbers, and both measure the same stretch of the trip. The clock starts at the back of the line and stops when you reach the officer. U.S. Customs and Border Protection (CBP) posts that stretch. Border Time does not time it.",
+      sections: [
+        {
+          heading: "From the back of the line to the booth",
+          paragraphs: [
+            "CBP’s number is one stretch. It starts when you reach the back of the line for the lane you are in, and it ends when you reach that lane’s primary inspection booth, the moment you get to the officer. On a long line the back of the queue can sit in Mexico or Canada, before the port itself. On a short line it can already be on the U.S. side. The start point moves with the line.",
+            "The clock stops at the booth. It leaves out the time the officer spends with you, a second inspection, and the road after you are waved through. It also leaves out everything before the line: the drive to the crossing and the distance up to wherever the queue happens to end.",
+            "Cars, Ready Lane, SENTRI, NEXUS, people on foot, and trucks each have their own line. The number is the back of the line you will join. The average under the live number is the usual length of that same stretch for this hour, not a measurement of a longer trip.",
+          ],
+        },
+        {
+          heading: "The live number",
+          paragraphs: [
+            "The large number is that stretch, as CBP posts it for the lane right now. Border Time refreshes that reading through the day. A blank is still a missing reading, not a short line.",
+          ],
+        },
+        {
+          heading: "The average under it",
+          paragraphs: [
+            "Under the live number the card says “avg” and a time. That is CBP’s average length of the same stretch, from the back of the line to the booth, for this hour on this lane. It is the usual wait, not a second measurement of the line you are in.",
+            "Open the crossing and the same average is on every lane CBP publishes. The day chart draws those hourly averages for the lane on screen. It does not blend lanes together, and it does not fold today’s live reading into the bars.",
+          ],
+        },
+        {
+          heading: "The hour at the crossing",
+          paragraphs: [
+            "The average on the card is for the hour on the crossing’s own clock, not the hour on your phone. CBP leaves later hours blank until they have an average, so a missing hour uses the latest earlier hour that already has one. A published 0 stays 0. It is a real average. A lane with no average at all leaves that line off the card.",
+          ],
+        },
+        {
+          heading: "The high",
+          paragraphs: [
+            "CBP also lists a high for the hour. When that high sits above the average, the card shows the span from the average up to the high. When the high is not above the average, you see the average alone.",
+          ],
+        },
+        {
+          heading: "The quieter stretch",
+          paragraphs: [
+            "The day chart names the quietest part of those averages for the lane you are looking at. Hours that stay within 8 minutes of the quietest hour join that stretch. A stretch longer than 6 hours is cut to a 6-hour slice that still holds the quietest hour. When at least 18 hours are published and the whole day stays within those 8 minutes, the chart says the wait is about the same all day.",
+            "The sentence uses the hours for that lane, as in “Quietest from 10 AM to 3 PM” when those are the hours. It is not a reservation, and it does not include the drive to the bridge.",
+          ],
+        },
+        {
+          heading: "How to use the two numbers",
+          paragraphs: [
+            "A live wait close to the average is an ordinary hour. A live wait well above it is a spike. When you will arrive later, use the usual wait for that hour. Neither number is a promise of your own crossing.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "como-funciona-la-estimacion",
+      label: "Cómo funciona la estimación",
+      title: "Cómo estima Border Time una espera en la frontera",
+      description:
+        "La espera de CBP va del final de la fila a la caseta de inspección primaria. El promedio debajo del número en vivo es el largo usual de ese mismo tramo para esta hora.",
+      lead: "Un cruce muestra dos números, y los dos miden el mismo tramo del viaje. El reloj empieza al final de la fila y se detiene cuando llegas con el oficial. La Oficina de Aduanas y Protección Fronteriza de Estados Unidos (CBP) publica ese tramo. Border Time no lo mide.",
+      sections: [
+        {
+          heading: "Del final de la fila a la caseta",
+          paragraphs: [
+            "El número de CBP es un solo tramo. Empieza cuando llegas al final de la fila del carril en el que vas, y termina cuando llegas a la caseta de inspección primaria de ese carril, en el momento en que estás con el oficial. Si la fila es larga, el final puede estar en México o en Canadá, antes del puerto. Si es corta, puede estar ya del lado de Estados Unidos. El punto de inicio se mueve con la fila.",
+            "El reloj se detiene en la caseta. Deja fuera el tiempo que el oficial pasa contigo, una segunda revisión y el camino después de que te dejan pasar. También deja fuera todo lo que va antes de la fila: el trayecto al cruce y la distancia hasta donde la cola termine ese día.",
+            "Los autos, el carril Ready, SENTRI, NEXUS, quien va a pie y los camiones tienen cada uno su fila. El número es el final de la fila a la que te vas a formar. El promedio debajo del número en vivo es el largo usual de ese mismo tramo para esta hora, no la medición de un viaje más largo.",
+          ],
+        },
+        {
+          heading: "El número en vivo",
+          paragraphs: [
+            "El número grande es ese tramo, tal como CBP lo publica para el carril ahora. Border Time actualiza esa lectura a lo largo del día. Un espacio en blanco sigue siendo una lectura que falta, no una fila corta.",
+          ],
+        },
+        {
+          heading: "El promedio debajo",
+          paragraphs: [
+            "Debajo del número en vivo la tarjeta dice “promedio” y un tiempo. Es el largo promedio que CBP da a ese mismo tramo, del final de la fila a la caseta, para esta hora en este carril. Es la espera usual, no una segunda medición de la fila en la que estás.",
+            "Al abrir el cruce, el mismo promedio aparece en cada carril que CBP publica. La gráfica del día dibuja esos promedios por hora del carril que estás viendo. No mezcla carriles, y no mete la lectura en vivo de hoy en las barras.",
+          ],
+        },
+        {
+          heading: "La hora del cruce",
+          paragraphs: [
+            "El promedio de la tarjeta es el de la hora en el reloj del cruce, no el de la hora en tu teléfono. CBP deja las horas de más tarde en blanco hasta que tienen un promedio, así que una hora vacía usa la hora anterior más reciente que ya tiene uno. Un 0 publicado se queda en 0. Es un promedio real. Un carril sin ningún promedio deja esa línea fuera de la tarjeta.",
+          ],
+        },
+        {
+          heading: "El máximo",
+          paragraphs: [
+            "CBP también lista un máximo para la hora. Cuando ese máximo está por encima del promedio, la tarjeta muestra el tramo desde el promedio hasta el máximo. Cuando el máximo no está por encima del promedio, ves solo el promedio.",
+          ],
+        },
+        {
+          heading: "El tramo más tranquilo",
+          paragraphs: [
+            "La gráfica del día nombra la parte más tranquila de esos promedios para el carril que estás viendo. Las horas que se quedan a 8 minutos o menos de la hora más tranquila se suman a ese tramo. Un tramo de más de 6 horas se corta a un segmento de 6 horas que todavía incluye la hora más tranquila. Cuando hay al menos 18 horas publicadas y todo el día se queda dentro de esos 8 minutos, la gráfica dice que la espera es casi igual todo el día.",
+            "La frase usa las horas de ese carril, como en “Más tranquilo de 10 a. m. a 3 p. m.” cuando esas son las horas. No es una reserva, y no incluye el trayecto hasta el puente.",
+          ],
+        },
+        {
+          heading: "Cómo usar los dos números",
+          paragraphs: [
+            "Una espera en vivo cerca del promedio es una hora normal. Una espera en vivo muy por encima es un pico. Si vas a llegar más tarde, usa la espera usual de esa hora. Ninguno de los dos números es una promesa de tu propio cruce.",
           ],
         },
       ],
@@ -681,6 +797,944 @@ export const GUIDES: readonly Guide[] = [
           heading: "Antes de salir",
           paragraphs: [
             "Revisa primero el horario. Algunos carriles peatonales cierran antes que los de autos, y un cruce que marca el carril como cerrado no tiene espera que leer. Ten tus documentos listos, porque la espera solo cuenta el tiempo en fila.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "canada-border",
+    related: ["peace-arch", "detroit-windsor", "buffalo-niagara"],
+    en: {
+      slug: "canada-border-wait-times",
+      label: "Canadian border waits",
+      title: "Canadian border wait times",
+      description:
+        "How to read a U.S.–Canada border wait: Peace Arch, Detroit–Windsor, Buffalo–Niagara, and Champlain, and why the number is the line into the United States.",
+      lead: "CBP posts a wait for the Canadian border the same way it posts one for Mexico. The number is the line to enter the United States, and the lane that matters has a different name.",
+      sections: [
+        {
+          heading: "The wait is into the United States",
+          paragraphs: [
+            "A Canadian-border wait on Border Time is the delay CBP reports for travelers entering the United States. It is not the line to enter Canada. The two countries run separate inspections, and only the U.S. number is in this app.",
+          ],
+        },
+        {
+          heading: "Where people actually cross",
+          paragraphs: [
+            "On the West Coast, Peace Arch and Pacific Highway at Blaine carry most of the Seattle–Vancouver traffic, with Sumas and Lynden as the smaller alternatives. In Michigan, the Ambassador Bridge and the Detroit–Windsor Tunnel serve Detroit, and the Blue Water Bridge serves Port Huron. In New York, the Peace Bridge, Rainbow Bridge, and Lewiston–Queenston Bridge split Buffalo and Niagara Falls, and Champlain carries I-87 toward Montreal.",
+            "Each of those is its own crossing with its own lanes. “The Canada border” is not one line.",
+          ],
+        },
+        {
+          heading: "NEXUS, not SENTRI",
+          paragraphs: [
+            "The trusted-traveler lane on this border is NEXUS. Border Time labels that lane NEXUS at a Canadian port and SENTRI at a Mexican port, because they are different programs on the same kind of booth. Ready Lane, where a crossing has it, is the RFID line and is separate from NEXUS.",
+          ],
+        },
+        {
+          heading: "Compare the crossing you can reach",
+          paragraphs: [
+            "A shorter wait only helps if you can get to that crossing. Add the drive before you leave a bridge that is already on your route. Read the same lane on each one: standard if that is your line, NEXUS if you are enrolled, commercial if you drive a truck.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-frontera-canada",
+      label: "Espera en la frontera con Canadá",
+      title: "Tiempos de espera en la frontera con Canadá",
+      description:
+        "Cómo leer una espera entre Estados Unidos y Canadá: Peace Arch, Detroit–Windsor, Buffalo–Niagara y Champlain, y por qué el número es la fila para entrar a Estados Unidos.",
+      lead: "CBP publica una espera en la frontera con Canadá igual que en la de México. El número es la fila para entrar a Estados Unidos, y el carril que importa tiene otro nombre.",
+      sections: [
+        {
+          heading: "La espera es para entrar a Estados Unidos",
+          paragraphs: [
+            "Una espera de la frontera con Canadá en Border Time es la demora que CBP reporta para quien entra a Estados Unidos. No es la fila para entrar a Canadá. Los dos países hacen inspecciones distintas, y en esta app solo está el número de Estados Unidos.",
+          ],
+        },
+        {
+          heading: "Por dónde cruza la gente",
+          paragraphs: [
+            "En la costa oeste, Peace Arch y Pacific Highway en Blaine llevan la mayor parte del tráfico entre Seattle y Vancouver, y Sumas y Lynden son las alternativas más chicas. En Michigan, el Ambassador Bridge y el túnel Detroit–Windsor sirven a Detroit, y el Blue Water Bridge sirve a Port Huron. En Nueva York, el Peace Bridge, el Rainbow Bridge y el Lewiston–Queenston se reparten Buffalo y Niagara Falls, y Champlain lleva la I-87 hacia Montreal.",
+            "Cada uno es un cruce con sus propios carriles. “La frontera con Canadá” no es una sola fila.",
+          ],
+        },
+        {
+          heading: "NEXUS, no SENTRI",
+          paragraphs: [
+            "El carril de viajero confiable en esta frontera es NEXUS. Border Time lo llama NEXUS en un puerto de Canadá y SENTRI en un puerto de México, porque son programas distintos en el mismo tipo de caseta. El carril Ready, donde el cruce lo tiene, es la fila con chip RFID y va aparte de NEXUS.",
+          ],
+        },
+        {
+          heading: "Compara el cruce al que sí llegas",
+          paragraphs: [
+            "Una espera más corta solo sirve si puedes llegar a ese cruce. Suma el trayecto antes de dejar un puente que ya está en tu ruta. Lee el mismo carril en cada uno: estándar si esa es tu fila, NEXUS si estás inscrito, comercial si manejas un camión.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "peace-arch",
+    related: ["canada-border", "nexus", "ready-lane"],
+    en: {
+      slug: "peace-arch-pacific-highway-wait",
+      label: "Peace Arch and Pacific Highway",
+      title: "Peace Arch and Pacific Highway border wait times",
+      description:
+        "Peace Arch or Pacific Highway? Which Blaine crossing fits cars, walkers, and trucks, and when Sumas or Lynden is the better detour.",
+      lead: "Blaine has two crossings a few minutes apart, and they are built for different traffic. Most of the Seattle–Vancouver line is one of those two.",
+      sections: [
+        {
+          heading: "Peace Arch",
+          paragraphs: [
+            "Peace Arch is the I-5 crossing. It takes passenger cars and people on foot. Commercial trucks do not use it. If you are walking, or driving a car down I-5, this is the wait to read.",
+          ],
+        },
+        {
+          heading: "Pacific Highway",
+          paragraphs: [
+            "Pacific Highway sits just east of Peace Arch on State Route 543. It is the commercial crossing, and it also takes passenger cars. A truck reads this wait. A car stuck in the Peace Arch line can compare it before committing to the I-5 queue.",
+          ],
+        },
+        {
+          heading: "Sumas and Lynden",
+          paragraphs: [
+            "Sumas, on State Route 9 toward Huntingdon, takes cars and trucks and is the usual detour when both Blaine crossings are long and you are already east. Lynden, toward Aldergrove, is a smaller passenger crossing. Neither replaces Peace Arch when you are on I-5, and both are worth opening when the extra miles are short.",
+          ],
+        },
+        {
+          heading: "Which lane",
+          paragraphs: [
+            "Read NEXUS if you are enrolled, and the standard lane if you are not. A pedestrian wait at Peace Arch is not the car wait. Border Time shows the lane you pick, so switch it before you compare the two Blaine crossings.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-peace-arch",
+      label: "Peace Arch y Pacific Highway",
+      title: "Tiempo de espera en Peace Arch y Pacific Highway",
+      description:
+        "¿Peace Arch o Pacific Highway? Qué cruce de Blaine conviene para autos, peatones y camiones, y cuándo Sumas o Lynden es el mejor desvío.",
+      lead: "Blaine tiene dos cruces a pocos minutos uno del otro y están hechos para tráfico distinto. Casi toda la fila entre Seattle y Vancouver es uno de esos dos.",
+      sections: [
+        {
+          heading: "Peace Arch",
+          paragraphs: [
+            "Peace Arch es el cruce de la I-5. Recibe autos de pasajeros y gente a pie. Los camiones comerciales no lo usan. Si caminas, o si manejas un auto por la I-5, esta es la espera que debes leer.",
+          ],
+        },
+        {
+          heading: "Pacific Highway",
+          paragraphs: [
+            "Pacific Highway está justo al este de Peace Arch, sobre la ruta estatal 543. Es el cruce comercial y también recibe autos. Un camión lee esta espera. Un auto atorado en Peace Arch puede compararla antes de quedarse en la fila de la I-5.",
+          ],
+        },
+        {
+          heading: "Sumas y Lynden",
+          paragraphs: [
+            "Sumas, sobre la ruta estatal 9 hacia Huntingdon, recibe autos y camiones y es el desvío usual cuando los dos cruces de Blaine están largos y ya vienes del este. Lynden, hacia Aldergrove, es un cruce de pasajeros más pequeño. Ninguno sustituye a Peace Arch si vas por la I-5, y los dos valen una mirada cuando los kilómetros extra son pocos.",
+          ],
+        },
+        {
+          heading: "Qué carril",
+          paragraphs: [
+            "Lee NEXUS si estás inscrito, y el carril estándar si no. La espera peatonal de Peace Arch no es la espera de autos. Border Time muestra el carril que eliges, así que cámbialo antes de comparar los dos cruces de Blaine.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "detroit-windsor",
+    related: ["canada-border", "buffalo-niagara", "truck-crossings"],
+    en: {
+      slug: "detroit-windsor-border-wait",
+      label: "Detroit–Windsor crossings",
+      title: "Detroit–Windsor border wait times",
+      description:
+        "Ambassador Bridge or the Detroit–Windsor Tunnel? Which crossing takes cars, which takes trucks, and when Blue Water at Port Huron is the alternative.",
+      lead: "Detroit and Windsor have two crossings downtown of each other, and they do not take the same vehicles.",
+      sections: [
+        {
+          heading: "Ambassador Bridge",
+          paragraphs: [
+            "The Ambassador Bridge carries passenger cars and commercial trucks between Detroit and Windsor. It does not have a walking lane. If you drive a truck into Michigan, this is the Detroit wait to read, on the commercial lane or on FAST if you are enrolled.",
+          ],
+        },
+        {
+          heading: "Detroit–Windsor Tunnel",
+          paragraphs: [
+            "The tunnel connects the two downtowns and takes passenger vehicles. It does not take commercial trucks. A car going downtown to downtown compares the tunnel with the Ambassador Bridge. A truck does not: the tunnel is the wrong crossing.",
+          ],
+        },
+        {
+          heading: "Blue Water Bridge",
+          paragraphs: [
+            "The Blue Water Bridge at Port Huron, about an hour north, crosses to Sarnia. It takes cars and trucks. It is a real alternative when you are already north of Detroit, or when both Detroit crossings are long and the extra drive is acceptable. It is not a shortcut from downtown.",
+          ],
+        },
+        {
+          heading: "Read your own lane",
+          paragraphs: [
+            "NEXUS is the trusted-traveler lane here. Compare NEXUS with NEXUS, and the standard car lane with the standard car lane. A commercial number on the Ambassador Bridge says nothing about the tunnel.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-detroit-windsor",
+      label: "Cruces Detroit–Windsor",
+      title: "Tiempo de espera en Detroit–Windsor",
+      description:
+        "¿El Ambassador Bridge o el túnel Detroit–Windsor? Qué cruce recibe autos, cuál recibe camiones y cuándo el Blue Water en Port Huron es la alternativa.",
+      lead: "Detroit y Windsor tienen dos cruces, uno frente al centro del otro, y no reciben los mismos vehículos.",
+      sections: [
+        {
+          heading: "Ambassador Bridge",
+          paragraphs: [
+            "El Ambassador Bridge lleva autos de pasajeros y camiones comerciales entre Detroit y Windsor. No tiene carril para caminar. Si manejas un camión hacia Michigan, esta es la espera de Detroit que debes leer, en el carril comercial o en FAST si estás inscrito.",
+          ],
+        },
+        {
+          heading: "Túnel Detroit–Windsor",
+          paragraphs: [
+            "El túnel conecta los dos centros y recibe vehículos de pasajeros. No recibe camiones comerciales. Un auto que va de centro a centro compara el túnel con el Ambassador Bridge. Un camión no: el túnel es el cruce equivocado.",
+          ],
+        },
+        {
+          heading: "Blue Water Bridge",
+          paragraphs: [
+            "El Blue Water Bridge en Port Huron, como una hora al norte, cruza hacia Sarnia. Recibe autos y camiones. Es una alternativa real si ya estás al norte de Detroit, o si los dos cruces de Detroit están largos y el trayecto extra te sirve. No es un atajo desde el centro.",
+          ],
+        },
+        {
+          heading: "Lee tu propio carril",
+          paragraphs: [
+            "NEXUS es el carril de viajero confiable aquí. Compara NEXUS con NEXUS, y el carril estándar de autos con el carril estándar de autos. Un número comercial del Ambassador Bridge no dice nada del túnel.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "buffalo-niagara",
+    related: ["canada-border", "detroit-windsor", "nexus"],
+    en: {
+      slug: "buffalo-niagara-border-wait",
+      label: "Buffalo and Niagara bridges",
+      title: "Buffalo and Niagara Falls border wait times",
+      description:
+        "Peace Bridge, Rainbow Bridge, Lewiston–Queenston, or Whirlpool: which Buffalo–Niagara crossing fits cars, walkers, trucks, and NEXUS.",
+      lead: "Buffalo and Niagara Falls are four crossings, not one. The bridge on your route and the lane you can use decide the wait.",
+      sections: [
+        {
+          heading: "Peace Bridge",
+          paragraphs: [
+            "The Peace Bridge runs from Buffalo to Fort Erie. It takes passenger cars and commercial trucks, and it is the main crossing for people already in Buffalo. Read the commercial lane if you drive a truck and the passenger lane if you drive a car.",
+          ],
+        },
+        {
+          heading: "Rainbow Bridge",
+          paragraphs: [
+            "The Rainbow Bridge lands at Niagara Falls and takes passenger cars and people on foot. It does not take commercial trucks. Walkers read this pedestrian wait. A truck has to use Peace Bridge or Lewiston–Queenston instead.",
+          ],
+        },
+        {
+          heading: "Lewiston–Queenston",
+          paragraphs: [
+            "Lewiston–Queenston is north of the falls and connects to the highway on the Canadian side. It takes cars and trucks. When the Peace Bridge and Rainbow Bridge are both slow and you can reach the north end, this is the wait to put next to them.",
+          ],
+        },
+        {
+          heading: "Whirlpool",
+          paragraphs: [
+            "The Whirlpool Rapids Bridge is a NEXUS crossing. If you are not enrolled in NEXUS, it is not your lane. Enrolled drivers compare it with the NEXUS lane at the bridge they can also reach, not with the standard line.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-buffalo-niagara",
+      label: "Puentes de Buffalo y Niagara",
+      title: "Tiempo de espera en Buffalo y Niagara Falls",
+      description:
+        "Peace Bridge, Rainbow Bridge, Lewiston–Queenston o Whirlpool: qué cruce de Buffalo–Niagara conviene para autos, peatones, camiones y NEXUS.",
+      lead: "Buffalo y Niagara Falls son cuatro cruces, no uno. El puente de tu ruta y el carril que puedes usar deciden la espera.",
+      sections: [
+        {
+          heading: "Peace Bridge",
+          paragraphs: [
+            "El Peace Bridge va de Buffalo a Fort Erie. Recibe autos de pasajeros y camiones comerciales, y es el cruce principal para quien ya está en Buffalo. Lee el carril comercial si manejas un camión y el de pasajeros si manejas un auto.",
+          ],
+        },
+        {
+          heading: "Rainbow Bridge",
+          paragraphs: [
+            "El Rainbow Bridge llega a Niagara Falls y recibe autos de pasajeros y gente a pie. No recibe camiones comerciales. Quien camina lee esta espera peatonal. Un camión tiene que usar el Peace Bridge o Lewiston–Queenston.",
+          ],
+        },
+        {
+          heading: "Lewiston–Queenston",
+          paragraphs: [
+            "Lewiston–Queenston está al norte de las cataratas y conecta con la autopista del lado canadiense. Recibe autos y camiones. Cuando el Peace Bridge y el Rainbow Bridge van lentos y puedes llegar al extremo norte, esta es la espera que se pone junto a ellos.",
+          ],
+        },
+        {
+          heading: "Whirlpool",
+          paragraphs: [
+            "El Whirlpool Rapids Bridge es un cruce NEXUS. Si no estás inscrito en NEXUS, no es tu carril. Quien sí lo está lo compara con el carril NEXUS del puente al que también puede llegar, no con la fila estándar.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "champlain",
+    related: ["canada-border", "buffalo-niagara", "nexus"],
+    en: {
+      slug: "champlain-border-wait",
+      label: "Champlain and the northeast",
+      title: "Champlain border wait time and the northeast crossings",
+      description:
+        "Champlain–Lacolle is the I-87 crossing toward Montreal. How it compares with Alexandria Bay, Highgate, and Derby Line, and which lane to read.",
+      lead: "Most New York–Montreal traffic uses one crossing. Champlain is that crossing, and the smaller ports nearby are only useful when you are already close to them.",
+      sections: [
+        {
+          heading: "Champlain",
+          paragraphs: [
+            "Champlain, New York, is the I-87 port opposite Lacolle, Quebec. It takes passenger cars and commercial trucks. If your route is the interstate, this is the wait to read, on the standard lane, on NEXUS if you are enrolled, or on the commercial lane if you drive a truck.",
+          ],
+        },
+        {
+          heading: "Highgate and Derby Line",
+          paragraphs: [
+            "Highgate Springs and Derby Line are the Vermont crossings, farther east. They are smaller. Check them when your route already runs through Vermont. They are a long detour from I-87.",
+          ],
+        },
+        {
+          heading: "Thousand Islands",
+          paragraphs: [
+            "Alexandria Bay’s Thousand Islands Bridge is west of Champlain, on the way to Kingston rather than Montreal. It takes cars and trucks. Compare it with Champlain only when both are plausible drives, not because the name “New York border” covers both.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-champlain",
+      label: "Champlain y el noreste",
+      title: "Tiempo de espera en Champlain y los cruces del noreste",
+      description:
+        "Champlain–Lacolle es el cruce de la I-87 hacia Montreal. Cómo se compara con Alexandria Bay, Highgate y Derby Line, y qué carril leer.",
+      lead: "Casi todo el tráfico entre Nueva York y Montreal usa un cruce. Champlain es ese cruce, y los puertos chicos de al lado solo sirven cuando ya estás cerca.",
+      sections: [
+        {
+          heading: "Champlain",
+          paragraphs: [
+            "Champlain, Nueva York, es el puerto de la I-87 frente a Lacolle, Quebec. Recibe autos de pasajeros y camiones comerciales. Si tu ruta es la autopista, esta es la espera que debes leer, en el carril estándar, en NEXUS si estás inscrito, o en el comercial si manejas un camión.",
+          ],
+        },
+        {
+          heading: "Highgate y Derby Line",
+          paragraphs: [
+            "Highgate Springs y Derby Line son los cruces de Vermont, más al este. Son más pequeños. Revísalos cuando tu ruta ya pasa por Vermont. Desde la I-87 son un desvío largo.",
+          ],
+        },
+        {
+          heading: "Thousand Islands",
+          paragraphs: [
+            "El puente Thousand Islands de Alexandria Bay está al oeste de Champlain, camino a Kingston y no a Montreal. Recibe autos y camiones. Compáralo con Champlain solo cuando los dos trayectos son posibles, no porque el nombre “frontera de Nueva York” cubra los dos.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "nogales",
+    related: ["san-ysidro-otay", "sentri", "truck-crossings"],
+    en: {
+      slug: "nogales-border-wait",
+      label: "Nogales crossings",
+      title: "Nogales border wait times: DeConcini, Mariposa, and Morley",
+      description:
+        "Which Nogales crossing for cars, walkers, and trucks: DeConcini, Mariposa, or the Morley Gate, and how to read each wait.",
+      lead: "Nogales, Arizona, and Nogales, Sonora, share three crossings. The downtown gates and the west-side port are not interchangeable.",
+      sections: [
+        {
+          heading: "DeConcini",
+          paragraphs: [
+            "The DeConcini port is the downtown crossing. It takes passenger cars and pedestrians and is the one most people mean by “the Nogales border.” It is not the truck port.",
+          ],
+        },
+        {
+          heading: "Morley Gate",
+          paragraphs: [
+            "Morley is a pedestrian gate downtown, listed apart from the car lanes. If you are on foot, read the Morley or DeConcini pedestrian wait. The car number does not describe that line.",
+          ],
+        },
+        {
+          heading: "Mariposa",
+          paragraphs: [
+            "Mariposa is west of downtown, on State Route 189. It is the commercial port, and it also takes passenger cars. Trucks read the commercial and FAST lanes here. A car compares Mariposa with DeConcini before driving across town to chase a shorter line.",
+          ],
+        },
+        {
+          heading: "SENTRI at Nogales",
+          paragraphs: [
+            "SENTRI is the trusted-traveler lane on this border. Read it only if you can use it, and compare SENTRI with SENTRI when you are choosing between DeConcini and Mariposa.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-nogales",
+      label: "Cruces de Nogales",
+      title: "Tiempo de espera en Nogales: DeConcini, Mariposa y Morley",
+      description:
+        "Qué cruce de Nogales para autos, peatones y camiones: DeConcini, Mariposa o la garita Morley, y cómo leer cada espera.",
+      lead: "Nogales, Arizona, y Nogales, Sonora, comparten tres cruces. Las garitas del centro y el puerto del oeste no se sustituyen.",
+      sections: [
+        {
+          heading: "DeConcini",
+          paragraphs: [
+            "El puerto DeConcini es el cruce del centro. Recibe autos de pasajeros y peatones y es el que casi todos llaman “la garita de Nogales”. No es el puerto de camiones.",
+          ],
+        },
+        {
+          heading: "Garita Morley",
+          paragraphs: [
+            "Morley es una garita peatonal del centro, listada aparte de los carriles de autos. Si vas a pie, lee la espera peatonal de Morley o de DeConcini. El número de autos no describe esa fila.",
+          ],
+        },
+        {
+          heading: "Mariposa",
+          paragraphs: [
+            "Mariposa está al oeste del centro, sobre la ruta estatal 189. Es el puerto comercial y también recibe autos. Los camiones leen aquí los carriles comercial y FAST. Un auto compara Mariposa con DeConcini antes de cruzar la ciudad para seguir una fila más corta.",
+          ],
+        },
+        {
+          heading: "SENTRI en Nogales",
+          paragraphs: [
+            "SENTRI es el carril de viajero confiable en esta frontera. Léelo solo si puedes usarlo, y compara SENTRI con SENTRI cuando eliges entre DeConcini y Mariposa.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "san-luis",
+    related: ["nogales", "calexico-mexicali", "walking-across"],
+    en: {
+      slug: "san-luis-lukeville-wait",
+      label: "San Luis and Lukeville",
+      title: "San Luis and Lukeville border wait times",
+      description:
+        "San Luis I or San Luis II for Yuma and San Luis Río Colorado, and when the smaller Lukeville crossing to Sonoyta is worth the drive.",
+      lead: "The Yuma area has a downtown crossing and a commercial crossing a few miles apart. Lukeville is a different trip entirely.",
+      sections: [
+        {
+          heading: "San Luis I",
+          paragraphs: [
+            "San Luis I is the downtown port between San Luis, Arizona, and San Luis Río Colorado. It takes passenger cars and pedestrians. People on foot, and cars headed into the center of town, read this wait.",
+          ],
+        },
+        {
+          heading: "San Luis II",
+          paragraphs: [
+            "San Luis II is east of town and is the commercial crossing. Trucks use it. Cars use it as the alternative when San Luis I is slow and the extra miles still land them where they are going.",
+          ],
+        },
+        {
+          heading: "Lukeville",
+          paragraphs: [
+            "Lukeville is south of Ajo, across from Sonoyta, on the way through Organ Pipe. It is a smaller passenger crossing with shorter hours than the San Luis ports. Check the hours CBP posts before you treat it as a backup, and do not drive there from Yuma only because the name is on the same border.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-san-luis-lukeville",
+      label: "San Luis y Lukeville",
+      title: "Tiempo de espera en San Luis y Lukeville",
+      description:
+        "San Luis I o San Luis II para Yuma y San Luis Río Colorado, y cuándo el cruce más chico de Lukeville hacia Sonoyta vale el camino.",
+      lead: "La zona de Yuma tiene un cruce en el centro y un cruce comercial a pocos kilómetros. Lukeville es otro viaje.",
+      sections: [
+        {
+          heading: "San Luis I",
+          paragraphs: [
+            "San Luis I es el puerto del centro entre San Luis, Arizona, y San Luis Río Colorado. Recibe autos de pasajeros y peatones. Quien va a pie, y los autos que van al centro, leen esta espera.",
+          ],
+        },
+        {
+          heading: "San Luis II",
+          paragraphs: [
+            "San Luis II está al este de la ciudad y es el cruce comercial. Lo usan los camiones. Los autos lo usan como alternativa cuando San Luis I va lento y los kilómetros extra igual los dejan donde van.",
+          ],
+        },
+        {
+          heading: "Lukeville",
+          paragraphs: [
+            "Lukeville está al sur de Ajo, frente a Sonoyta, camino de Organ Pipe. Es un cruce de pasajeros más pequeño, con horario más corto que los puertos de San Luis. Revisa el horario que publica CBP antes de tomarlo como respaldo, y no manejes hasta allá desde Yuma solo porque el nombre está en la misma frontera.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "eagle-pass-del-rio",
+    related: ["laredo", "el-paso-juarez", "read-a-wait"],
+    en: {
+      slug: "eagle-pass-del-rio-wait",
+      label: "Eagle Pass and Del Rio",
+      title: "Eagle Pass and Del Rio border wait times",
+      description:
+        "Which Eagle Pass bridge for Piedras Negras, how Del Rio crosses to Ciudad Acuña, and how to read passenger and truck waits there.",
+      lead: "Between Laredo and the Big Bend, two cities do most of the crossing. Each one has its own bridges, and they are not backups for each other unless the drive is already your plan.",
+      sections: [
+        {
+          heading: "Eagle Pass Bridge I",
+          paragraphs: [
+            "Eagle Pass Bridge I is the downtown crossing to Piedras Negras. It takes passenger cars and pedestrians. It is the bridge people in the center of either city are usually headed for.",
+          ],
+        },
+        {
+          heading: "Camino Real",
+          paragraphs: [
+            "Camino Real, Eagle Pass Bridge II, sits south of downtown. It takes passenger cars and is the commercial crossing for trucks. Compare it with Bridge I on the same lane, and use the commercial or FAST number if you drive a truck.",
+          ],
+        },
+        {
+          heading: "Del Rio",
+          paragraphs: [
+            "The Del Rio International Bridge crosses to Ciudad Acuña. It is a separate city from Eagle Pass, a long drive upriver. Read it when Acuña or Del Rio is the destination. It is a poor substitute for Piedras Negras.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-eagle-pass-del-rio",
+      label: "Eagle Pass y Del Rio",
+      title: "Tiempo de espera en Eagle Pass y Del Rio",
+      description:
+        "Qué puente de Eagle Pass para Piedras Negras, cómo cruza Del Rio hacia Ciudad Acuña y cómo leer ahí las esperas de pasajeros y de camiones.",
+      lead: "Entre Laredo y el Big Bend, dos ciudades hacen casi todo el cruce. Cada una tiene sus puentes, y no son respaldo una de la otra salvo que ese camino ya sea tu plan.",
+      sections: [
+        {
+          heading: "Puente I de Eagle Pass",
+          paragraphs: [
+            "El Puente I de Eagle Pass es el cruce del centro hacia Piedras Negras. Recibe autos de pasajeros y peatones. Es el puente al que suele ir quien está en el centro de cualquiera de las dos ciudades.",
+          ],
+        },
+        {
+          heading: "Camino Real",
+          paragraphs: [
+            "Camino Real, el Puente II de Eagle Pass, está al sur del centro. Recibe autos de pasajeros y es el cruce comercial para camiones. Compáralo con el Puente I en el mismo carril, y usa el número comercial o FAST si manejas un camión.",
+          ],
+        },
+        {
+          heading: "Del Rio",
+          paragraphs: [
+            "El puente internacional de Del Rio cruza hacia Ciudad Acuña. Es otra ciudad, un trayecto largo río arriba desde Eagle Pass. Léelo cuando Acuña o Del Rio es el destino. Es un mal sustituto de Piedras Negras.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "santa-teresa",
+    related: ["el-paso-juarez", "truck-crossings", "read-a-wait"],
+    en: {
+      slug: "santa-teresa-border-wait",
+      label: "Santa Teresa",
+      title: "Santa Teresa border wait time",
+      description:
+        "Santa Teresa, New Mexico, is the west-side alternative to the El Paso bridges: who it is for, and how to compare it with Ysleta and Tornillo.",
+      lead: "Santa Teresa is not an El Paso bridge. It is the New Mexico port west of the city, and it was built with trucks in mind.",
+      sections: [
+        {
+          heading: "Where it sits",
+          paragraphs: [
+            "The Santa Teresa port connects New Mexico with San Jerónimo, Chihuahua, west of El Paso and Ciudad Juárez. Cars can cross, and it is a main commercial port for the region. People use it to stay out of the El Paso city bridges.",
+          ],
+        },
+        {
+          heading: "Against the El Paso bridges",
+          paragraphs: [
+            "Ysleta is the southeast truck bridge inside El Paso. Tornillo is the far-east crossing. Santa Teresa is the west-side port. A truck compares the commercial and FAST waits at the ports it can reach. A car compares the passenger lane, then adds the drive through the west mesa before switching.",
+          ],
+        },
+        {
+          heading: "The lane still matters",
+          paragraphs: [
+            "A passenger number at Santa Teresa is not the truck number. SENTRI, Ready, and the standard lane are separate when the port offers them. A lane marked N/A is one this crossing does not post.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-santa-teresa",
+      label: "Santa Teresa",
+      title: "Tiempo de espera en Santa Teresa",
+      description:
+        "Santa Teresa, Nuevo México, es la alternativa del oeste a los puentes de El Paso: para quién sirve y cómo compararla con Ysleta y Tornillo.",
+      lead: "Santa Teresa no es un puente de El Paso. Es el puerto de Nuevo México al oeste de la ciudad, y se construyó pensando en camiones.",
+      sections: [
+        {
+          heading: "Dónde queda",
+          paragraphs: [
+            "El puerto de Santa Teresa conecta Nuevo México con San Jerónimo, Chihuahua, al oeste de El Paso y Ciudad Juárez. Los autos pueden cruzar, y es un puerto comercial importante de la región. La gente lo usa para no meterse a los puentes de la ciudad de El Paso.",
+          ],
+        },
+        {
+          heading: "Frente a los puentes de El Paso",
+          paragraphs: [
+            "Ysleta es el puente de camiones del sureste, dentro de El Paso. Tornillo es el cruce del extremo este. Santa Teresa es el puerto del oeste. Un camión compara las esperas comercial y FAST de los puertos a los que llega. Un auto compara el carril de pasajeros y luego suma el trayecto por el oeste antes de cambiar.",
+          ],
+        },
+        {
+          heading: "El carril sigue importando",
+          paragraphs: [
+            "Un número de pasajeros en Santa Teresa no es el número de camiones. SENTRI, Ready y el carril estándar van aparte cuando el puerto los ofrece. Un carril marcado N/A es uno que ese cruce no publica.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "sentri",
+    related: ["ready-lane", "read-a-wait", "nogales"],
+    en: {
+      slug: "sentri-lane-wait-times",
+      label: "SENTRI lane",
+      title: "SENTRI lane wait times",
+      description:
+        "What the SENTRI wait measures, how it differs from Ready Lane and from the standard line, and which Mexican-border crossings post one.",
+      lead: "SENTRI is its own line. The standard wait at the same bridge can be a different length at the same minute, so the number to read is the SENTRI number.",
+      sections: [
+        {
+          heading: "What the lane is",
+          paragraphs: [
+            "SENTRI is the trusted-traveler program for the Mexican border. The lane is only for vehicles and people eligible to use it. Enrollment, the vehicle, and who may ride are CBP’s rules, and those rules are the ones to confirm at the Trusted Traveler Programs site before you rely on the lane.",
+          ],
+        },
+        {
+          heading: "Not Ready Lane",
+          paragraphs: [
+            "Ready Lane is the RFID line. A passport card or another Ready document is enough for Ready, and it is not enough for SENTRI. The two waits are posted separately. A short Ready number does not mean SENTRI is short, and the reverse is just as true.",
+          ],
+        },
+        {
+          heading: "Where you will see it",
+          paragraphs: [
+            "Busy Mexican-border passenger crossings post a SENTRI lane when they have one: San Ysidro, Otay Mesa, Calexico, Nogales, the El Paso bridges, Laredo’s passenger bridges, and the Rio Grande Valley and Brownsville crossings among them. A crossing that shows N/A for SENTRI does not offer that lane. NEXUS is the matching program on the Canadian border, and Border Time labels the lane that way there.",
+          ],
+        },
+        {
+          heading: "How to use the number",
+          paragraphs: [
+            "Compare SENTRI with SENTRI if you are choosing between bridges. The usual wait for this hour tells you whether the live SENTRI number is normal. A SENTRI line can still be long on a holiday or when the lane is short-staffed.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-carril-sentri",
+      label: "Carril SENTRI",
+      title: "Tiempo de espera del carril SENTRI",
+      description:
+        "Qué mide la espera SENTRI, en qué se distingue del carril Ready y de la fila estándar, y qué cruces de la frontera con México publican una.",
+      lead: "SENTRI es su propia fila. La espera estándar del mismo puente puede durar otra cosa en el mismo minuto, así que el número que se lee es el de SENTRI.",
+      sections: [
+        {
+          heading: "Qué es el carril",
+          paragraphs: [
+            "SENTRI es el programa de viajero confiable de la frontera con México. El carril es solo para vehículos y personas que pueden usarlo. La inscripción, el vehículo y quién puede ir a bordo son reglas de CBP, y esas reglas se confirman en el sitio de Trusted Traveler Programs antes de contar con el carril.",
+          ],
+        },
+        {
+          heading: "No es el carril Ready",
+          paragraphs: [
+            "El carril Ready es la fila con chip RFID. Una tarjeta de pasaporte u otro documento Ready alcanza para Ready, y no alcanza para SENTRI. Las dos esperas se publican aparte. Un número corto de Ready no significa que SENTRI esté corto, y al revés pasa igual.",
+          ],
+        },
+        {
+          heading: "Dónde lo vas a ver",
+          paragraphs: [
+            "Los cruces de pasajeros más usados de la frontera con México publican un carril SENTRI cuando lo tienen: San Ysidro, Otay Mesa, Calexico, Nogales, los puentes de El Paso, los puentes de pasajeros de Laredo, y los del Valle del Río Grande y de Brownsville, entre otros. Un cruce que muestra N/A en SENTRI no ofrece ese carril. NEXUS es el programa equivalente en la frontera con Canadá, y Border Time nombra así el carril allá.",
+          ],
+        },
+        {
+          heading: "Cómo usar el número",
+          paragraphs: [
+            "Compara SENTRI con SENTRI si estás eligiendo entre puentes. La espera usual de esta hora te dice si el número SENTRI en vivo es normal. La fila SENTRI también puede ir larga en un día festivo o cuando el carril tiene poco personal.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "nexus",
+    related: ["canada-border", "ready-lane", "buffalo-niagara"],
+    en: {
+      slug: "nexus-lane-wait-times",
+      label: "NEXUS lane",
+      title: "NEXUS lane wait times",
+      description:
+        "What a NEXUS border wait means on the Canadian border, how it differs from Ready Lane, and which crossings are NEXUS-only.",
+      lead: "On the Canadian border the trusted-traveler lane is NEXUS. Border Time uses that name there, on the same booth type it calls SENTRI in Mexico.",
+      sections: [
+        {
+          heading: "What you are reading",
+          paragraphs: [
+            "A NEXUS wait is the delay CBP posts for the trusted-traveler lane at that port, for travelers entering the United States. It is not the standard car line. Enrollment rules, including who may be in the vehicle, belong to CBP’s NEXUS program.",
+          ],
+        },
+        {
+          heading: "Ready Lane is separate",
+          paragraphs: [
+            "Where a Canadian port offers Ready Lane, that wait is the RFID line and uses a different document rule. A NEXUS card can be a Ready document. A Ready document is not a NEXUS membership. Read the lane you will actually join.",
+          ],
+        },
+        {
+          heading: "Crossings that are NEXUS-only",
+          paragraphs: [
+            "The Whirlpool Rapids Bridge at Niagara Falls is a NEXUS crossing. If you are not enrolled, pick Peace Bridge, Rainbow Bridge, or Lewiston–Queenston instead. Other ports post a NEXUS lane next to a standard lane. Use the NEXUS number only when you can enter that lane.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-carril-nexus",
+      label: "Carril NEXUS",
+      title: "Tiempo de espera del carril NEXUS",
+      description:
+        "Qué significa una espera NEXUS en la frontera con Canadá, en qué se distingue del carril Ready y qué cruces son solo NEXUS.",
+      lead: "En la frontera con Canadá el carril de viajero confiable es NEXUS. Border Time usa ese nombre ahí, en el mismo tipo de caseta que en México llama SENTRI.",
+      sections: [
+        {
+          heading: "Qué estás leyendo",
+          paragraphs: [
+            "Una espera NEXUS es la demora que CBP publica para el carril de viajero confiable de ese puerto, para quien entra a Estados Unidos. No es la fila estándar de autos. Las reglas de inscripción, incluido quién puede ir en el vehículo, son del programa NEXUS de CBP.",
+          ],
+        },
+        {
+          heading: "El carril Ready va aparte",
+          paragraphs: [
+            "Donde un puerto de Canadá ofrece carril Ready, esa espera es la fila con chip RFID y usa otra regla de documentos. Una tarjeta NEXUS puede servir como documento Ready. Un documento Ready no es una membresía NEXUS. Lee el carril al que de verdad te vas a formar.",
+          ],
+        },
+        {
+          heading: "Cruces que son solo NEXUS",
+          paragraphs: [
+            "El Whirlpool Rapids Bridge en Niagara Falls es un cruce NEXUS. Si no estás inscrito, elige el Peace Bridge, el Rainbow Bridge o Lewiston–Queenston. Otros puertos publican un carril NEXUS junto a un carril estándar. Usa el número NEXUS solo cuando puedes entrar a ese carril.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "ready-lane",
+    related: ["sentri", "read-a-wait", "nexus"],
+    en: {
+      slug: "ready-lane-wait-times",
+      label: "Ready Lane",
+      title: "Ready Lane border wait times",
+      description:
+        "Who Ready Lane is for, how the RFID line differs from SENTRI and NEXUS, and why everyone in the car needs an eligible card.",
+      lead: "Ready Lane is the line for RFID travel cards. It is faster to join only when it is actually shorter than the standard lane, and only when every person in the car qualifies.",
+      sections: [
+        {
+          heading: "The card, not the membership",
+          paragraphs: [
+            "Ready Lane takes travelers whose document has the RFID chip CBP’s readers use: a passport card, an enhanced driver’s license, a SENTRI, NEXUS, or Global Entry card, or a green card that qualifies. A passport book does not. Everyone in the vehicle needs an eligible document. One person with only a book sends the car to the standard lane.",
+          ],
+        },
+        {
+          heading: "A different number from SENTRI",
+          paragraphs: [
+            "SENTRI and NEXUS are trusted-traveler lanes. Ready Lane is not. The waits are posted separately, and on a busy morning they move on their own. Read Ready if you will use Ready. Read SENTRI or NEXUS if you will use that lane instead.",
+          ],
+        },
+        {
+          heading: "When a crossing has no Ready Lane",
+          paragraphs: [
+            "Some ports do not offer it. Border Time shows N/A for a lane the crossing does not post. That is not a closed lane and not a short wait. Use the standard number there.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-carril-ready",
+      label: "Carril Ready",
+      title: "Tiempo de espera del carril Ready",
+      description:
+        "Para quién es el carril Ready, en qué se distingue la fila RFID de SENTRI y de NEXUS, y por qué todas las personas del auto necesitan una tarjeta válida.",
+      lead: "El carril Ready es la fila para tarjetas de viaje con chip RFID. Conviene formarse ahí solo cuando de verdad está más corta que el carril estándar, y solo cuando todas las personas del auto califican.",
+      sections: [
+        {
+          heading: "La tarjeta, no la membresía",
+          paragraphs: [
+            "El carril Ready recibe a quien trae el chip RFID que leen los lectores de CBP: tarjeta de pasaporte, licencia de conducir mejorada, tarjeta SENTRI, NEXUS o Global Entry, o una green card que califique. El libro de pasaporte no. Todas las personas del vehículo necesitan un documento válido. Una persona que solo trae el libro manda el auto al carril estándar.",
+          ],
+        },
+        {
+          heading: "Un número distinto al de SENTRI",
+          paragraphs: [
+            "SENTRI y NEXUS son carriles de viajero confiable. El carril Ready no. Las esperas se publican aparte, y en una mañana llena se mueven cada una por su lado. Lee Ready si vas a usar Ready. Lee SENTRI o NEXUS si vas a usar ese carril.",
+          ],
+        },
+        {
+          heading: "Cuando un cruce no tiene carril Ready",
+          paragraphs: [
+            "Hay puertos que no lo ofrecen. Border Time muestra N/A en un carril que el cruce no publica. Eso no es un carril cerrado ni una espera corta. Ahí se usa el número estándar.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "truck-crossings",
+    related: ["laredo", "read-a-wait", "nogales"],
+    en: {
+      slug: "commercial-truck-border-wait",
+      label: "Truck and FAST lanes",
+      title: "Commercial truck border wait times and FAST lanes",
+      description:
+        "Which crossings are built for trucks, how the commercial wait differs from the car wait, and what the FAST lane requires.",
+      lead: "A truck is not in the passenger line. CBP posts a commercial wait, and a separate FAST wait, at the ports that move freight.",
+      sections: [
+        {
+          heading: "Read the commercial lane",
+          paragraphs: [
+            "The commercial number is the standard truck lane. The passenger number beside it is a different queue and a different booth. A port that shows N/A for commercial does not take trucks. Passenger bridges such as San Ysidro and Peace Arch are in that group.",
+          ],
+        },
+        {
+          heading: "FAST is its own line",
+          paragraphs: [
+            "FAST is the faster commercial lane for enrolled drivers and enrolled loads. It is not open to every truck at the port. If you are not enrolled, the standard commercial wait is yours. If you are, compare FAST with FAST when you can choose ports.",
+          ],
+        },
+        {
+          heading: "Ports that trucks actually use",
+          paragraphs: [
+            "On the Mexican border, the freight ports include Otay Mesa, Calexico East, Mariposa at Nogales, Santa Teresa, Ysleta, World Trade and Colombia at Laredo, Pharr, and Veterans International at Brownsville. On the Canadian border, Pacific Highway, the Ambassador Bridge, Blue Water, the Peace Bridge, Lewiston–Queenston, and Champlain post commercial lanes. Each guide for those places says which bridge is the truck bridge.",
+          ],
+        },
+        {
+          heading: "The hour matters more for freight",
+          paragraphs: [
+            "Truck waits swing through the day as booths open and appointments stack up. The live number is the line now. The usual wait for this hour shows whether that line is ordinary. Border Time shows both, and an alert can watch the commercial or FAST lane you named.",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "tiempo-espera-camiones-frontera",
+      label: "Carriles de camiones y FAST",
+      title: "Tiempo de espera de camiones y carriles FAST",
+      description:
+        "Qué cruces están hechos para camiones, en qué se distingue la espera comercial de la de autos y qué pide el carril FAST.",
+      lead: "Un camión no va en la fila de pasajeros. CBP publica una espera comercial, y otra de FAST, en los puertos que mueven carga.",
+      sections: [
+        {
+          heading: "Lee el carril comercial",
+          paragraphs: [
+            "El número comercial es el carril estándar de camiones. El número de pasajeros de al lado es otra fila y otra caseta. Un puerto que muestra N/A en comercial no recibe camiones. Puentes de pasajeros como San Ysidro y Peace Arch están en ese grupo.",
+          ],
+        },
+        {
+          heading: "FAST es su propia fila",
+          paragraphs: [
+            "FAST es el carril comercial más rápido para conductores inscritos y cargas inscritas. No está abierto a todos los camiones del puerto. Si no estás inscrito, la espera comercial estándar es la tuya. Si lo estás, compara FAST con FAST cuando puedes elegir puerto.",
+          ],
+        },
+        {
+          heading: "Puertos que sí usan los camiones",
+          paragraphs: [
+            "En la frontera con México, los puertos de carga incluyen Otay Mesa, Calexico Este, Mariposa en Nogales, Santa Teresa, Ysleta, World Trade y Colombia en Laredo, Pharr, y Veterans International en Brownsville. En la frontera con Canadá, Pacific Highway, el Ambassador Bridge, Blue Water, el Peace Bridge, Lewiston–Queenston y Champlain publican carriles comerciales. La guía de cada lugar dice cuál es el puente de camiones.",
+          ],
+        },
+        {
+          heading: "La hora importa más en la carga",
+          paragraphs: [
+            "Las esperas de camiones se mueven durante el día conforme abren casetas y se juntan las citas. El número en vivo es la fila de ahora. La espera usual de esta hora muestra si esa fila es la de siempre. Border Time muestra las dos, y una alerta puede vigilar el carril comercial o FAST que nombraste.",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "best-time",
+    related: ["estimate", "read-a-wait", "border-congestion"],
+    en: {
+      slug: "best-time-to-cross-the-border",
+      label: "Best time to cross",
+      title: "Best time to cross the border",
+      description:
+        "How to pick a quieter hour at a U.S. land port: what usually builds the line, and why the usual wait for that bridge beats a general rule.",
+      lead: "There is no single quiet hour for every crossing. The useful comparison is the usual wait for this hour on the bridge and the lane you will use.",
+      sections: [
+        {
+          heading: "What usually fills a line",
+          paragraphs: [
+            "Weekday mornings fill with work and school traffic at many Mexican-border cities. Friday afternoons and Sunday evenings fill with people heading home. Holiday weekends add a longer peak. Midday in the middle of the week is often the lighter stretch. Those are patterns, not a promise for the bridge in front of you.",
+          ],
+        },
+        {
+          heading: "Use the usual wait",
+          paragraphs: [
+            "Border Time keeps the usual wait for each hour next to the live number. A live wait that matches the usual one is an ordinary hour. A live wait well above it is a spike, and another bridge or a later hour may be the better plan. The usual figure is a typical value for that lane, not a booking.",
+          ],
+        },
+        {
+          heading: "The lane changes the hour",
+          paragraphs: [
+            "SENTRI, NEXUS, Ready, pedestrian, and commercial lanes peak at different times. A quiet car lane can sit beside a long truck lane. Pick the hour for the lane you will join, then add the drive to the bridge. The posted wait starts when you are in line. It does not include the trip to get there.",
+          ],
+        },
+        {
+          heading: "Let the crossing tell you",
+          paragraphs: [
+            "An alert watches a lane and sends a note when it drops under the number you set. A schedule checks the bridges you already use at the hour you already travel. Either one is more specific than a rule of thumb about “the border.”",
+          ],
+        },
+      ],
+    },
+    es: {
+      slug: "mejor-hora-para-cruzar",
+      label: "Mejor hora para cruzar",
+      title: "La mejor hora para cruzar la frontera",
+      description:
+        "Cómo elegir una hora más tranquila en un puerto terrestre de EE. UU.: qué suele llenar la fila y por qué la espera usual de ese puente vale más que una regla general.",
+      lead: "No hay una sola hora tranquila para todos los cruces. La comparación útil es la espera usual de esta hora en el puente y el carril que vas a usar.",
+      sections: [
+        {
+          heading: "Qué suele llenar una fila",
+          paragraphs: [
+            "Las mañanas de entre semana se llenan con el tráfico de trabajo y de escuela en muchas ciudades de la frontera con México. Los viernes por la tarde y los domingos por la noche se llenan con quien regresa a casa. Los fines de semana festivos alargan el pico. El mediodía a mitad de semana suele ser el tramo más ligero. Son patrones, no una promesa para el puente que tienes enfrente.",
+          ],
+        },
+        {
+          heading: "Usa la espera usual",
+          paragraphs: [
+            "Border Time guarda la espera usual de cada hora junto al número en vivo. Una espera en vivo que coincide con la usual es una hora normal. Una espera en vivo muy por encima es un pico, y otro puente u otra hora puede ser mejor plan. La cifra usual es un valor típico de ese carril, no una reserva.",
+          ],
+        },
+        {
+          heading: "El carril cambia la hora",
+          paragraphs: [
+            "Los carriles SENTRI, NEXUS, Ready, peatonal y comercial tienen el pico a horas distintas. Un carril de autos tranquilo puede estar junto a un carril de camiones largo. Elige la hora del carril al que te vas a formar y luego suma el trayecto al puente. La espera publicada empieza cuando ya estás en la fila. No incluye el camino para llegar.",
+          ],
+        },
+        {
+          heading: "Deja que el cruce te avise",
+          paragraphs: [
+            "Una alerta vigila un carril y manda un aviso cuando baja del número que fijaste. Un horario revisa los puentes que ya usas a la hora en que ya viajas. Cualquiera de los dos es más concreto que una regla general sobre “la frontera”.",
           ],
         },
       ],

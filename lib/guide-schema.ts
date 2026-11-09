@@ -8,7 +8,7 @@ import { siteOrigin } from "@/lib/site";
 const LANGUAGE: Record<Locale, string> = { en: "en-US", es: "es-MX" };
 
 /** The public answers and guides were last revised on this day. */
-const REVISED = "2026-10-12";
+const REVISED = "2026-11-09";
 
 function abs(path: string): string {
   return `${siteOrigin()}${path}`;
