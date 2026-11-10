@@ -737,7 +737,10 @@ function CheckInSheet({
                           tabIndex={-1}
                           aria-hidden
                           className="fixed inset-0 z-10 cursor-default"
-                          onClick={() => setPhotoMenu(false)}
+                          onClick={() => {
+                            haptic("light");
+                            setPhotoMenu(false);
+                          }}
                         />
                         <div
                           role="menu"
@@ -747,24 +750,28 @@ function CheckInSheet({
                             type="button"
                             role="menuitem"
                             onClick={() => {
+                              haptic("selection");
                               setPhotoMenu(false);
                               // A computer has no camera app to hand off to, so show its webcam here.
                               if (window.matchMedia("(pointer: fine)").matches) setWebcam(true);
                               else cameraRef.current?.click();
                             }}
-                            className="block w-full rounded-xl px-3.5 py-2.5 text-left text-[15px] text-foreground active:bg-foreground/[0.08]"
+                            className="relative block w-full rounded-xl px-3.5 py-2.5 text-left text-[15px] text-foreground active:bg-foreground/[0.08]"
                           >
+                            <HapticPad />
                             {copy.checkInTakePhoto}
                           </button>
                           <button
                             type="button"
                             role="menuitem"
                             onClick={() => {
+                              haptic("selection");
                               setPhotoMenu(false);
                               fileRef.current?.click();
                             }}
-                            className="block w-full rounded-xl px-3.5 py-2.5 text-left text-[15px] text-foreground active:bg-foreground/[0.08]"
+                            className="relative block w-full rounded-xl px-3.5 py-2.5 text-left text-[15px] text-foreground active:bg-foreground/[0.08]"
                           >
+                            <HapticPad />
                             {copy.checkInChoosePhoto}
                           </button>
                         </div>
@@ -777,7 +784,10 @@ function CheckInSheet({
                       aria-expanded={photoMenu}
                       disabled={preparing}
                       aria-busy={preparing}
-                      onClick={() => setPhotoMenu((value) => !value)}
+                      onClick={() => {
+                        haptic("selection");
+                        setPhotoMenu((value) => !value);
+                      }}
                       onPointerEnter={() => camera.current?.startAnimation()}
                       onPointerLeave={() => camera.current?.stopAnimation()}
                       whileTap={reduce ? undefined : { scale: 0.92 }}
