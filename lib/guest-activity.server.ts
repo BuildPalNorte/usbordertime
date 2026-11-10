@@ -1,8 +1,9 @@
 import { CAMPAIGN_COOKIE, campaignQuery } from "@/lib/campaign";
 import { knownCampaign } from "@/lib/campaign.server";
 import { database } from "@/lib/db.server";
-import { VISITOR_COOKIE } from "@/lib/analytics";
-import { ensureVisitorTable, recordVisitor } from "@/lib/visitor.server";
+import { isVisitorId, VISITOR_COOKIE } from "@/lib/analytics";
+import { KNOWN_VISITOR_LIMIT, NEW_VISITOR_BURST, NEW_VISITOR_HOURLY, withinLimit } from "@/lib/throttle.server";
+import { ensureVisitorTable, knownVisitor, recordVisitor } from "@/lib/visitor.server";
 import { cookies } from "next/headers";
 
 /**
@@ -42,16 +43,33 @@ export function ensureGuestActivityTable(): Promise<void> {
   return ensuring;
 }
 
-/** The browser this request already is, or a new visitor id stored in the cookie. */
-export async function visitorForActivity(): Promise<string> {
+/**
+ * The browser this request already is, or a new visitor id stored in the cookie. Returns null when
+ * the request is over a limit, and nothing is recorded.
+ *
+ * A cookie only counts as "already known" when the server really made that id: the cookie is a
+ * plain UUID anyone can forge. A known browser is limited by its own id, so a shared address never
+ * counts strangers together. An unknown one is limited by address, and gets a fresh server-made id.
+ */
+export async function visitorForActivity(): Promise<string | null> {
   const jar = await cookies();
+  const sent = jar.get(VISITOR_COOKIE)?.value ?? null;
+  const known = isVisitorId(sent) && (await knownVisitor(sent));
+  if (known) {
+    const { scope, limit, seconds } = KNOWN_VISITOR_LIMIT;
+    if (!(await withinLimit(scope, limit, seconds, sent))) return null;
+  } else {
+    for (const cap of [NEW_VISITOR_BURST, NEW_VISITOR_HOURLY]) {
+      if (!(await withinLimit(cap.scope, cap.limit, cap.seconds))) return null;
+    }
+  }
   let campaign: string | null = null;
   try {
     campaign = await knownCampaign(campaignQuery(jar.get(CAMPAIGN_COOKIE)?.value ?? null));
   } catch (error) {
     console.error("campaign", error);
   }
-  const id = await recordVisitor(jar.get(VISITOR_COOKIE)?.value ?? null, campaign);
+  const id = await recordVisitor(known ? sent : null, campaign);
   jar.set(VISITOR_COOKIE, id, {
     httpOnly: true,
     sameSite: "lax",

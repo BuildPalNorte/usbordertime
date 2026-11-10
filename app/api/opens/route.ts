@@ -1,6 +1,7 @@
 import { isExcludedFromAnalytics } from "@/lib/analytics";
 import { recordGuestOpen, visitorForActivity } from "@/lib/guest-activity.server";
 import { NO_STORE, serverError, sessionUser } from "@/lib/session.server";
+import { tooManyRequests } from "@/lib/throttle.server";
 import { recordAppOpen } from "@/lib/usage.server";
 
 /**
@@ -13,7 +14,9 @@ export async function POST() {
     if (user) {
       if (!isExcludedFromAnalytics(user.email)) await recordAppOpen(user.id);
     } else {
-      await recordGuestOpen(await visitorForActivity());
+      const id = await visitorForActivity();
+      if (!id) return tooManyRequests();
+      await recordGuestOpen(id);
     }
     return new Response(null, { status: 204, headers: NO_STORE });
   } catch (error) {

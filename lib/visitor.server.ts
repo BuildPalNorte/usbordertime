@@ -33,6 +33,14 @@ export function ensureVisitorTable(): Promise<void> {
   return ensuring;
 }
 
+/** Whether the server has already made this id. A cookie can hold any UUID, so a valid shape proves nothing. */
+export async function knownVisitor(id: string): Promise<boolean> {
+  await ensureVisitorTable();
+  const sql = database();
+  const rows = await sql`select 1 from visitor where id = ${id} limit 1`;
+  return rows.length > 0;
+}
+
 /**
  * Notes one more sign-in screen from this browser. Returns the id to keep in the cookie: the one
  * it already had, or a new one. A campaign code sticks on the first visit that had one.
