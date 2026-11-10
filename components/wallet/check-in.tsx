@@ -42,10 +42,14 @@ import {
   useReducedMotion,
   useTransform,
 } from "motion/react";
+import dynamic from "next/dynamic";
 import {
+  memo,
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -53,11 +57,15 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useSignedIn } from "./account-context";
-import { CameraCapture } from "./check-in-camera";
 import { prepareJpeg } from "./check-in-photo";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 import { SignInButton } from "./sign-in-prompt";
+
+// Only a computer without a camera app ever opens this, so it stays out of the chat's first load.
+const CameraCapture = dynamic(() => import("./check-in-camera").then((m) => m.CameraCapture), {
+  ssr: false,
+});
 
 type Stage = "idle" | "locating" | "sending";
 type Problem = { kind: CheckInProblem; miles?: number };
@@ -287,18 +295,22 @@ function CheckInSheet({
   };
 
   /** Runs `job` after every earlier one, and holds the 15-second refresh back until it is done. */
-  const enqueue = <T,>(job: () => Promise<T>): Promise<T> => {
+  const enqueue = useCallback(<T,>(job: () => Promise<T>): Promise<T> => {
     inflight.current += 1;
     const run = queue.current.then(job, job);
     queue.current = run.catch(() => {}).finally(() => {
       inflight.current -= 1;
     });
     return run;
-  };
+  }, []);
 
-  const patch = (change: (list: CheckIn[]) => CheckIn[]) => {
-    queryClient.setQueryData<CheckIn[]>(threadKey(port.portNumber), (list) => change(list ?? []));
-  };
+  const portNumber = port.portNumber;
+  const patch = useCallback(
+    (change: (list: CheckIn[]) => CheckIn[]) => {
+      queryClient.setQueryData<CheckIn[]>(threadKey(portNumber), (list) => change(list ?? []));
+    },
+    [queryClient, portNumber],
+  );
 
   const send = () => {
     if (preparing) return;
@@ -418,10 +430,10 @@ function CheckInSheet({
     });
   };
 
-  const remove = (id: string) => {
+  const remove = useCallback((id: string) => {
     haptic("selection");
     // Gone at once. If the server refuses, the next refresh brings it back.
-    void queryClient.cancelQueries({ queryKey: threadKey(port.portNumber) });
+    void queryClient.cancelQueries({ queryKey: threadKey(portNumber) });
     patch((list) => list.filter((item) => item.id !== id));
     void enqueue(async () => {
       try {
@@ -429,19 +441,19 @@ function CheckInSheet({
         if (!response.ok) throw new Error("delete");
       } catch {
         haptic("error");
-        void queryClient.invalidateQueries({ queryKey: threadKey(port.portNumber) });
+        void queryClient.invalidateQueries({ queryKey: threadKey(portNumber) });
       }
     });
-  };
+  }, [enqueue, patch, queryClient, portNumber]);
 
-  const react = (id: string, kind: Reaction) => {
+  const react = useCallback((id: string, kind: Reaction) => {
     // Read from the thread as it is now, not from the render the tap came from: a second tap
     // before the first has settled must flip the state the rider is looking at.
-    const row = queryClient.getQueryData<CheckIn[]>(threadKey(port.portNumber))?.find((item) => item.id === id);
+    const row = queryClient.getQueryData<CheckIn[]>(threadKey(portNumber))?.find((item) => item.id === id);
     if (!row || row.pending) return;
     const on = !row.reacted[kind];
     haptic(on ? "light" : "selection");
-    void queryClient.cancelQueries({ queryKey: threadKey(port.portNumber) });
+    void queryClient.cancelQueries({ queryKey: threadKey(portNumber) });
     patch((list) =>
       list.map((entry) =>
         entry.id !== id
@@ -464,10 +476,25 @@ function CheckInSheet({
       } catch {
         haptic("error");
         setProblem({ kind: "react" });
-        void queryClient.invalidateQueries({ queryKey: threadKey(port.portNumber) });
+        void queryClient.invalidateQueries({ queryKey: threadKey(portNumber) });
       }
     });
-  };
+  }, [enqueue, patch, queryClient, portNumber]);
+
+  // Stable, so a keystroke in the box never re-renders the thread.
+  const onReact = useCallback((item: CheckIn, kind: Reaction) => react(item.id, kind), [react]);
+  const onAskRemove = useCallback((item: CheckIn) => {
+    haptic("selection");
+    setConfirming(item);
+  }, []);
+  const onAskReport = useCallback((item: CheckIn) => {
+    haptic("selection");
+    setReporting(item);
+  }, []);
+  const onOpenPhoto = useCallback((src: string, alt: string) => {
+    haptic("light");
+    setViewing({ src, alt });
+  }, []);
 
   const report = (item: CheckIn, reason: ReportReason) => {
     haptic("medium");
@@ -568,19 +595,10 @@ function CheckInSheet({
             pending={thread.isPending}
             failed={thread.isError}
             reduce={Boolean(reduce)}
-            onReact={(item, kind) => react(item.id, kind)}
-            onRemove={(item) => {
-              haptic("selection");
-              setConfirming(item);
-            }}
-            onReport={(item) => {
-              haptic("selection");
-              setReporting(item);
-            }}
-            onOpenPhoto={(src, alt) => {
-              haptic("light");
-              setViewing({ src, alt });
-            }}
+            onReact={onReact}
+            onRemove={onAskRemove}
+            onReport={onAskReport}
+            onOpenPhoto={onOpenPhoto}
           />
         </div>
 
@@ -1119,7 +1137,7 @@ function problemText(
   }
 }
 
-function Thread({
+const Thread = memo(function Thread({
   items,
   pending,
   failed,
@@ -1139,16 +1157,15 @@ function Thread({
   onOpenPhoto: (src: string, alt: string) => void;
 }) {
   const { copy, locale } = useLocale();
-  // The time on the rider's own clock. A post from another day also names the day.
-  const clock = new Intl.DateTimeFormat(locale === "es" ? "es-US" : "en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  const dayClock = new Intl.DateTimeFormat(locale === "es" ? "es-US" : "en-US", {
-    weekday: "short",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  // The time on the rider's own clock. A post from another day also names the day. Building an
+  // Intl formatter is slow, so each is made once per language, not once per render.
+  const { clock, dayClock } = useMemo(() => {
+    const tag = locale === "es" ? "es-US" : "en-US";
+    return {
+      clock: new Intl.DateTimeFormat(tag, { hour: "numeric", minute: "2-digit" }),
+      dayClock: new Intl.DateTimeFormat(tag, { weekday: "short", hour: "numeric", minute: "2-digit" }),
+    };
+  }, [locale]);
   const today = new Date().toDateString();
   const sentAt = (iso: string) => {
     const at = new Date(iso);
@@ -1275,7 +1292,7 @@ function Thread({
       </AnimatePresence>
     </ul>
   );
-}
+});
 
 /** A reaction anyone can give, signed in or not. The count only shows once someone has. */
 function ReactionChip({

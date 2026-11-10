@@ -23,6 +23,7 @@ import {
 } from "@/lib/session.server";
 import { tooManyRequests, withinLimit } from "@/lib/throttle.server";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 
 /** The form is a few fields and one shrunken photo. Anything bigger is not a post. */
 const MAX_BODY_BYTES = MAX_CHECK_IN_PHOTO_BYTES + 100_000;
@@ -101,18 +102,26 @@ export async function POST(request: Request) {
 
   if (!(await withinLimit("check-in", CHECK_IN_POSTS_PER_HOUR, 3600, userId))) return tooManyRequests();
 
-  try {
-    // Posting pauses for an account whose messages keep being hidden by reports.
-    if ((await countRecentUsage(userId, "flagged", MUTE_WINDOW_HOURS)) >= HIDDEN_TO_MUTE) {
-      return Response.json({ error: "muted" }, { status: 403, headers: NO_STORE });
-    }
-  } catch (error) {
-    // Moderation lookup failing must not turn into a free pass or a block. Let the post through.
-    console.error("mute check", error);
+  // The mute lookup and the cached feed do not depend on each other, so they run together.
+  const muteCheck = countRecentUsage(userId, "flagged", MUTE_WINDOW_HOURS).then(
+    (count) => count >= HIDDEN_TO_MUTE,
+    (error: unknown) => {
+      // Moderation lookup failing must not turn into a free pass or a block. Let the post through.
+      console.error("mute check", error);
+      return false;
+    },
+  );
+  const feed = getBorderWaitTimes();
+  // If we return before awaiting the feed, its rejection must not go unhandled.
+  feed.catch(() => {});
+
+  // Posting pauses for an account whose messages keep being hidden by reports.
+  if (await muteCheck) {
+    return Response.json({ error: "muted" }, { status: 403, headers: NO_STORE });
   }
 
   try {
-    const snapshot = await getBorderWaitTimes();
+    const snapshot = await feed;
     const port = snapshot.ports.find((item) => item.portNumber === portNumber);
     if (!port) return badRequest("Unknown crossing.");
 
@@ -123,7 +132,8 @@ export async function POST(request: Request) {
 
     const id = await saveCheckIn({ userId, portNumber, message, photo, milesAway: presence.miles });
     // The count outlives the post, which is deleted after 6 hours.
-    await recordUsage(userId, "chat");
+    // After the response is sent, so the rider does not wait on a counter.
+    after(() => recordUsage(userId, "chat"));
     return Response.json({ id }, { status: 201, headers: NO_STORE });
   } catch (error) {
     return serverError("Could not save the post.", error);

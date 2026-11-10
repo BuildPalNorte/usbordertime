@@ -91,21 +91,38 @@ export async function listCheckIns(
 ): Promise<CheckIn[]> {
   await ensureTable();
   const sql = database();
+  // The 50 newest posts are picked first (index scan on port + time), then one pass over their
+  // reactions counts both kinds and the viewer's own, instead of four lookups per row.
+  const me = actor ?? "";
   const rows = (await sql`
-    select c.id, p.name, c.message, (c.photo is not null) as has_photo, c.created_at,
+    select c.id, p.name, c.message, c.has_photo, c.created_at,
            (c.user_id = ${userId ?? ""}) as mine,
-           (select count(*)::int from check_in_reaction r where r.check_in_id = c.id and r.kind = 'like') as likes,
-           (select count(*)::int from check_in_reaction r where r.check_in_id = c.id and r.kind = 'helpful') as helpfuls,
-           exists (select 1 from check_in_reaction r where r.check_in_id = c.id and r.kind = 'like' and r.actor = ${actor ?? ""}) as liked,
-           exists (select 1 from check_in_reaction r where r.check_in_id = c.id and r.kind = 'helpful' and r.actor = ${actor ?? ""}) as helped
-    from check_in c
+           coalesce(r.likes, 0)::int as likes,
+           coalesce(r.helpfuls, 0)::int as helpfuls,
+           coalesce(r.liked, false) as liked,
+           coalesce(r.helped, false) as helped
+    from (
+      select id, user_id, message, (photo is not null) as has_photo, created_at
+      from check_in
+      where port_number = ${portNumber}
+        and hidden_at is null
+        and created_at > now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
+        and not exists (
+          select 1 from check_in_report x where x.check_in_id = check_in.id and x.actor = ${me}
+        )
+      order by created_at desc
+      limit 50
+    ) c
     join profile p on p.id = c.user_id
-    where c.port_number = ${portNumber}
-      and c.hidden_at is null
-      and not exists (select 1 from check_in_report x where x.check_in_id = c.id and x.actor = ${actor ?? ""})
-      and c.created_at > now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
+    left join lateral (
+      select count(*) filter (where kind = 'like') as likes,
+             count(*) filter (where kind = 'helpful') as helpfuls,
+             bool_or(kind = 'like' and actor = ${me}) as liked,
+             bool_or(kind = 'helpful' and actor = ${me}) as helped
+      from check_in_reaction
+      where check_in_id = c.id
+    ) r on true
     order by c.created_at desc
-    limit 50
   `) as Row[];
   return rows.reverse().map((row) => ({
     id: row.id,
