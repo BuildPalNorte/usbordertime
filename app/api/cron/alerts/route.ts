@@ -1,7 +1,7 @@
 import { runAlertCheck } from "@/lib/alert-check.server";
 import { loadNotifyExpectation } from "@/lib/notify-expectation.server";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
-import { alertsNeedWork, failOpenPlan, notifyPlan } from "@/lib/notify-window";
+import { alertsNeedWork, failOpenPlan, notifyPlan, thresholdQuiet } from "@/lib/notify-window";
 import { runScheduleCheck } from "@/lib/schedule-check.server";
 import {
   nextScheduledAnnouncementAt,
@@ -39,6 +39,8 @@ async function expectedWork() {
 
 /** Opens the database only when the cached next time says a scheduled announcement is due. */
 async function dueAnnouncements() {
+  // Nobody is pushed between 10:00pm and 4:00am Central; one due overnight goes out at 4:00am.
+  if (thresholdQuiet()) return { sent: 0, failed: 0 };
   const next = await nextScheduledAnnouncementAt();
   if (!next || Date.parse(next) > Date.now()) return { sent: 0, failed: 0 };
   return runDueAnnouncements();
