@@ -558,14 +558,14 @@ export function WalletApp({
         withInvite(crossingSharePath(port.portNumber, mode, locale), userId),
         window.location.origin,
       ).href;
-      const body = `${message.text}\n${url}`;
+      const body = `${message.text}\n${copy.shareInvite}\n${url}`;
       try {
         if (typeof navigator.share === "function") {
           const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
           if (ios) {
             await navigator.share({ title: message.title, text: body });
           } else {
-            const data = { title: message.title, text: message.text, url };
+            const data = { title: message.title, text: `${message.text}\n${copy.shareInvite}`, url };
             if (!navigator.canShare || navigator.canShare(data))
               await navigator.share(data);
             else await navigator.share({ title: message.title, text: body });

@@ -187,6 +187,10 @@ export type Copy = {
   shareNamed: (name: string) => string;
   shareCopied: string;
   shareFailed: string;
+  /** The line after a shared wait, above the link. Says what the link is and that it costs nothing. */
+  shareInvite: string;
+  /** Under the brand on a shared preview image, so a screenshot still says where it came from. */
+  shareTagline: string;
   shareTitle: (name: string, wait: string) => string;
   shareWait: (
     name: string,
@@ -715,6 +719,8 @@ export const COPY: Record<Locale, Copy> = {
     shareNamed: (name) => `Share ${name}`,
     shareCopied: "Link copied",
     shareFailed: "Could not share",
+    shareInvite: "Live waits for every crossing, free, no sign-in:",
+    shareTagline: "usbordertime.com · Live from CBP",
     shareTitle: (name, wait) => `${name} · ${wait}`,
     shareWait: (name, minutes, lane, place) =>
       `${name} is ${formatDuration(minutes, "hr", "min")} to cross right now. ${lane}, ${place}.`,
@@ -1287,6 +1293,8 @@ export const COPY: Record<Locale, Copy> = {
     shareNamed: (name) => `Compartir ${name}`,
     shareCopied: "Enlace copiado",
     shareFailed: "No se pudo compartir",
+    shareInvite: "Esperas en vivo de cada cruce, gratis y sin registrarte:",
+    shareTagline: "usbordertime.com · En vivo desde CBP",
     shareTitle: (name, wait) => `${name} · ${wait}`,
     shareWait: (name, minutes, lane, place) =>
       `${name} está a ${formatDuration(minutes, "h", "min")} para cruzar. ${lane}, ${place}.`,

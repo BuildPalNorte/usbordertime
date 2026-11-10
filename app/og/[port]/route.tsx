@@ -47,7 +47,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ por
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", fontSize: 30, letterSpacing: -0.4 }}>Border Time</div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", fontSize: 30, letterSpacing: -0.4 }}>Border Time</div>
+          <div style={{ display: "flex", fontSize: 22, marginTop: 6, color: muted }}>
+            {copy.shareTagline}
+          </div>
+        </div>
         <div
           style={{
             display: "flex",
