@@ -1,5 +1,11 @@
 import { isAdminEmail } from "@/lib/admin.server";
-import { listAnnouncements, sendAnnouncement, setAnnouncementActive } from "@/lib/announcement.server";
+import {
+  cancelScheduledAnnouncement,
+  listAnnouncements,
+  scheduleAnnouncement,
+  sendAnnouncement,
+  setAnnouncementActive,
+} from "@/lib/announcement.server";
 import { parseAnnouncementActive, parseAnnouncementInput } from "@/lib/announcement";
 import { getAuth } from "@/lib/auth/server";
 import { badRequest, NO_STORE, serverError, unauthorized } from "@/lib/session.server";
@@ -40,6 +46,18 @@ export async function POST(request: Request) {
   if (!input) return badRequest("Expected a title, body, and url.");
 
   try {
+    if (input.scheduledFor) {
+      const scheduled = await scheduleAnnouncement(
+        adminId,
+        input.title,
+        input.body,
+        input.url,
+        input.surface,
+        input.scheduledFor,
+      );
+      if (scheduled.status === "empty") return badRequest("Title and body can't be empty.");
+      return Response.json({ announcement: scheduled.announcement }, { headers: NO_STORE });
+    }
     const result = await sendAnnouncement(adminId, input.title, input.body, input.url, input.surface);
     if (result.status === "empty") return badRequest("Title and body can't be empty.");
     if (result.status === "no-devices") {
@@ -71,5 +89,28 @@ export async function PATCH(request: Request) {
     return Response.json({ announcement }, { headers: NO_STORE });
   } catch (error) {
     return serverError("Could not update that announcement.", error);
+  }
+}
+
+/** Cancels one that has not gone out yet. */
+export async function DELETE(request: Request) {
+  const adminId = await requireAdmin();
+  if (!adminId) return unauthorized();
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("Expected an id.");
+  }
+  const id = body && typeof body === "object" ? (body as Record<string, unknown>).id : null;
+  if (typeof id !== "string" || id.length === 0 || id.length > 64) return badRequest("Expected an id.");
+
+  try {
+    const removed = await cancelScheduledAnnouncement(id);
+    if (!removed) return Response.json({ error: "That one already went out." }, { status: 404, headers: NO_STORE });
+    return Response.json({ ok: true }, { headers: NO_STORE });
+  } catch (error) {
+    return serverError("Could not cancel that announcement.", error);
   }
 }

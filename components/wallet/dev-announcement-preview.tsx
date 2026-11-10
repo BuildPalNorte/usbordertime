@@ -15,6 +15,8 @@ const MOCK: Announcement = {
   active: true,
   sentAt: new Date(0).toISOString(),
   recipients: 0,
+  status: "sent",
+  scheduledFor: null,
 };
 
 /**

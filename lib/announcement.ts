@@ -20,9 +20,29 @@ export type Announcement = {
   surface: AnnouncementSurface;
   /** An inactive broadcast is kept in the history but no longer shows in the app. The push already went out. */
   active: boolean;
+  /** For a scheduled one this is when it was created until it goes out, then when it went out. */
   sentAt: string;
   recipients: number;
+  /** `scheduled` waits for `scheduledFor`; `failed` came due with no device to send to. */
+  status: AnnouncementStatus;
+  /** ISO time the admin picked, or null for one sent right away. */
+  scheduledFor: string | null;
 };
+
+export type AnnouncementStatus = "sent" | "scheduled" | "failed";
+
+export function isAnnouncementStatus(value: unknown): value is AnnouncementStatus {
+  return value === "sent" || value === "scheduled" || value === "failed";
+}
+
+/** A scheduled time must be a real moment at least a minute ahead and within a year. */
+export function parseScheduledFor(value: unknown, now = Date.now()): string | null {
+  if (typeof value !== "string") return null;
+  const time = Date.parse(value);
+  if (Number.isNaN(time)) return null;
+  if (time < now + 60_000 || time > now + 365 * 24 * 60 * 60 * 1000) return null;
+  return new Date(time).toISOString();
+}
 
 export const MAX_ANNOUNCEMENT_TITLE = 60;
 export const MAX_ANNOUNCEMENT_BODY = 160;
@@ -49,7 +69,14 @@ export function isAnnouncementUrl(value: unknown): value is string {
 }
 
 /** What the route accepts, before it's cleaned and validated. */
-export type AnnouncementInput = { title: string; body: string; url: string; surface: AnnouncementSurface };
+export type AnnouncementInput = {
+  title: string;
+  body: string;
+  url: string;
+  surface: AnnouncementSurface;
+  /** Present when the admin asked for a later time. An invalid time makes the whole input invalid. */
+  scheduledFor: string | null;
+};
 
 export function parseAnnouncementInput(value: unknown): AnnouncementInput | null {
   if (!value || typeof value !== "object") return null;
@@ -57,7 +84,12 @@ export function parseAnnouncementInput(value: unknown): AnnouncementInput | null
   if (typeof record.title !== "string" || typeof record.body !== "string") return null;
   const url = isAnnouncementUrl(record.url) ? record.url : "/";
   const surface = isAnnouncementSurface(record.surface) ? record.surface : "modal";
-  return { title: record.title, body: record.body, url, surface };
+  let scheduledFor: string | null = null;
+  if (record.scheduledFor !== undefined && record.scheduledFor !== null) {
+    scheduledFor = parseScheduledFor(record.scheduledFor);
+    if (!scheduledFor) return null;
+  }
+  return { title: record.title, body: record.body, url, surface, scheduledFor };
 }
 
 /** What `PATCH /api/admin/announcements` accepts. */

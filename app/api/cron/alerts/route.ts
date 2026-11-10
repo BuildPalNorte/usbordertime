@@ -3,6 +3,10 @@ import { loadNotifyExpectation } from "@/lib/notify-expectation.server";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { alertsNeedWork, failOpenPlan, notifyPlan } from "@/lib/notify-window";
 import { runScheduleCheck } from "@/lib/schedule-check.server";
+import {
+  nextScheduledAnnouncementAt,
+  runDueAnnouncements,
+} from "@/lib/announcement.server";
 import { authorizedCron } from "@/lib/cron-auth.server";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
@@ -33,6 +37,13 @@ async function expectedWork() {
   return plan;
 }
 
+/** Opens the database only when the cached next time says a scheduled announcement is due. */
+async function dueAnnouncements() {
+  const next = await nextScheduledAnnouncementAt();
+  if (!next || Date.parse(next) > Date.now()) return { sent: 0, failed: 0 };
+  return runDueAnnouncements();
+}
+
 const IDLE_ALERTS = { checked: 0, notified: 0 };
 const IDLE_SCHEDULES = { checked: 0, sent: 0 };
 
@@ -44,22 +55,41 @@ const IDLE_SCHEDULES = { checked: 0, sent: 0 };
  */
 export async function GET(request: Request) {
   if (!authorizedCron(request)) {
-    return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: NO_STORE },
+    );
   }
   const plan = await expectedWork();
+  const announcements = await Promise.allSettled([dueAnnouncements()]);
+  if (announcements[0].status === "rejected")
+    console.error("announcement check", announcements[0].reason);
   const [alerts, schedules] = await Promise.allSettled([
     plan.alerts ? runAlertCheck() : Promise.resolve(IDLE_ALERTS),
     plan.schedules ? runScheduleCheck() : Promise.resolve(IDLE_SCHEDULES),
   ]);
   if (alerts.status === "rejected") console.error("alert check", alerts.reason);
-  if (schedules.status === "rejected") console.error("schedule check", schedules.reason);
+  if (schedules.status === "rejected")
+    console.error("schedule check", schedules.reason);
   if (alerts.status === "rejected" && schedules.status === "rejected") {
-    return Response.json({ error: "Alert check failed." }, { status: 502, headers: NO_STORE });
+    return Response.json(
+      { error: "Alert check failed." },
+      { status: 502, headers: NO_STORE },
+    );
   }
   return Response.json(
     {
-      ...(alerts.status === "fulfilled" ? alerts.value : { error: "Alert check failed." }),
-      schedules: schedules.status === "fulfilled" ? schedules.value : { error: "Schedule check failed." },
+      ...(alerts.status === "fulfilled"
+        ? alerts.value
+        : { error: "Alert check failed." }),
+      schedules:
+        schedules.status === "fulfilled"
+          ? schedules.value
+          : { error: "Schedule check failed." },
+      announcements:
+        announcements[0].status === "fulfilled"
+          ? announcements[0].value
+          : { error: "Announcement check failed." },
       ran: plan,
     },
     { headers: NO_STORE },
