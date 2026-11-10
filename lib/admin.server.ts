@@ -361,6 +361,15 @@ async function readDashboard(): Promise<AdminData> {
     }),
     stats: [
       { label: "Accounts", value: accounts, detail: "Profiles" },
+      ...(arrivals
+        ? [
+            {
+              label: "Guests",
+              value: arrivals.total - arrivals.registered,
+              detail: `Browsers, no account · ${(arrivals.weekTotal - arrivals.weekRegistered).toLocaleString("en-US")} new this week`,
+            },
+          ]
+        : []),
       {
         label: "Alerts",
         value: alertCount,

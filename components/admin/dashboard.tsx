@@ -164,7 +164,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
 
       {/* One surface, hairline cells: four separate cards weighed more than the numbers inside them. */}
       <dl
-        className="rise mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-line bg-line lg:grid-cols-4"
+        className="rise mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-line bg-line max-lg:[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-5"
         style={{ "--i": 1 } as CSSProperties}
       >
         {data.stats.map((stat) => (
@@ -182,12 +182,6 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
         <AdminTabs
           overview={
             <div className="flex min-w-0 flex-col gap-10">
-              <Section
-                title="Uses"
-                hint="Every time a signed-in account opens the app, including coming back to it. Unique is how many different accounts did that in the dates you pick."
-              >
-                <AppOpens initial={data.opens} now={now} />
-              </Section>
               <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
               <div className="flex flex-col gap-10">
                 <Section
@@ -240,6 +234,12 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                 </Section>
               </div>
               </div>
+              <Section
+                title="Uses"
+                hint="Every time a signed-in account opens the app, including coming back to it. Unique is how many different accounts did that in the dates you pick."
+              >
+                <AppOpens initial={data.opens} now={now} />
+              </Section>
             </div>
           }
           acquisition={
