@@ -46,7 +46,9 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from "react";
+import { AccountProvider } from "./account-context";
 import { AnnouncementNotice } from "./announcement-notice";
+import { GuestPane } from "./guest-pane";
 import { CameraStreamProvider } from "./camera-streams";
 import { BrowsePane } from "./browse-pane";
 import type { StackItem } from "./card-stack";
@@ -135,7 +137,8 @@ export function WalletApp({
 }: {
   initial: BorderWaitTimes | null;
   streams: Record<string, string>;
-  userId: string;
+  /** The signed-in account, or null for someone using the app without one. */
+  userId: string | null;
   announcement: Announcement | null;
 }) {
   const { locale, copy } = useLocale();
@@ -740,6 +743,7 @@ export function WalletApp({
           : "none";
 
   return (
+    <AccountProvider signedIn={userId !== null}>
     <PaneChromeProvider
       initial={{
         subtitle: "\u00A0",
@@ -867,13 +871,23 @@ export function WalletApp({
                 style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
                 aria-label={copy.schedules}
               >
-                <SchedulesPane
-                  ports={ports}
-                  items={items}
-                  hydrated={hydrated}
-                  onBrowse={() => changeTab("browse")}
-                  ownsHeader={tab === "schedules"}
-                />
+                {userId === null ? (
+                  <GuestPane
+                    title={copy.schedules}
+                    subtitle={copy.schedulesSummary(0)}
+                    signInTitle={copy.schedulesSignInTitle}
+                    signInBody={copy.schedulesSignInBody}
+                    ownsHeader={tab === "schedules"}
+                  />
+                ) : (
+                  <SchedulesPane
+                    ports={ports}
+                    items={items}
+                    hydrated={hydrated}
+                    onBrowse={() => changeTab("browse")}
+                    ownsHeader={tab === "schedules"}
+                  />
+                )}
               </section>
 
               <section
@@ -894,7 +908,17 @@ export function WalletApp({
                 style={{ "--pane-from": `${paneFrom}px` } as CSSProperties}
                 aria-label={copy.ask}
               >
-                <AskPane ownsHeader={tab === "ask"} />
+                {userId === null ? (
+                  <GuestPane
+                    title={copy.ask}
+                    subtitle={copy.askSubtitle}
+                    signInTitle={copy.askSignInTitle}
+                    signInBody={copy.askSignInBody}
+                    ownsHeader={tab === "ask"}
+                  />
+                ) : (
+                  <AskPane ownsHeader={tab === "ask"} />
+                )}
               </section>
             </div>
           </div>
@@ -913,5 +937,6 @@ export function WalletApp({
         </div>
       </CameraStreamProvider>
     </PaneChromeProvider>
+    </AccountProvider>
   );
 }

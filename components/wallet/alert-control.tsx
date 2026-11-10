@@ -15,9 +15,11 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalSto
 import { createPortal } from "react-dom";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
+import { useSignedIn } from "./account-context";
+import { SignInButton } from "./sign-in-prompt";
 import { useAlerts } from "./use-alerts";
 
-type Problem = "denied" | "unsupported" | "install" | "failed";
+type Problem = "denied" | "unsupported" | "install" | "failed" | "signin";
 
 const noopSubscribe = () => () => {};
 
@@ -44,6 +46,7 @@ export function AlertButton({
   const panelRef = useRef<HTMLDivElement>(null);
   const dialogId = useId();
   const titleId = useId();
+  const signedIn = useSignedIn();
   const { find, set, clear } = useAlerts();
   const [open, setOpen] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
@@ -59,8 +62,9 @@ export function AlertButton({
     (a, b) => a - b,
   );
 
-  const blocked: Problem | null =
-    support === "needs-install"
+  const blocked: Problem | null = !signedIn
+    ? "signin"
+    : support === "needs-install"
       ? "install"
       : support === "unsupported"
         ? "unsupported"
@@ -200,7 +204,9 @@ export function AlertButton({
   };
 
   const message =
-    shown === "install"
+    shown === "signin"
+      ? copy.alertSignIn
+      : shown === "install"
       ? copy.alertNeedsInstall
       : shown === "denied"
         ? copy.alertDenied
@@ -313,6 +319,12 @@ export function AlertButton({
               >
                 {message}
               </p>
+
+              {shown === "signin" && (
+                <div className="mt-3 flex">
+                  <SignInButton />
+                </div>
+              )}
 
               {shown === "install" && (
                 <button

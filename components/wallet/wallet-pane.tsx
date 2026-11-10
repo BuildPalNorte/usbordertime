@@ -13,6 +13,7 @@ import { RouteRow } from "./route-row";
 import { HapticPad } from "./haptic-pad";
 import { AnnouncementBanner } from "./announcement-banner";
 import { InstallBanner } from "./install-prompt";
+import { SignInNudge } from "./sign-in-prompt";
 import { CARD_H, PEEK, SPRING } from "./motion";
 
 type Props = {
@@ -124,6 +125,7 @@ export const WalletPane = forwardRef<HTMLElement, Props>(function WalletPane(pro
             hydrated={hydrated}
             onView={onViewAnnouncement}
           />
+          <SignInNudge />
           <InstallBanner />
         </>
       )}

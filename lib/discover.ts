@@ -49,7 +49,7 @@ export const DISCOVER: Record<Locale, DiscoverCopy> = {
         id: "check-a-wait-now",
         question: "How do I check a border wait time right now?",
         answer:
-          "Open Border Time at usbordertime.com and sign in with Google. The live minute for each lane is in the app. These guides explain which crossing and which lane a number refers to, and they leave the current wait out because that number changes through the day.",
+          "Open Border Time at usbordertime.com. No account is needed to see the waits; sign in with Google to get alerts. The live minute for each lane is in the app. These guides explain which crossing and which lane a number refers to, and they leave the current wait out because that number changes through the day.",
       },
       {
         id: "which-crossings",
@@ -120,7 +120,7 @@ export const DISCOVER: Record<Locale, DiscoverCopy> = {
         id: "check-a-wait-now",
         question: "¿Cómo veo un tiempo de espera ahora mismo?",
         answer:
-          "Abre Border Time en usbordertime.com e inicia sesión con Google. El minuto en vivo de cada carril está en la app. Estas guías explican a qué cruce y a qué carril se refiere un número, y dejan fuera la espera de este momento porque ese número cambia a lo largo del día.",
+          "Abre Border Time en usbordertime.com. No necesitas cuenta para ver las esperas; inicia sesión con Google para recibir alertas. El minuto en vivo de cada carril está en la app. Estas guías explican a qué cruce y a qué carril se refiere un número, y dejan fuera la espera de este momento porque ese número cambia a lo largo del día.",
       },
       {
         id: "which-crossings",

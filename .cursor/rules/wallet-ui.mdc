@@ -61,3 +61,7 @@ Inside Facebook, Messenger, Instagram, or TikTok's own browser (`detectInAppBrow
 `WalletPane` shows `InstallBanner` under the header while no card is open. The wait alert itself is the clock button on the card, described in `alerts.mdc`.
 
 The empty wallet suggests unsaved Mexican crossings whose city is Brownsville.
+
+## Guest visits
+
+`app/(app)/layout.tsx` no longer stops a signed-out visit at `SignInScreen`; `SessionGate` still does if a session disappears while the app is open. With no session it renders `GuestEntry` (remembers `from` and `c`, posts `/api/visitor` once per page load so Arrivals and campaign counts keep working) and `LiveWallet` with `userId` null, and none of the account syncs (`PreferenceSync`, `AlertSync`, `StreakSync`, `OpenSync`). `WalletApp` wraps in `AccountProvider`; read it with `useSignedIn()`. A guest sees `SignInNudge` above the cards, `GuestPane` instead of the Alarms and Ask panes, and the card clock explains an account is needed and offers `SignInButton`. `useAlerts` does not fetch for a guest. Sign-out reloads into the guest app.

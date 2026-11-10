@@ -110,6 +110,16 @@ export type Copy = {
   signInBody: string;
   signInWithGoogle: string;
   signInSwipe: string;
+  /** The suggestion shown to someone using the app without an account. */
+  nudgeTitle: string;
+  nudgeBody: string;
+  nudgeDismiss: string;
+  /** Alerts, alarms, and Ask need an account. */
+  alertSignIn: string;
+  schedulesSignInTitle: string;
+  schedulesSignInBody: string;
+  askSignInTitle: string;
+  askSignInBody: string;
   signInRedirecting: string;
   signInHeadline: string;
   signInSample: string;
@@ -541,6 +551,16 @@ export const COPY: Record<Locale, Copy> = {
     signInBody: "Sign in with Google to see the bridges you cross.",
     signInWithGoogle: "Sign in with Google",
     signInSwipe: "Tap, or swipe up",
+    nudgeTitle: "Keep your bridges",
+    nudgeBody:
+      "Your bridges stay on this device for now. Sign in with Google to keep them on every phone and get a notification when a wait drops.",
+    nudgeDismiss: "Not now",
+    alertSignIn: "Sign in to get a notification when this lane drops.",
+    schedulesSignInTitle: "Sign in to set an alarm",
+    schedulesSignInBody:
+      "An alarm sends you the wait at your bridges at the time you pick. It needs an account so we know where to send it.",
+    askSignInTitle: "Sign in to ask a question",
+    askSignInBody: "The assistant answers with the waits right now. Sign in with Google to use it.",
     signInRedirecting: "Signing in…",
     signInHeadline: "Know before you cross.",
     signInSample: "Sample",
@@ -1086,6 +1106,16 @@ export const COPY: Record<Locale, Copy> = {
     signInBody: "Inicia sesión con Google para ver los puentes que cruzas.",
     signInWithGoogle: "Iniciar sesión con Google",
     signInSwipe: "Toca o desliza hacia arriba",
+    nudgeTitle: "Guarda tus puentes",
+    nudgeBody:
+      "Por ahora tus puentes se quedan en este dispositivo. Inicia sesión con Google para tenerlos en todos tus teléfonos y recibir un aviso cuando baje una espera.",
+    nudgeDismiss: "Ahora no",
+    alertSignIn: "Inicia sesión para recibir un aviso cuando este carril baje.",
+    schedulesSignInTitle: "Inicia sesión para poner una alarma",
+    schedulesSignInBody:
+      "Una alarma te manda la espera de tus puentes a la hora que elijas. Necesita una cuenta para saber a dónde enviarla.",
+    askSignInTitle: "Inicia sesión para hacer una pregunta",
+    askSignInBody: "El asistente responde con las esperas de ahora. Inicia sesión con Google para usarlo.",
     signInRedirecting: "Iniciando sesión…",
     signInHeadline: "Conoce antes de cruzar.",
     signInSample: "Ejemplo",

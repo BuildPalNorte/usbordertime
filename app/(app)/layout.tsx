@@ -6,6 +6,7 @@ import { StreakSync } from "@/components/wallet/streak-sync";
 import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { LocationPrompt } from "@/components/wallet/location-prompt";
 import { ReferralPrompt } from "@/components/wallet/referral-prompt";
+import { GuestEntry } from "@/components/wallet/guest-entry";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
 import { isAdminEmail } from "@/lib/admin.server";
@@ -45,10 +46,14 @@ async function GatedHome({ children }: { children: ReactNode }) {
   const session = await getAuth().api.getSession({ headers: headerList });
   const user = session?.user;
   if (!user?.id || !user.email) {
+    // Signing in is a suggestion, not a gate. The waits, saved bridges (kept on this device), and
+    // the converter work without an account. Alerts, alarms, and Ask ask for one where they are used.
     return (
       <>
-        <SignInScreen />
-        {children}
+        <GuestEntry />
+        <LiveWallet userId={null} live={loadLive()} />
+        {/* The page's own copy is for search engines. The app is what a guest uses. */}
+        <div className="sr-only">{children}</div>
       </>
     );
   }
@@ -127,7 +132,7 @@ async function loadLive(): Promise<Live> {
   };
 }
 
-async function LiveWallet({ userId, live }: { userId: string; live: Promise<Live> }) {
+async function LiveWallet({ userId, live }: { userId: string | null; live: Promise<Live> }) {
   const { snapshot, streams, announcement } = await live;
   return (
     <Suspense fallback={<ShellSkeleton wordless />}>

@@ -4,6 +4,7 @@ import { alertKey, type WaitAlert } from "@/lib/alert";
 import { isMode, type Mode } from "@/lib/ports";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
+import { useSignedIn } from "./account-context";
 
 const ALERTS_KEY = ["alerts"] as const;
 
@@ -28,9 +29,12 @@ export type AlertSaveResult = "ok" | "limit" | "failed";
 /** This account's wait alerts, and the two things you can do to one: set it, or turn it off. */
 export function useAlerts() {
   const queryClient = useQueryClient();
+  const signedIn = useSignedIn();
   const query = useQuery({
     queryKey: ALERTS_KEY,
     queryFn: fetchAlerts,
+    // A visit without an account has no alerts to read, and the request would only be refused.
+    enabled: signedIn,
     staleTime: 60_000,
     retry: false,
   });
