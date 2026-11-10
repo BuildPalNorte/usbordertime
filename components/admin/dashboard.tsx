@@ -1,4 +1,5 @@
 import { AccountList } from "@/components/admin/account-list";
+import { AppOpens } from "@/components/admin/app-opens";
 import { AdminTabs } from "@/components/admin/admin-tabs";
 import { AnnouncementModal } from "@/components/admin/announcement-modal";
 import { Campaigns } from "@/components/admin/campaigns";
@@ -180,7 +181,14 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
       <div className="mt-8 min-w-0">
         <AdminTabs
           overview={
-            <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+            <div className="flex min-w-0 flex-col gap-10">
+              <Section
+                title="Uses"
+                hint="Every time a signed-in account opens the app, including coming back to it. Unique is how many different accounts did that in the dates you pick."
+              >
+                <AppOpens initial={data.opens} now={now} />
+              </Section>
+              <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
               <div className="flex flex-col gap-10">
                 <Section
                   title="Arrivals"
@@ -230,6 +238,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                     now={now}
                   />
                 </Section>
+              </div>
               </div>
             </div>
           }
@@ -313,6 +322,57 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
           }
           usage={
             <div className="grid min-w-0 gap-10 lg:grid-cols-2 lg:gap-14">
+              <div className="flex min-w-0 flex-col gap-10">
+              <Section
+                title="Saved by city"
+                hint={`Where riders keep their bridges. ${data.cities.accounts.toLocaleString("en-US")} accounts have saved ${data.cities.saved.toLocaleString("en-US")} bridges. A person with bridges in two cities counts in both, so the rows add up to more than the accounts.`}
+              >
+                {data.cities.cities.length === 0 ? (
+                  <p className="text-[15px] text-muted">No one has saved a bridge yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <Rows>
+                      {data.cities.regions.map((side) => (
+                        <li key={side.region} className={`${LINE} px-4 py-3`}>
+                          <div>
+                            <p className="text-[15px] font-medium">{side.region}</p>
+                            <p className="text-[13px] text-muted">
+                              {percent(data.cities.accounts === 0 ? 0 : side.accounts / data.cities.accounts)} of accounts
+                              with a saved bridge, {side.saved.toLocaleString("en-US")} bridges
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                            {side.accounts.toLocaleString("en-US")}
+                          </p>
+                        </li>
+                      ))}
+                    </Rows>
+                    <MoreRows noun="cities">
+                      {data.cities.cities.map((row) => (
+                        <li key={`${row.region}:${row.city}`} className={`${LINE} px-4 py-3`}>
+                          <div>
+                            <p className="text-[15px] font-medium">{row.city}</p>
+                            <p className="text-[13px] text-muted">
+                              {row.region}, {percent(data.cities.accounts === 0 ? 0 : row.accounts / data.cities.accounts)}{" "}
+                              of accounts, {row.saved.toLocaleString("en-US")} bridges
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                            {row.accounts.toLocaleString("en-US")}
+                          </p>
+                        </li>
+                      ))}
+                    </MoreRows>
+                    {data.cities.unplaced > 0 && (
+                      <p className="text-[13px] text-muted">
+                        {data.cities.unplaced.toLocaleString("en-US")} saved bridges are at a crossing that is not in the
+                        CBP feed right now, so they have no city.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </Section>
+
               <Section title="Crossings" hint="Who saved, watches, or schedules each crossing, next to its wait right now.">
                 {data.crossings.length === 0 ? (
                   <p className="text-[15px] text-muted">No one has saved or watched a crossing.</p>
@@ -340,6 +400,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                   </MoreRows>
                 )}
               </Section>
+              </div>
 
               <div className="flex flex-col gap-10">
                 <Section title="Feature use" hint="Everything riders have done, counted per action.">

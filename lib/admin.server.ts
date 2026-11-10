@@ -6,11 +6,14 @@ import { listCampaigns } from "@/lib/campaign.server";
 import type { Campaign } from "@/lib/campaign";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { FEED_GROUPS, type FeedKind } from "@/lib/camera-feeds";
-import { defaultMode, laneFor, listedCameras, portName } from "@/lib/ports";
+import { defaultMode, laneFor, listedCameras, portName, REPEATED_PORT } from "@/lib/ports";
 import { geoPointFrom } from "@/lib/port-locations";
 import { ensureProfile, ensureProfileColumns } from "@/lib/profile";
+import { centralDay } from "@/lib/admin-time";
+import { recentOpenRange, type AppOpens } from "@/lib/app-opens";
 import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
-import { readUsageTotals, type UsageTotals } from "@/lib/usage.server";
+import { readAppOpens, readUsageTotals, type UsageTotals } from "@/lib/usage.server";
+import type { PortWaitTime } from "@/lib/border-wait-times";
 import { database } from "@/lib/db.server";
 import { ANALYTICS_EXCLUDED_EMAILS, isExcludedFromAnalytics } from "@/lib/analytics";
 import { readExchangeSummary, type ExchangeSummary } from "@/lib/exchange-use.server";
@@ -74,6 +77,24 @@ export type AdminFeedGroup = {
 
 export type AdminUsageTotals = { active: number; byKind: Record<UsageKind, number> };
 
+/** Where saved bridges are, one row per city. `accounts` are distinct people, `saved` is every bridge they kept. */
+export type AdminCity = {
+  city: string;
+  region: "Mexican border" | "Canadian border";
+  accounts: number;
+  saved: number;
+};
+
+export type AdminCities = {
+  /** Accounts with at least one saved bridge, and how many bridges that is in all. */
+  accounts: number;
+  saved: number;
+  /** Saved bridges whose crossing the feed no longer lists, so they have no city. */
+  unplaced: number;
+  regions: { region: AdminCity["region"]; accounts: number; saved: number }[];
+  cities: AdminCity[];
+};
+
 /** A crossing with who is watching it, joined with what the feed says right now. */
 export type AdminCrossing = {
   portNumber: string;
@@ -94,6 +115,7 @@ export type AdminData = {
   stats: AdminStat[];
   accountTotal: number;
   usage: AdminUsageTotals;
+  cities: AdminCities;
   cameras: AdminCamera[];
   feedGroups: AdminFeedGroup[];
   feed: { fetchedAt: string; ports: number } | null;
@@ -102,6 +124,8 @@ export type AdminData = {
   campaigns: Campaign[];
   /** Browsers that opened the sign-in screen, or null when the table could not be read. */
   arrivals: Arrivals | null;
+  /** App opens in the last 7 Central days, or null when that read failed. */
+  opens: AppOpens | null;
   exchange: ExchangeSummary | null;
   /** Display name for every crossing in the feed, by port number. */
   portLabels: Record<string, string>;
@@ -159,6 +183,8 @@ export async function openAdmin(): Promise<AdminOpen> {
 
 async function readDashboard(): Promise<AdminData> {
   const sql = database();
+  const now = new Date();
+  const opensRange = recentOpenRange(centralDay(now), 7);
   let problem = false;
 
   const mark = (error: unknown, quietWhenMissing: boolean) => {
@@ -227,7 +253,12 @@ async function readDashboard(): Promise<AdminData> {
     return [];
   });
 
-  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, campaigns, exchange] =
+  const opensQuery = readAppOpens(opensRange.from, opensRange.to).catch((error: unknown) => {
+    mark(error, true);
+    return null;
+  });
+
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, campaigns, exchange, opens] =
     await Promise.all([
     factsQuery,
     accountsQuery.then(
@@ -283,20 +314,24 @@ async function readDashboard(): Promise<AdminData> {
     arrivalsQuery,
     campaignsQuery,
     exchangeQuery,
+    opensQuery,
   ]);
 
   const out = new Set(facts.profiles.filter((row) => isExcludedFromAnalytics(row.email)).map((row) => row.id));
   const usageRows = rawUsageRows.filter((row) => !out.has(row.userId));
 
-  const insights = buildInsights({
-    ...facts,
-    usage: usageRows.map((row) => ({
-      userId: row.userId,
-      total: row.total,
-      lastActive: row.lastActive,
-      byKind: row.byKind as Record<string, number>,
-    })),
-  });
+  const insights = buildInsights(
+    {
+      ...facts,
+      usage: usageRows.map((row) => ({
+        userId: row.userId,
+        total: row.total,
+        lastActive: row.lastActive,
+        byKind: row.byKind as Record<string, number>,
+      })),
+    },
+    now,
+  );
   const byNumber = new Map((feed?.ports ?? []).map((port) => [port.portNumber, port]));
   const labelOf = (portNumber: string): string => {
     const port = byNumber.get(portNumber);
@@ -339,6 +374,10 @@ async function readDashboard(): Promise<AdminData> {
       },
     ],
     usage: usageTotals(usageRows),
+    cities: savedByCity(
+      facts.preferences.filter((row) => !out.has(row.userId)),
+      byNumber,
+    ),
     accountTotal: accounts,
     cameras: camerasFrom(cameras),
     feedGroups: feedGroupsFrom(feeds),
@@ -346,6 +385,7 @@ async function readDashboard(): Promise<AdminData> {
     announcements,
     campaigns,
     arrivals,
+    opens,
     exchange,
     portLabels,
     problem,
@@ -359,6 +399,58 @@ function usageTotals(rows: UsageTotals[]): AdminUsageTotals {
     for (const kind of USAGE_KINDS) byKind[kind] += row.byKind[kind] ?? 0;
   }
   return { active: rows.length, byKind };
+}
+
+/**
+ * Saved bridges grouped by the city CBP files them under, and by border. A person who saved two
+ * bridges in one city is one account in that city. Across cities and regions the same person can
+ * appear in more than one row, so those rows add up to more than the account total.
+ */
+function savedByCity(
+  preferences: RawFacts["preferences"],
+  byNumber: Map<string, PortWaitTime>,
+): AdminCities {
+  const cities = new Map<string, { city: string; region: AdminCity["region"]; people: Set<string>; saved: number }>();
+  const regions = new Map<AdminCity["region"], { people: Set<string>; saved: number }>();
+  const everyone = new Set<string>();
+  let saved = 0;
+  let unplaced = 0;
+
+  for (const pref of preferences) {
+    const mine = new Set(pref.wallet.map((entry) => REPEATED_PORT[entry.portNumber] ?? entry.portNumber));
+    for (const portNumber of mine) {
+      const port = byNumber.get(portNumber);
+      if (!port) {
+        unplaced += 1;
+        continue;
+      }
+      const { city } = portName(port);
+      const region = port.border.toLowerCase().includes("canad") ? "Canadian border" : "Mexican border";
+      const key = `${region}|${city.toLowerCase()}`;
+      const entry = cities.get(key) ?? { city, region, people: new Set<string>(), saved: 0 };
+      entry.people.add(pref.userId);
+      entry.saved += 1;
+      cities.set(key, entry);
+      const side = regions.get(region) ?? { people: new Set<string>(), saved: 0 };
+      side.people.add(pref.userId);
+      side.saved += 1;
+      regions.set(region, side);
+      everyone.add(pref.userId);
+      saved += 1;
+    }
+  }
+
+  return {
+    accounts: everyone.size,
+    saved,
+    unplaced,
+    regions: [...regions.entries()]
+      .map(([region, side]) => ({ region, accounts: side.people.size, saved: side.saved }))
+      .sort((a, b) => b.accounts - a.accounts),
+    cities: [...cities.values()]
+      .map((entry) => ({ city: entry.city, region: entry.region, accounts: entry.people.size, saved: entry.saved }))
+      .sort((a, b) => b.accounts - a.accounts || b.saved - a.saved || a.city.localeCompare(b.city)),
+  };
 }
 
 function camerasFrom(rows: { alias: string; src: string }[]): AdminCamera[] {

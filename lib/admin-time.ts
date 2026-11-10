@@ -22,6 +22,17 @@ const CLOCK_YEAR = new Intl.DateTimeFormat("en-US", {
   timeZone: ZONE,
 });
 const YEAR = new Intl.DateTimeFormat("en-US", { year: "numeric", timeZone: ZONE });
+const DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** Calendar day in Central time, `YYYY-MM-DD`. A daylight-saving change does not shift it. */
+export function centralDay(date: Date): string {
+  return DAY.format(date);
+}
 
 function parse(value: string | null | undefined): Date | null {
   if (!value) return null;

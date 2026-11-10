@@ -191,6 +191,12 @@ const COMTODO: FeedSource = {
 };
 
 /** Live HLS cameras, keyed the same way as LOCAL_CROSSING. `src` is the fallback. */
+/**
+ * A second CBP listing the app hides, and the port it repeats. Older wallets can still hold the
+ * hidden one, so anything that groups saved bridges reads it as the port it repeats.
+ */
+export const REPEATED_PORT: Readonly<Record<string, string>> = { "230106": "535501" };
+
 const CROSSING_STREAM: Record<string, CrossingStream> = {
   "brownsville|gateway": {
     src: "https://s81.ipcamlive.com/streams/51bcyg8u6laxau7hi/stream.m3u8",

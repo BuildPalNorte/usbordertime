@@ -4,6 +4,7 @@ import { authClient } from "@/lib/auth/client";
 import { clearCampaignCookie, dropCampaignParam } from "@/lib/campaign";
 import { clearInviteCookie, dropInviteParam } from "@/lib/invite";
 import { useLayoutEffect, useSyncExternalStore, type ReactNode } from "react";
+import { OpenSync } from "./open-sync";
 import { SignInScreen } from "./sign-in-screen";
 
 const emptySubscribe = () => () => {};
@@ -27,6 +28,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
   return (
     <>
       <InviteClaim />
+      <OpenSync />
       {children}
     </>
   );
