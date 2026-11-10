@@ -348,8 +348,7 @@ export type Copy = {
   checkInNotePlaceholder: string;
   checkInNoteCount: (used: number, max: number) => string;
   checkInAddPhoto: string;
-  checkInReplacePhoto: string;
-  checkInRemovePhoto: string;
+  checkInReplacePhoto: string;  checkInRemovePhoto: string;
   checkInPhotoAlt: string;
   checkInLocating: string;
   checkInSending: string;
@@ -976,8 +975,7 @@ export const COPY: Record<Locale, Copy> = {
     checkInNotePlaceholder: "How does the line look from where you are?",
     checkInNoteCount: (used, max) => `${used} of ${max}`,
     checkInAddPhoto: "Add a photo",
-    checkInReplacePhoto: "Change photo",
-    checkInRemovePhoto: "Remove photo",
+    checkInReplacePhoto: "Change photo",    checkInRemovePhoto: "Remove photo",
     checkInPhotoAlt: "Your photo from the bridge",
       checkInLocating: "Confirming where you are",
     checkInSending: "Checking in",
@@ -1616,8 +1614,7 @@ export const COPY: Record<Locale, Copy> = {
     checkInNotePlaceholder: "¿Cómo se ve la fila desde donde estás?",
     checkInNoteCount: (used, max) => `${used} de ${max}`,
     checkInAddPhoto: "Agregar foto",
-    checkInReplacePhoto: "Cambiar foto",
-    checkInRemovePhoto: "Quitar foto",
+    checkInReplacePhoto: "Cambiar foto",    checkInRemovePhoto: "Quitar foto",
     checkInPhotoAlt: "Tu foto desde el puente",
       checkInLocating: "Confirmando dónde estás",
     checkInSending: "Registrando",

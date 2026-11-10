@@ -178,8 +178,7 @@ function CheckInSheet({
   const panelRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const camera = useRef<CameraIconHandle>(null);
+  const fileRef = useRef<HTMLInputElement>(null);  const camera = useRef<CameraIconHandle>(null);
   const fix = useRef<Fix | null>(null);
   const stick = useRef(true);
   /** Taps sent but not yet answered. */
@@ -699,7 +698,6 @@ function CheckInSheet({
                       <HapticPad />
                       <CameraIcon ref={camera} size={20} aria-hidden />
                     </motion.button>
-
                     <motion.button
                       type="button"
                       aria-label={copy.checkInSendLabel}
