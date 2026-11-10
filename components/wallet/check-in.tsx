@@ -53,6 +53,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useSignedIn } from "./account-context";
+import { CameraCapture } from "./check-in-camera";
 import { prepareJpeg } from "./check-in-photo";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
@@ -178,7 +179,10 @@ function CheckInSheet({
   const panelRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);  const camera = useRef<CameraIconHandle>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const [photoMenu, setPhotoMenu] = useState(false);
+  const [webcam, setWebcam] = useState(false);  const camera = useRef<CameraIconHandle>(null);
   const fix = useRef<Fix | null>(null);
   const stick = useRef(true);
   /** Taps sent but not yet answered. */
@@ -611,6 +615,33 @@ function CheckInSheet({
                   void pick(file);
                 }}
               />
+              {/* `capture` opens the camera app directly. Android's picker alone offers no camera. */}
+              <input
+                ref={cameraRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  void pick(file);
+                }}
+              />
+              {webcam && (
+                <CameraCapture
+                  labels={{
+                    capture: copy.checkInCapture,
+                    cancel: copy.checkInCameraCancel,
+                    unavailable: copy.checkInCameraUnavailable,
+                  }}
+                  onClose={() => setWebcam(false)}
+                  onCapture={(file) => {
+                    setWebcam(false);
+                    void pick(file);
+                  }}
+                />
+              )}
               <div className="relative rounded-[28px] p-1.5">
                 <div
                   aria-hidden
@@ -680,12 +711,55 @@ function CheckInSheet({
                       }
                     />
 
+                    <div className="relative shrink-0">
+                    {photoMenu && (
+                      <>
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          aria-hidden
+                          className="fixed inset-0 z-10 cursor-default"
+                          onClick={() => setPhotoMenu(false)}
+                        />
+                        <div
+                          role="menu"
+                          className="glass absolute right-0 bottom-full z-20 mb-2 w-max min-w-44 overflow-hidden rounded-2xl p-1 shadow-lg"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setPhotoMenu(false);
+                              // A computer has no camera app to hand off to, so show its webcam here.
+                              if (window.matchMedia("(pointer: fine)").matches) setWebcam(true);
+                              else cameraRef.current?.click();
+                            }}
+                            className="block w-full rounded-xl px-3.5 py-2.5 text-left text-[15px] text-foreground active:bg-foreground/[0.08]"
+                          >
+                            {copy.checkInTakePhoto}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setPhotoMenu(false);
+                              fileRef.current?.click();
+                            }}
+                            className="block w-full rounded-xl px-3.5 py-2.5 text-left text-[15px] text-foreground active:bg-foreground/[0.08]"
+                          >
+                            {copy.checkInChoosePhoto}
+                          </button>
+                        </div>
+                      </>
+                    )}
                     <motion.button
                       type="button"
                       aria-label={photo ? copy.checkInReplacePhoto : copy.checkInAddPhoto}
+                      aria-haspopup="menu"
+                      aria-expanded={photoMenu}
                       disabled={preparing}
                       aria-busy={preparing}
-                      onClick={() => fileRef.current?.click()}
+                      onClick={() => setPhotoMenu((value) => !value)}
                       onPointerEnter={() => camera.current?.startAnimation()}
                       onPointerLeave={() => camera.current?.stopAnimation()}
                       whileTap={reduce ? undefined : { scale: 0.92 }}
@@ -698,6 +772,7 @@ function CheckInSheet({
                       <HapticPad />
                       <CameraIcon ref={camera} size={20} aria-hidden />
                     </motion.button>
+                    </div>
                     <motion.button
                       type="button"
                       aria-label={copy.checkInSendLabel}
