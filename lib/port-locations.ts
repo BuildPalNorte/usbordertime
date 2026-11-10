@@ -80,7 +80,7 @@ const CITY_LOCATION: Record<string, GeoPoint> = {
   ysleta: { lat: 31.6975, lng: -106.3326 },
 };
 
-function haversineMiles(a: GeoPoint, b: GeoPoint): number {
+export function haversineMiles(a: GeoPoint, b: GeoPoint): number {
   const R = 3958.8; // Earth radius, miles.
   const dLat = ((b.lat - a.lat) * Math.PI) / 180;
   const dLng = ((b.lng - a.lng) * Math.PI) / 180;
@@ -90,6 +90,11 @@ function haversineMiles(a: GeoPoint, b: GeoPoint): number {
   const sinLng = Math.sin(dLng / 2);
   const h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+/** Where a crossing is, to the precision of its city. Null when the feed names a city this file lacks. */
+export function portLocation(port: PortWaitTime): GeoPoint | null {
+  return CITY_LOCATION[portName(port).city.toLowerCase()] ?? null;
 }
 
 /** A city close enough to count as "nearby" once at least one city has been found. */

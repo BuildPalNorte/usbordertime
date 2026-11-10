@@ -3,18 +3,9 @@ import { loadNotifyExpectation } from "@/lib/notify-expectation.server";
 import { getBorderWaitTimes } from "@/lib/border-wait-times";
 import { alertsNeedWork, failOpenPlan, notifyPlan } from "@/lib/notify-window";
 import { runScheduleCheck } from "@/lib/schedule-check.server";
-import { timingSafeEqual } from "node:crypto";
+import { authorizedCron } from "@/lib/cron-auth.server";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
-
-function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  // No secret configured means nobody can call this. It must never fall open.
-  if (!secret) return false;
-  const given = Buffer.from(request.headers.get("authorization") ?? "");
-  const expected = Buffer.from(`Bearer ${secret}`);
-  return given.length === expected.length && timingSafeEqual(given, expected);
-}
 
 /**
  * What this tick has to do. A threshold check runs only when a rule would change state against the
@@ -52,7 +43,7 @@ const IDLE_SCHEDULES = { checked: 0, sent: 0 };
  * One failing does not stop the other. A skipped tick is what lets Neon suspend.
  */
 export async function GET(request: Request) {
-  if (!authorized(request)) {
+  if (!authorizedCron(request)) {
     return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
   }
   const plan = await expectedWork();

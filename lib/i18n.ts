@@ -336,6 +336,64 @@ export type Copy = {
   scheduleLimit: string;
   scheduleFailed: string;
   scheduleMissing: string;
+  checkIn: string;
+  checkInHint: string;
+  checkInOpen: (bridge: string) => string;
+  checkInClose: string;
+  checkInSheetTitle: string;
+  checkInAt: (bridge: string) => string;
+  checkInSignInTitle: string;
+  checkInSignInBody: string;
+  checkInNote: string;
+  checkInNotePlaceholder: string;
+  checkInNoteCount: (used: number, max: number) => string;
+  checkInAddPhoto: string;
+  checkInReplacePhoto: string;
+  checkInRemovePhoto: string;
+  checkInPhotoAlt: string;
+  checkInLocating: string;
+  checkInSending: string;
+  checkInPrivacy: string;
+  checkInRecent: string;
+  checkInEmpty: string;
+  checkInYou: string;
+  checkInRemove: string;
+  checkInDeleteTitle: string;
+  checkInDeleteBody: string;
+  checkInDeleteBodyPhoto: string;
+  checkInDeleteConfirm: string;
+  checkInDeleteCancel: string;
+  checkInLoadFailed: string;
+  checkInDenied: string;
+  checkInUnsupported: string;
+  checkInImprecise: string;
+  checkInFar: (miles: number, bridge: string) => string;
+  checkInUnknown: string;
+  checkInEmptyPost: string;
+  checkInLanguage: string;
+  checkInMuted: string;
+  checkInClosed: string;
+  checkInClosedHint: string;
+  checkInReport: string;
+  checkInReportTitle: string;
+  checkInReportBody: string;
+  checkInReportAbuse: string;
+  checkInReportSpam: string;
+  checkInReportPhoto: string;
+  checkInReportOther: string;
+  checkInReportConfirm: string;
+  checkInReported: string;
+  checkInLike: string;
+  checkInOpenPhoto: (name: string) => string;
+  checkInClosePhoto: string;
+  checkInHelpful: string;
+  checkInComposer: string;
+  checkInSendLabel: string;
+  checkInGuest: string;
+  checkInReactFailed: string;
+  checkInPhotoOf: (name: string) => string;
+  checkInPhotoFailed: string;
+  checkInFailed: string;
   scheduleTitle: (time: string, lane: string) => string;
   scheduleWait: (name: string, minutes: number) => string;
   scheduleStatus: (name: string, status: string) => string;
@@ -905,6 +963,71 @@ export const COPY: Record<Locale, Copy> = {
     scheduleLimit: "You can keep up to 8 alarms. Delete one to add another.",
     scheduleFailed: "Could not save the alarm. Try again.",
     scheduleMissing: "That alarm no longer exists.",
+    checkIn: "Bridge chat",
+    checkInHint: "See what riders at the bridge are saying",
+    checkInOpen: (bridge) => `Open the chat at ${bridge}`,
+    checkInClose: "Close chat",
+    checkInSheetTitle: "Bridge chat",
+    checkInAt: (bridge) => `At ${bridge}`,
+    checkInSignInTitle: "Sign in to check in",
+    checkInSignInBody:
+      "Check-ins belong to an account, so riders can trust what they read at the bridge.",
+    checkInNote: "Note",
+    checkInNotePlaceholder: "How does the line look from where you are?",
+    checkInNoteCount: (used, max) => `${used} of ${max}`,
+    checkInAddPhoto: "Add a photo",
+    checkInReplacePhoto: "Change photo",
+    checkInRemovePhoto: "Remove photo",
+    checkInPhotoAlt: "Your photo from the bridge",
+      checkInLocating: "Confirming where you are",
+    checkInSending: "Checking in",
+    checkInPrivacy:
+      "Posting confirms you are near this bridge, then discards your location. Messages show your first name for 6 hours.",
+          checkInRecent: "Recent messages",
+    checkInEmpty: "No one has posted yet. Be the first to say how the line looks.",
+    checkInYou: "You",
+    checkInRemove: "Delete your message",
+    checkInDeleteTitle: "Delete this message?",
+    checkInDeleteBody: "It will be removed for everyone, and reactions on it will be lost.",
+    checkInDeleteBodyPhoto:
+      "The message and its photo will be removed for everyone, and reactions on it will be lost.",
+    checkInDeleteConfirm: "Delete",
+    checkInDeleteCancel: "Cancel",
+    checkInLoadFailed: "Could not load check-ins.",
+    checkInDenied:
+      "Location is off for this site. Turn it on in your browser settings to check in.",
+    checkInUnsupported: "This browser cannot share a location, so it cannot check in.",
+    checkInImprecise:
+      "Your location is too rough to confirm. Step outside or turn on precise location, then try again.",
+    checkInFar: (miles, bridge) =>
+      `You look about ${miles} mi from ${bridge}. Check in when you are at the bridge.`,
+    checkInUnknown: "We cannot confirm the location of this crossing yet.",
+    checkInPhotoFailed: "That photo could not be used. Try another one.",
+    checkInFailed: "Could not check you in. Try again.",
+    checkInEmptyPost: "Write a message or add a photo first.",
+    checkInLanguage: "That message has language we do not allow in the chat. Please reword it.",
+    checkInMuted: "Posting is paused for a while because several riders reported your messages.",
+    checkInClosed: "Chat is closed",
+    checkInClosedHint: "Open from 4 AM to 10 PM Central",
+    checkInReport: "Report this message",
+    checkInReportTitle: "Report this message",
+    checkInReportBody:
+      "What is wrong with it? It is hidden for you now, and for everyone once enough riders report it.",
+    checkInReportAbuse: "Harassment, hate, or bad language",
+    checkInReportSpam: "Spam or an ad",
+    checkInReportPhoto: "Inappropriate photo",
+    checkInReportOther: "Something else",
+    checkInReportConfirm: "Report",
+    checkInReported: "Reported. It is hidden for you, and we will take it down if others report it too.",
+    checkInLike: "Like",
+    checkInOpenPhoto: (name) => `View photo from ${name} full screen`,
+    checkInClosePhoto: "Close photo",
+    checkInHelpful: "Helpful",
+    checkInComposer: "Message riders at this bridge",
+    checkInSendLabel: "Send",
+    checkInGuest: "Sign in to leave a message. You can still like and react.",
+    checkInReactFailed: "Could not save that reaction.",
+    checkInPhotoOf: (name) => `Photo from ${name}`,
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
     scheduleWait: (name, minutes) =>
       `${name}: ${formatDuration(minutes, "hr", "min")}`,
@@ -1480,6 +1603,71 @@ export const COPY: Record<Locale, Copy> = {
       "Puedes tener hasta 8 alarmas. Elimina una para agregar otra.",
     scheduleFailed: "No se pudo guardar la alarma. Intenta de nuevo.",
     scheduleMissing: "Esa alarma ya no existe.",
+    checkIn: "Chat del puente",
+    checkInHint: "Mira lo que dicen quienes están en el puente",
+    checkInOpen: (bridge) => `Abrir el chat en ${bridge}`,
+    checkInClose: "Cerrar chat",
+    checkInSheetTitle: "Chat del puente",
+    checkInAt: (bridge) => `En ${bridge}`,
+    checkInSignInTitle: "Inicia sesión para registrarte",
+    checkInSignInBody:
+      "Los registros pertenecen a una cuenta, para que quien cruza pueda confiar en lo que lee del puente.",
+    checkInNote: "Nota",
+    checkInNotePlaceholder: "¿Cómo se ve la fila desde donde estás?",
+    checkInNoteCount: (used, max) => `${used} de ${max}`,
+    checkInAddPhoto: "Agregar foto",
+    checkInReplacePhoto: "Cambiar foto",
+    checkInRemovePhoto: "Quitar foto",
+    checkInPhotoAlt: "Tu foto desde el puente",
+      checkInLocating: "Confirmando dónde estás",
+    checkInSending: "Registrando",
+    checkInPrivacy:
+      "Al publicar confirmamos que estás cerca de este puente y descartamos tu ubicación. Los mensajes muestran tu primer nombre durante 6 horas.",
+          checkInRecent: "Mensajes recientes",
+    checkInEmpty: "Nadie ha escrito todavía. Cuenta cómo se ve la fila.",
+    checkInYou: "Tú",
+    checkInRemove: "Eliminar tu mensaje",
+    checkInDeleteTitle: "¿Eliminar este mensaje?",
+    checkInDeleteBody: "Se quitará para todos y se perderán las reacciones.",
+    checkInDeleteBodyPhoto:
+      "El mensaje y su foto se quitarán para todos y se perderán las reacciones.",
+    checkInDeleteConfirm: "Eliminar",
+    checkInDeleteCancel: "Cancelar",
+    checkInLoadFailed: "No se pudieron cargar los registros.",
+    checkInDenied:
+      "La ubicación está apagada para este sitio. Actívala en los ajustes del navegador para registrarte.",
+    checkInUnsupported: "Este navegador no puede compartir la ubicación, así que no puede registrarte.",
+    checkInImprecise:
+      "Tu ubicación es muy imprecisa para confirmarla. Sal al aire libre o activa la ubicación precisa e intenta de nuevo.",
+    checkInFar: (miles, bridge) =>
+      `Pareces estar a unas ${miles} mi de ${bridge}. Regístrate cuando estés en el puente.`,
+    checkInUnknown: "Todavía no podemos confirmar la ubicación de este cruce.",
+    checkInPhotoFailed: "No se pudo usar esa foto. Prueba con otra.",
+    checkInFailed: "No se pudo registrar tu llegada. Intenta de nuevo.",
+    checkInEmptyPost: "Escribe un mensaje o agrega una foto primero.",
+    checkInLanguage: "Ese mensaje tiene lenguaje que no permitimos en el chat. Por favor reescríbelo.",
+    checkInMuted: "Publicar está en pausa por un tiempo porque varias personas reportaron tus mensajes.",
+    checkInClosed: "El chat está cerrado",
+    checkInClosedHint: "Abierto de 4 a. m. a 10 p. m. (hora central)",
+    checkInReport: "Reportar este mensaje",
+    checkInReportTitle: "Reportar este mensaje",
+    checkInReportBody:
+      "¿Qué tiene de malo? Se oculta para ti ahora, y para todos cuando suficientes personas lo reporten.",
+    checkInReportAbuse: "Acoso, odio o lenguaje ofensivo",
+    checkInReportSpam: "Spam o publicidad",
+    checkInReportPhoto: "Foto inapropiada",
+    checkInReportOther: "Otra cosa",
+    checkInReportConfirm: "Reportar",
+    checkInReported: "Reportado. Se oculta para ti, y lo quitaremos si otras personas también lo reportan.",
+    checkInLike: "Me gusta",
+    checkInOpenPhoto: (name) => `Ver foto de ${name} en pantalla completa`,
+    checkInClosePhoto: "Cerrar foto",
+    checkInHelpful: "Útil",
+    checkInComposer: "Escribe a quienes están en este puente",
+    checkInSendLabel: "Enviar",
+    checkInGuest: "Inicia sesión para dejar un mensaje. Aun así puedes reaccionar.",
+    checkInReactFailed: "No se pudo guardar esa reacción.",
+    checkInPhotoOf: (name) => `Foto de ${name}`,
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
     scheduleWait: (name, minutes) =>
       `${name}: ${formatDuration(minutes, "h", "min")}`,

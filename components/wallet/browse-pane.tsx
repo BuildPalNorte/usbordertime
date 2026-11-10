@@ -27,6 +27,7 @@ import {
 import { AverageWait } from "./average-wait";
 import { WaitDuration } from "./wait-duration";
 import { useCameraStreams } from "./camera-streams";
+import { CheckInButton } from "./check-in";
 import { CrossingCamera } from "./lazy-camera";
 import { CrossingFeeds } from "./lazy-camera";
 import { HapticPad } from "./haptic-pad";
@@ -590,6 +591,7 @@ function CrossingRow({
               />
             )}
             {open && !stream && <CrossingFeeds port={port} name={row.title} />}
+            {open && <CheckInButton port={port} name={row.title} />}
             <div className="grid grid-cols-2 gap-2">
               {lanes.map((id) => {
                 const lane = readLane(port, id);

@@ -1,0 +1,45 @@
+---
+description: The bridge chat (check-in button), who can post or react, its location check, and where messages and photos are kept
+globs: lib/check-in.ts,lib/check-in.server.ts,app/api/check-in/**/*.ts,components/wallet/check-in.tsx,components/wallet/check-in-photo.ts
+alwaysApply: false
+---
+
+# Check-in chat
+
+`CheckInButton` (`check-in.tsx`) is the accent-filled button directly under the camera in `CardDetail` and in an expanded `BrowsePane` row. It opens a per-bridge chat sheet: the last `CHECK_IN_VISIBLE_HOURS` of posts, oldest first, mine on the right in the accent color, others on the left. The thread refetches every 15 seconds while the sheet is open and sticks to the newest message unless the rider has scrolled up.
+
+## Overnight
+
+The chat is closed from 10:00pm to 4:00am Central, the same clock as threshold alerts (`chatClosed` in `lib/check-in.ts` wraps `thresholdQuiet`). `CheckInButton` swaps to a muted, untappable "Chat is closed" row (`useChatClosed`, rechecked each minute, so an open sheet unmounts when the hour strikes). The server enforces it before any session read or query: `GET /api/check-in` answers `{ checkIns: [], closed: true }`, and posting, reacting and reporting answer 403 `closed`. A closed chat does not touch the database, so it can suspend. When the chat closes the whole thread is dumped: `GET /api/cron/check-in` runs at 03:00 and 04:00 UTC (10pm Central in summer and in winter; the run that lands before 10pm sees the chat still open and only trims), and while `chatClosed()` is true it calls `purgeExpiredCheckIns(true)`, deleting every post with its photo, reactions and reports. Noon and 18:00 UTC runs only trim posts past 6 hours. The chat reopens empty at 4:00am. Counts in `usage_event` stay.
+
+## Who can do what
+
+- Reading the thread and reacting: anyone, guests included. `GET /api/check-in` and `PUT /api/check-in/react` need no session.
+- Posting and deleting your own post: signed in only (401 otherwise). A guest sees "Sign in to leave a message" and `SignInButton` in place of the composer.
+- Reactions (`REACTIONS`: `like`, `helpful`) are one per rider per kind in `check_in_reaction`. `actor` is `u:<account id>` or `v:<visitor id>`. A guest's id comes from `visitorForActivity()` (the server-made visitor cookie, with its own limits), so a forged cookie cannot mint actors. Reads of a guest's own reactions only look at the cookie. Reactions are optimistic in the browser and refetched after.
+
+## Location check
+
+The rider's position is requested only on send, never on open. `checkPresence` (`lib/check-in.ts`, client-safe) compares the reading with `portLocation(port)`, the crossing's city point from `CITY_LOCATION`. The radius is `CHECK_IN_RADIUS_MILES` (a border town, not a parking lot, because a city's bridges can be miles apart), plus up to 1 km of the reading's own accuracy; worse than `MAX_ACCURACY_METERS` is refused as imprecise. The browser keeps the last good reading for `POSITION_REUSE_MS` so a conversation asks once, and runs the check first so someone plainly elsewhere hears it before uploading a photo. `POST /api/check-in` runs the same function against the port in `getBorderWaitTimes()` on every post, so the server never trusts the browser's verdict. A client can still lie about its coordinates; this keeps an honest rider honest, it is not proof. A city missing from `CITY_LOCATION` refuses with `unknown` instead of guessing.
+
+## Storage
+
+Coordinates are never saved. `check_in` (created on first use, cascades from `profile`) keeps `port_number`, `message`, `photo` (bytea), `miles_away`, and the time. A post needs a message or a photo. The photo is redrawn in the browser (`prepareJpeg`) to a JPEG of at most `PHOTO_MAX_EDGE` px and `MAX_CHECK_IN_PHOTO_BYTES`, which also strips camera metadata and EXIF location. The server accepts only JPEG magic bytes. `GET /api/check-in/photo/{id}` serves it while the post is live (`private` cache, `nosniff`); ids are random uuids.
+
+Limits: `CHECK_IN_POSTS_PER_HOUR` posts per account (`withinLimit`), 200 reactions an hour per rider. Others see a first name only.
+
+Sheet events are stopped at the portal root so a press inside it never reaches the card it was opened from. Escape closes the sheet first (capture, `preventDefault`), like the alert picker. Reduced motion swaps the slide for a fade.
+
+A photo in the thread is a button that opens `PhotoViewer` full screen, inside the same portal at a higher layer. The picture follows a finger dragged up or down 1:1 while the backdrop thins, and closes past 110 px or on a flick; a tap on the backdrop, the close button, or Escape also closes it. Escape closes the viewer first, then the chat. Reduced motion turns the drag off and uses a fade.
+
+Everything the rider does shows on screen before the server answers. A sent post is added to the thread at once, dimmed (`pending`), with the rider's own photo (`localPhoto`) so nothing is fetched back; the position read, upload and check run behind it, and a refusal removes it and returns the words to the box. Reactions and deletes change the thread in the query cache first. Requests go through one ordered queue, so rapid taps reach the server in order and the last one wins, and the 15-second refresh is held off while any are in flight so it cannot paint stale state over a tap. A reaction reads the thread as it is now, not the render the tap came from. `ref` and `localPhoto` are browser-only fields the refresh merges back in, so confirming a post never remounts its row. A failed request invalidates the thread, which rolls the screen back to the server's truth.
+
+Deleting a post asks first (`ConfirmDelete`, an alert dialog over the chat). Cancel holds focus; the backdrop and Escape cancel, and Escape closes the confirmation before the photo viewer or the chat. Only Delete calls `remove`.
+
+Language: `hasProfanity` (`lib/profanity.ts`, client-safe, English and Spanish) refuses a message that holds a listed word, whole words only, after undoing accents, leet characters (`sh1t`, `@ss`), stretched letters, and spaced-out letters. A few unambiguous slurs also match inside a longer token. The browser checks first so the rider hears it at once and keeps their text; `POST /api/check-in` repeats the check and answers 422 `language`. It is a first line, not a judge: it cannot read intent, so harassment in clean words still needs a report flow. Add a word to `WORDS` (no accents) and a passing case to `tests/profanity.test.ts` for anything it should not catch.
+
+## Reports and retention
+
+Anyone, guests included, can report another rider's post (`POST /api/check-in/report`, flag button, a reason from `REPORT_REASONS`; your own post cannot be reported). The reporter stops seeing it at once (the thread query leaves out posts that actor reported, and the browser removes it optimistically). When `REPORTS_TO_HIDE` different riders have reported it, `hidden_at` is set once and it disappears for everyone, its photo stops being served, and the author gets one `flagged` row in `usage_event`. An account with `HIDDEN_TO_MUTE` flagged posts inside `MUTE_WINDOW_HOURS` cannot post (403 `muted`); a failing moderation lookup lets the post through rather than blocking. Reports are only as honest as the riders: guests count by their visitor id (the server limits how many of those one address can make), and a report limit of 30 an hour applies per rider.
+
+Posts do not live past the 6 hours the chat shows. `GET /api/cron/check-in` (`vercel.json`, `0 */6 * * *`, same `CRON_SECRET` bearer check as the alert cron through `authorizedCron`) deletes every post older than `CHECK_IN_VISIBLE_HOURS` with its photo, reactions and reports, so a row can sit in the table for up to 12 hours but is never shown or served after 6. What is kept is the count: every accepted post logs one `chat` row and every hidden post one `flagged` row in `usage_event`, per account, and the admin Feature use list totals both. Those rows hold no message text, photo, or place. Deleting your own post does not undo its `chat` count.

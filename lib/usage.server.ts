@@ -83,6 +83,18 @@ export async function claimAsk(userId: string, limit: number): Promise<boolean |
   }
 }
 
+/** How many `kind` events this account logged in the last `hours`. */
+export async function countRecentUsage(userId: string, kind: UsageKind, hours: number): Promise<number> {
+  await ensureUsageTable();
+  const sql = database();
+  const rows = (await sql`
+    select count(*)::int as count from usage_event
+    where user_id = ${userId} and kind = ${kind}
+      and created_at > now() - make_interval(hours => ${hours})
+  `) as { count: number }[];
+  return Number(rows[0]?.count ?? 0);
+}
+
 export type UsageTotals = {
   userId: string;
   total: number;

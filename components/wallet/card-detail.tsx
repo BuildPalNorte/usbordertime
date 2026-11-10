@@ -13,6 +13,7 @@ import {
 } from "@/lib/i18n";
 import { crossingStream, MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
 import { hourFromClock } from "@/lib/lane-averages";
+import { CheckInButton } from "./check-in";
 import { AverageWait } from "./average-wait";
 import { UsualDay } from "./usual-day";
 import { useCameraStreams } from "./camera-streams";
@@ -68,6 +69,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
       ) : (
         <CrossingFeeds port={port} name={name.title} />
       )}
+      <CheckInButton port={port} name={name.title} />
       <div
         role="radiogroup"
         aria-label={copy.laneType}
