@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accountLocationUrl,
+  applyGuestGrowth,
   buildInsights,
   DEFAULT_ACCOUNT_FILTER,
   formatAccountLocation,
@@ -143,6 +144,21 @@ describe("buildInsights", () => {
     expect(insights.growth).toHaveLength(90);
     expect(insights.growth.at(-1)?.day).toBe("2026-10-12");
     expect(new Set(insights.growth.map((entry) => entry.day)).size).toBe(90);
+    expect(insights.growth.every((entry) => entry.guests === 0)).toBe(true);
+    expect(insights.guestsBefore).toBe(0);
+  });
+
+  it("lays guest arrivals onto the same days as accounts", () => {
+    const insights = buildInsights(EMPTY, NOW);
+    const applied = applyGuestGrowth(insights.growth, [
+      { day: "2026-10-12", guests: 4 },
+      { day: "2026-10-11", guests: 2 },
+      { day: "2026-01-01", guests: 9 },
+    ]);
+    expect(applied.guestsBefore).toBe(9);
+    expect(applied.growth.at(-1)).toMatchObject({ day: "2026-10-12", guests: 4 });
+    expect(applied.growth.at(-2)).toMatchObject({ day: "2026-10-11", guests: 2 });
+    expect(applied.growth.filter((entry) => entry.guests > 0)).toHaveLength(2);
   });
 });
 

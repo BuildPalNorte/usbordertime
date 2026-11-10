@@ -1,12 +1,12 @@
 import { isPortNumber } from "@/lib/alert";
 import { isExcludedFromAnalytics } from "@/lib/analytics";
+import { recordGuestView, visitorForActivity } from "@/lib/guest-activity.server";
 import { recordPortView } from "@/lib/port-view.server";
-import { badRequest, NO_STORE, serverError, sessionUser, unauthorized } from "@/lib/session.server";
+import { badRequest, NO_STORE, serverError, sessionUser } from "@/lib/session.server";
 
-/** One open of a crossing's details by the signed-in account. */
+/** One open of a crossing's details. An account is named; a guest is the visitor cookie. */
 export async function POST(request: Request) {
   const user = await sessionUser();
-  if (!user) return unauthorized();
 
   let body: unknown;
   try {
@@ -18,10 +18,11 @@ export async function POST(request: Request) {
   if (!isPortNumber(portNumber)) return badRequest("Expected a crossing.");
 
   // The people who run the app are not counted.
-  if (isExcludedFromAnalytics(user.email)) return new Response(null, { status: 204, headers: NO_STORE });
+  if (user && isExcludedFromAnalytics(user.email)) return new Response(null, { status: 204, headers: NO_STORE });
 
   try {
-    await recordPortView(user.id, portNumber);
+    if (user) await recordPortView(user.id, portNumber);
+    else await recordGuestView(await visitorForActivity(), portNumber);
     return new Response(null, { status: 204, headers: NO_STORE });
   } catch (error) {
     return serverError("Could not save the view.", error);

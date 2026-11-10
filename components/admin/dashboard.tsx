@@ -229,6 +229,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                   <GrowthChart
                     days={insights.growth}
                     before={Math.max(0, insights.accounts.length - insights.growth.reduce((sum, entry) => sum + entry.count, 0))}
+                    guestsBefore={insights.guestsBefore}
                     now={now}
                   />
                 </Section>
@@ -236,7 +237,7 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
               </div>
               <Section
                 title="Uses"
-                hint="Every time a signed-in account opens the app, including coming back to it. Unique is how many different accounts did that in the dates you pick."
+                hint="Every time someone opens the app, including coming back to it. Accounts are the dark part of a bar and guests the blue part. Unique is how many different accounts, and how many different browsers without an account, did that in the dates you pick."
               >
                 <AppOpens initial={data.opens} now={now} />
               </Section>
@@ -384,7 +385,8 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                           <p className="text-[15px] font-medium">{crossing.label}</p>
                           <p className="text-[13px] text-muted">
                             {crossing.saved} saved, {crossing.alerts} alerts, {crossing.alarms} alarms,{" "}
-                            {crossing.opens} {crossing.opens === 1 ? "open" : "opens"} by {crossing.viewers}
+                            {crossing.opens} by {crossing.viewers} {crossing.viewers === 1 ? "account" : "accounts"},{" "}
+                            {crossing.guestOpens} by {crossing.guestViewers} {crossing.guestViewers === 1 ? "guest" : "guests"}
                           </p>
                         </div>
                         <div className="shrink-0 text-right">

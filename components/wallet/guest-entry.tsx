@@ -3,6 +3,7 @@
 import { dropCampaignParam, rememberCampaign } from "@/lib/campaign";
 import { detectInAppBrowser } from "@/lib/in-app-browser";
 import { dropInviteParam, rememberInvite } from "@/lib/invite";
+import { holdForVisitor } from "@/lib/visitor-ready";
 import { useEffect, useLayoutEffect } from "react";
 
 /** Set after the first note this page load, so a strict-mode remount does not note twice. */
@@ -26,7 +27,7 @@ export function GuestEntry() {
   useEffect(() => {
     if (noted) return;
     noted = true;
-    void fetch("/api/visitor", { method: "POST", keepalive: true }).catch(() => {});
+    holdForVisitor(fetch("/api/visitor", { method: "POST", keepalive: true }));
   }, []);
 
   return null;

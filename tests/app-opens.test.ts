@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { centralDay } from "@/lib/admin-time";
 import { AppOpens } from "@/components/admin/app-opens";
 import {
+  addGuestOpens,
   fillOpenDays,
   matchingOpenRange,
   openRangeIssue,
@@ -67,6 +68,26 @@ describe("open ranges", () => {
     expect(parseAppOpens(body)).toEqual(body);
     expect(parseAppOpens({ ...body, people: 1.5 })).toBeNull();
     expect(parseAppOpens({ ...body, days: [{ day: "yesterday", people: 1, opens: 1 }] })).toBeNull();
+  });
+
+  it("adds guest opens onto the same days", () => {
+    const report = addGuestOpens(
+      {
+        from: "2026-11-08",
+        to: "2026-11-09",
+        people: 3,
+        opens: 5,
+        days: [
+          { day: "2026-11-08", people: 1, opens: 1 },
+          { day: "2026-11-09", people: 3, opens: 4 },
+        ],
+      },
+      { guests: 2, opens: 6, days: [{ day: "2026-11-09", opens: 6, guests: 2 }] },
+    );
+    expect(report.guests).toBe(2);
+    expect(report.guestOpens).toBe(6);
+    expect(report.days[0]).toMatchObject({ guestOpens: 0, guestPeople: 0 });
+    expect(report.days[1]).toMatchObject({ opens: 4, guestOpens: 6, guestPeople: 2 });
   });
 });
 

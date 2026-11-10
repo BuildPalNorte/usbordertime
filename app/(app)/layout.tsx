@@ -7,6 +7,7 @@ import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { LocationPrompt } from "@/components/wallet/location-prompt";
 import { ReferralPrompt } from "@/components/wallet/referral-prompt";
 import { GuestEntry } from "@/components/wallet/guest-entry";
+import { OpenSync } from "@/components/wallet/open-sync";
 import { SignInScreen } from "@/components/wallet/sign-in-screen";
 import { WalletApp } from "@/components/wallet/wallet-app";
 import { isAdminEmail } from "@/lib/admin.server";
@@ -51,6 +52,7 @@ async function GatedHome({ children }: { children: ReactNode }) {
     return (
       <>
         <GuestEntry />
+        <OpenSync />
         <LiveWallet userId={null} live={loadLive()} />
         {/* The page's own copy is for search engines. The app is what a guest uses. */}
         <div className="sr-only">{children}</div>

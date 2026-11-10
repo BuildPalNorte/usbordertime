@@ -1,4 +1,5 @@
-import { fillOpenDays, type AppOpens } from "@/lib/app-opens";
+import { addGuestOpens, fillOpenDays, type AppOpens } from "@/lib/app-opens";
+import { readGuestOpenSpan } from "@/lib/guest-activity.server";
 import { ANALYTICS_EXCLUDED_EMAILS } from "@/lib/analytics";
 import { database } from "@/lib/db.server";
 import { USAGE_KINDS, type UsageKind } from "@/lib/usage";
@@ -200,11 +201,17 @@ export async function readAppOpens(from: string, to: string): Promise<AppOpens> 
     if (typeof row.day !== "string") return [];
     return [{ day: row.day.slice(0, 10), people: asCount(row.people), opens: asCount(row.opens) }];
   });
-  return {
+  const accounts: AppOpens = {
     from,
     to,
     people: asCount(total?.people),
     opens: asCount(total?.opens),
     days: fillOpenDays(from, to, days),
   };
+  try {
+    return addGuestOpens(accounts, await readGuestOpenSpan(from, to));
+  } catch (error) {
+    console.error("guest opens", error);
+    return accounts;
+  }
 }

@@ -1,4 +1,4 @@
-/** Client-safe. A use is one signed-in open of the app, counted on Central calendar days. */
+/** Client-safe. A use is one open of the app, by an account or a guest, counted on Central calendar days. */
 
 export const OPEN_SPAN_DAYS = 366;
 
@@ -11,16 +11,47 @@ export const OPEN_RANGES = [
 
 export type OpenRangeId = (typeof OPEN_RANGES)[number]["id"];
 
-export type OpenDay = { day: string; people: number; opens: number };
+export type OpenDay = {
+  day: string;
+  /** Distinct accounts that opened the app that day. */
+  people: number;
+  /** Opens by those accounts. */
+  opens: number;
+  /** Opens by browsers that still have no account. */
+  guestOpens?: number;
+  /** Distinct guests that opened the app that day. */
+  guestPeople?: number;
+};
 
-/** Unique accounts (`people`) and every entry (`opens`) from `from` through `to`, inclusive. */
+/** Account opens (`opens`, `people`) and guest opens from `from` through `to`, inclusive. */
 export type AppOpens = {
   from: string;
   to: string;
   people: number;
   opens: number;
+  /** Distinct guests across the whole span. */
+  guests?: number;
+  /** Every guest open in the span. */
+  guestOpens?: number;
   days: OpenDay[];
 };
+
+/** Lays guest opens onto the account days. A day the accounts query did not return stays at zero. */
+export function addGuestOpens(
+  report: AppOpens,
+  guest: { guests: number; opens: number; days: { day: string; opens: number; guests: number }[] },
+): AppOpens {
+  const byDay = new Map(guest.days.map((day) => [day.day, day]));
+  return {
+    ...report,
+    guests: guest.guests,
+    guestOpens: guest.opens,
+    days: report.days.map((day) => {
+      const match = byDay.get(day.day);
+      return match ? { ...day, guestOpens: match.opens, guestPeople: match.guests } : { ...day, guestOpens: 0, guestPeople: 0 };
+    }),
+  };
+}
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 86_400_000;
@@ -87,13 +118,33 @@ export function parseAppOpens(body: unknown): AppOpens | null {
   if (!entry || typeof entry.from !== "string" || typeof entry.to !== "string") return null;
   if (openRangeIssue(entry.from, entry.to)) return null;
   if (!isCount(entry.people) || !isCount(entry.opens) || !Array.isArray(entry.days)) return null;
+  const guests = entry.guests === undefined ? undefined : isCount(entry.guests) ? entry.guests : null;
+  const guestOpens = entry.guestOpens === undefined ? undefined : isCount(entry.guestOpens) ? entry.guestOpens : null;
+  if (guests === null || guestOpens === null) return null;
   const days: OpenDay[] = [];
   for (const row of entry.days) {
     const day = row as Partial<OpenDay> | null;
     if (!day || typeof day.day !== "string" || !isOpenDay(day.day) || !isCount(day.people) || !isCount(day.opens)) {
       return null;
     }
-    days.push({ day: day.day, people: day.people, opens: day.opens });
+    const guestOpens = day.guestOpens === undefined ? undefined : isCount(day.guestOpens) ? day.guestOpens : null;
+    const guestPeople = day.guestPeople === undefined ? undefined : isCount(day.guestPeople) ? day.guestPeople : null;
+    if (guestOpens === null || guestPeople === null) return null;
+    days.push({
+      day: day.day,
+      people: day.people,
+      opens: day.opens,
+      ...(guestOpens === undefined ? {} : { guestOpens }),
+      ...(guestPeople === undefined ? {} : { guestPeople }),
+    });
   }
-  return { from: entry.from, to: entry.to, people: entry.people, opens: entry.opens, days };
+  return {
+    from: entry.from,
+    to: entry.to,
+    people: entry.people,
+    opens: entry.opens,
+    ...(guests === undefined ? {} : { guests }),
+    ...(guestOpens === undefined ? {} : { guestOpens }),
+    days,
+  };
 }

@@ -14,15 +14,26 @@ const RANGES = [
 
 type Range = (typeof RANGES)[number]["days"];
 
-function sum(days: GrowthDay[]): number {
-  return days.reduce((total, entry) => total + entry.count, 0);
+function sum(days: GrowthDay[], key: "count" | "guests"): number {
+  return days.reduce((total, entry) => total + entry[key], 0);
 }
 
 /**
- * New accounts per day. Pick a range, then press or drag across the bars to read any single day.
- * `before` is how many accounts existed ahead of the first day passed in, so a running total is honest.
+ * New accounts and new guests per day, stacked. Accounts are the dark segment, guests the accent
+ * one. Pick a range, then press or drag across the bars to read any single day.
+ * `before` and `guestsBefore` are how many existed ahead of the first day passed in.
  */
-export function GrowthChart({ days, before, now }: { days: GrowthDay[]; before: number; now: number }) {
+export function GrowthChart({
+  days,
+  before,
+  guestsBefore,
+  now,
+}: {
+  days: GrowthDay[];
+  before: number;
+  guestsBefore: number;
+  now: number;
+}) {
   const [range, setRange] = useState<Range>(30);
   const [picked, setPicked] = useState<number | null>(null);
   const plot = useRef<HTMLDivElement>(null);
@@ -30,16 +41,21 @@ export function GrowthChart({ days, before, now }: { days: GrowthDay[]; before: 
   const length = Math.min(range, days.length);
   const visible = days.slice(days.length - length);
   const earlier = days.slice(Math.max(0, days.length - length * 2), days.length - length);
-  const total = sum(visible);
-  const peak = Math.max(1, ...visible.map((entry) => entry.count));
-  const previous = earlier.length === length ? sum(earlier) : null;
+  const accounts = sum(visible, "count");
+  const guests = sum(visible, "guests");
+  const total = accounts + guests;
+  const peak = Math.max(1, ...visible.map((entry) => entry.count + entry.guests));
+  const previous = earlier.length === length ? sum(earlier, "count") + sum(earlier, "guests") : null;
   const change = previous === null ? null : total - previous;
   const index = picked !== null && picked < visible.length ? picked : null;
   const chosen = index === null ? null : visible[index];
 
-  // Accounts that existed when the visible window began, plus everyone who joined up to a given day.
-  const baseline = before + sum(days.slice(0, days.length - length));
-  const running = (upTo: number) => baseline + sum(visible.slice(0, upTo + 1));
+  // People who existed when the visible window began, plus everyone who arrived up to a given day.
+  const hidden = days.slice(0, days.length - length);
+  const accountBaseline = before + sum(hidden, "count");
+  const guestBaseline = guestsBefore + sum(hidden, "guests");
+  const runningAccounts = (upTo: number) => accountBaseline + sum(visible.slice(0, upTo + 1), "count");
+  const runningGuests = (upTo: number) => guestBaseline + sum(visible.slice(0, upTo + 1), "guests");
 
   function at(event: PointerEvent<HTMLDivElement>) {
     const box = plot.current?.getBoundingClientRect();
@@ -93,21 +109,23 @@ export function GrowthChart({ days, before, now }: { days: GrowthDay[]; before: 
         })}
       </div>
 
-      <div className="mt-4 min-h-[3.75rem]" aria-live="polite">
+      <div className="mt-4 min-h-[4.75rem]" aria-live="polite">
         {chosen ? (
           <>
             <p className="text-[13px] text-muted">{formatDay(chosen.day, now)}</p>
             <p className="mt-1 text-[28px] leading-none font-bold tracking-[-0.03em] tabular-nums">
-              {chosen.count.toLocaleString("en-US")}
-              <span className="ml-2 text-[15px] font-medium tracking-normal text-muted">
-                new, {running(index!).toLocaleString("en-US")} in total
-              </span>
+              {(chosen.count + chosen.guests).toLocaleString("en-US")}
+            </p>
+            <p className="mt-1.5 text-[13px] text-muted tabular-nums">
+              {chosen.count.toLocaleString("en-US")} accounts, {chosen.guests.toLocaleString("en-US")} guests
+              <span className="mx-1.5">·</span>
+              {runningAccounts(index!).toLocaleString("en-US")} accounts and {runningGuests(index!).toLocaleString("en-US")} guests in total
             </p>
           </>
         ) : (
           <>
             <p className="text-[13px] text-muted">
-              New accounts, {formatDay(visible[0]?.day ?? "", now)} to today
+              New people, {formatDay(visible[0]?.day ?? "", now)} to today
             </p>
             <p className="mt-1 text-[28px] leading-none font-bold tracking-[-0.03em] tabular-nums">
               {total.toLocaleString("en-US")}
@@ -119,8 +137,22 @@ export function GrowthChart({ days, before, now }: { days: GrowthDay[]; before: 
                 </span>
               )}
             </p>
+            <p className="mt-1.5 text-[13px] text-muted tabular-nums">
+              {accounts.toLocaleString("en-US")} accounts, {guests.toLocaleString("en-US")} guests
+            </p>
           </>
         )}
+      </div>
+
+      <div className="mt-3 flex gap-4 text-[12px] text-muted">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-foreground" />
+          Accounts
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-accent" />
+          Guests
+        </span>
       </div>
 
       <div className="mt-3 flex gap-3">
@@ -132,7 +164,7 @@ export function GrowthChart({ days, before, now }: { days: GrowthDay[]; before: 
           ref={plot}
           role="group"
           tabIndex={0}
-          aria-label={`New accounts per day, ${total} in the last ${length} days. Use the arrow keys to read each day.`}
+          aria-label={`New accounts and guests per day, ${total} in the last ${length} days. Use the arrow keys to read each day.`}
           onPointerDown={(event) => {
             event.currentTarget.setPointerCapture(event.pointerId);
             at(event);
@@ -149,18 +181,37 @@ export function GrowthChart({ days, before, now }: { days: GrowthDay[]; before: 
           )}
         >
           <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-line" />
-          {visible.map((entry, position) => (
-            <span key={entry.day} className="relative flex h-full min-w-0 flex-1 items-end">
+          {visible.map((entry, position) => {
+            const combined = entry.count + entry.guests;
+            return (
               <span
+                key={entry.day}
                 className={cn(
-                  "h-full w-full origin-bottom rounded-t-[3px] bg-foreground transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none",
+                  "relative flex h-full min-w-0 flex-1 flex-col justify-end",
                   index !== null && index !== position && "opacity-30",
-                  entry.count === 0 && index === null && "opacity-15",
                 )}
-                style={{ transform: `scaleY(${entry.count === 0 ? 0.03 : Math.max(0.06, entry.count / peak)})` }}
-              />
-            </span>
-          ))}
+              >
+                {combined === 0 ? (
+                  <span className="h-[3%] w-full rounded-t-[3px] bg-foreground opacity-15" />
+                ) : (
+                  <>
+                    {entry.guests > 0 && (
+                      <span
+                        className="w-full rounded-t-[3px] bg-accent"
+                        style={{ height: `${(entry.guests / peak) * 100}%`, minHeight: 2 }}
+                      />
+                    )}
+                    {entry.count > 0 && (
+                      <span
+                        className={cn("w-full bg-foreground", entry.guests === 0 && "rounded-t-[3px]")}
+                        style={{ height: `${(entry.count / peak) * 100}%`, minHeight: 2 }}
+                      />
+                    )}
+                  </>
+                )}
+              </span>
+            );
+          })}
         </div>
       </div>
 

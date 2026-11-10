@@ -1,5 +1,5 @@
 import { getAuth } from "@/lib/auth/server";
-import { buildInsights, type Insights, type RawFacts } from "@/lib/admin-insights";
+import { applyGuestGrowth, buildInsights, type Insights, type RawFacts } from "@/lib/admin-insights";
 import { listAnnouncements } from "@/lib/announcement.server";
 import type { Announcement } from "@/lib/announcement";
 import { listCampaigns } from "@/lib/campaign.server";
@@ -18,7 +18,8 @@ import { database } from "@/lib/db.server";
 import { ANALYTICS_EXCLUDED_EMAILS, isExcludedFromAnalytics } from "@/lib/analytics";
 import { readExchangeSummary, type ExchangeSummary } from "@/lib/exchange-use.server";
 import { readPortViews } from "@/lib/port-view.server";
-import { readArrivals, type Arrivals } from "@/lib/visitor.server";
+import { readGuestPortViews, type GuestPortViews } from "@/lib/guest-activity.server";
+import { readArrivals, readGuestDays, type Arrivals } from "@/lib/visitor.server";
 import { headers } from "next/headers";
 
 /**
@@ -105,6 +106,9 @@ export type AdminCrossing = {
   people: number;
   viewers: number;
   opens: number;
+  /** Guests who opened this crossing's details, and how many times. */
+  guestViewers: number;
+  guestOpens: number;
   /** Current wait in minutes for the crossing's main lane, or null when the feed has none. */
   waitMinutes: number | null;
 };
@@ -243,6 +247,16 @@ async function readDashboard(): Promise<AdminData> {
     return null;
   });
 
+  const guestDaysQuery = readGuestDays().catch((error: unknown) => {
+    mark(error, true);
+    return [];
+  });
+
+  const guestViewsQuery = readGuestPortViews().catch((error: unknown) => {
+    mark(error, true);
+    return [];
+  });
+
   const exchangeQuery = readExchangeSummary().catch((error: unknown) => {
     mark(error, true);
     return null;
@@ -258,7 +272,7 @@ async function readDashboard(): Promise<AdminData> {
     return null;
   });
 
-  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, campaigns, exchange, opens] =
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, guestDays, guestViews, campaigns, exchange, opens] =
     await Promise.all([
     factsQuery,
     accountsQuery.then(
@@ -312,6 +326,8 @@ async function readDashboard(): Promise<AdminData> {
     usageQuery,
     announcementsQuery,
     arrivalsQuery,
+    guestDaysQuery,
+    guestViewsQuery,
     campaignsQuery,
     exchangeQuery,
     opensQuery,
@@ -320,7 +336,7 @@ async function readDashboard(): Promise<AdminData> {
   const out = new Set(facts.profiles.filter((row) => isExcludedFromAnalytics(row.email)).map((row) => row.id));
   const usageRows = rawUsageRows.filter((row) => !out.has(row.userId));
 
-  const insights = buildInsights(
+  const built = buildInsights(
     {
       ...facts,
       usage: usageRows.map((row) => ({
@@ -332,6 +348,8 @@ async function readDashboard(): Promise<AdminData> {
     },
     now,
   );
+  const guestGrowth = applyGuestGrowth(built.growth, guestDays);
+  const insights: Insights = { ...built, growth: guestGrowth.growth, guestsBefore: guestGrowth.guestsBefore };
   const byNumber = new Map((feed?.ports ?? []).map((port) => [port.portNumber, port]));
   const labelOf = (portNumber: string): string => {
     const port = byNumber.get(portNumber);
@@ -349,16 +367,7 @@ async function readDashboard(): Promise<AdminData> {
 
   return {
     insights,
-    crossings: insights.crossings.slice(0, CROSSING_LIMIT).map((row) => {
-      const port = byNumber.get(row.portNumber);
-      const name = port ? portName(port) : null;
-      const label =
-        name && !name.subtitleIsRegion && name.subtitle !== name.title
-          ? `${name.title} · ${name.subtitle}`
-          : (name?.title ?? row.portNumber);
-      const minutes = port ? laneFor(port, defaultMode(port)).delayMinutes : null;
-      return { ...row, label, waitMinutes: typeof minutes === "number" ? minutes : null };
-    }),
+    crossings: crossingRows(insights.crossings, guestViews, byNumber),
     stats: [
       { label: "Accounts", value: accounts, detail: "Profiles" },
       ...(arrivals
@@ -460,6 +469,55 @@ function savedByCity(
       .map((entry) => ({ city: entry.city, region: entry.region, accounts: entry.people.size, saved: entry.saved }))
       .sort((a, b) => b.accounts - a.accounts || b.saved - a.saved || a.city.localeCompare(b.city)),
   };
+}
+
+/** Account crossings plus any a guest opened that no account has touched, busiest first. */
+function crossingRows(
+  rows: Insights["crossings"],
+  guestViews: GuestPortViews[],
+  byNumber: Map<string, PortWaitTime>,
+): AdminCrossing[] {
+  const guests = new Map(guestViews.map((row) => [row.portNumber, row]));
+  const listed = new Set(rows.map((row) => row.portNumber));
+  const combined = [
+    ...rows,
+    ...guestViews
+      .filter((row) => !listed.has(row.portNumber))
+      .map((row) => ({
+        portNumber: row.portNumber,
+        saved: 0,
+        alerts: 0,
+        alarms: 0,
+        people: 0,
+        viewers: 0,
+        opens: 0,
+      })),
+  ];
+  return combined
+    .map((row) => {
+      const guest = guests.get(row.portNumber);
+      const port = byNumber.get(row.portNumber);
+      const name = port ? portName(port) : null;
+      const label =
+        name && !name.subtitleIsRegion && name.subtitle !== name.title
+          ? `${name.title} · ${name.subtitle}`
+          : (name?.title ?? row.portNumber);
+      const minutes = port ? laneFor(port, defaultMode(port)).delayMinutes : null;
+      return {
+        ...row,
+        label,
+        waitMinutes: typeof minutes === "number" ? minutes : null,
+        guestOpens: guest?.opens ?? 0,
+        guestViewers: guest?.viewers ?? 0,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.people + b.guestViewers - (a.people + a.guestViewers) ||
+        b.opens + b.guestOpens - (a.opens + a.guestOpens) ||
+        a.label.localeCompare(b.label),
+    )
+    .slice(0, CROSSING_LIMIT);
 }
 
 function camerasFrom(rows: { alias: string; src: string }[]): AdminCamera[] {

@@ -122,7 +122,13 @@ export type CrossingRow = {
   people: number;
 };
 
-export type GrowthDay = { day: string; count: number };
+export type GrowthDay = {
+  day: string;
+  /** Accounts created that day. */
+  count: number;
+  /** Browsers that arrived that day and still have no account. */
+  guests: number;
+};
 
 export type Insights = {
   /** When these figures were read, so the page never reads the clock while rendering. */
@@ -135,6 +141,8 @@ export type Insights = {
   /** Opened at least `OFTEN_OPENS` times with no alert or alarm on that crossing, most opens first. */
   often: OftenRow[];
   growth: GrowthDay[];
+  /** Guests whose first day is before the first day of `growth`. */
+  guestsBefore: number;
   /** Accounts that reached no step beyond signing in. */
   idle: number;
   /** Seen in the last 7 days. */
@@ -405,6 +413,7 @@ export function buildInsights(raw: RawFacts, now: Date = new Date(), growthDays 
   const growth: GrowthDay[] = Array.from({ length: growthDays }, (_, index) => ({
     day: new Date(Date.UTC(year, month - 1, dayOfMonth - (growthDays - 1 - index))).toISOString().slice(0, 10),
     count: 0,
+    guests: 0,
   }));
   const slot = new Map(growth.map((entry) => [entry.day, entry]));
   for (const account of accounts) {
@@ -422,8 +431,31 @@ export function buildInsights(raw: RawFacts, now: Date = new Date(), growthDays 
     crossings,
     often,
     growth,
+    guestsBefore: 0,
     idle: accounts.filter((account) => account.depth === 0).length,
     recent: accounts.filter((account) => (account.lastActive ?? "") >= weekAgo).length,
+  };
+}
+
+/**
+ * Fills `guests` on the account growth days. A day before the window adds to `guestsBefore`,
+ * so the chart's running total still counts guests who arrived earlier. A browser that later
+ * signs in is not in these rows: it counts as an account on the day the profile was created.
+ */
+export function applyGuestGrowth(
+  growth: GrowthDay[],
+  rows: { day: string; guests: number }[],
+): { growth: GrowthDay[]; guestsBefore: number } {
+  const first = growth[0]?.day ?? "";
+  const inWindow = new Map<string, number>();
+  let guestsBefore = 0;
+  for (const row of rows) {
+    if (first && row.day < first) guestsBefore += row.guests;
+    else inWindow.set(row.day, (inWindow.get(row.day) ?? 0) + row.guests);
+  }
+  return {
+    guestsBefore,
+    growth: growth.map((entry) => ({ ...entry, guests: inWindow.get(entry.day) ?? 0 })),
   };
 }
 

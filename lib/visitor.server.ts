@@ -102,3 +102,26 @@ export async function readArrivals(): Promise<Arrivals> {
     weekRegistered: count(row?.week_registered),
   };
 }
+
+export type GuestDay = { day: string; guests: number };
+
+/**
+ * New guests per Central day. A guest is a browser that still has no account, so someone who
+ * later signed in is left out and counted with accounts instead.
+ */
+export async function readGuestDays(): Promise<GuestDay[]> {
+  await ensureVisitorTable();
+  const sql = database();
+  const rows = (await sql`
+    select to_char(first_seen at time zone 'America/Chicago', 'YYYY-MM-DD') as day,
+           count(*)::int as guests
+    from visitor
+    where user_id is null
+    group by 1
+  `) as { day: unknown; guests: unknown }[];
+  return rows.flatMap((row) => {
+    const day = typeof row.day === "string" ? row.day : "";
+    const guests = count(row.guests);
+    return /^\d{4}-\d{2}-\d{2}$/.test(day) ? [{ day, guests }] : [];
+  });
+}

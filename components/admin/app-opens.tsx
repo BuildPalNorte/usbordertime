@@ -87,8 +87,11 @@ export function AppOpens({ initial, now }: { initial: AppOpens | null; now: numb
   const index = picked !== null && picked < length ? picked : null;
   const chosen = index === null ? null : days[index];
   const people = chosen ? chosen.people : (report?.people ?? 0);
-  const opens = chosen ? chosen.opens : (report?.opens ?? 0);
-  const peak = Math.max(1, ...days.map((entry) => entry.opens));
+  const guestPeople = chosen ? (chosen.guestPeople ?? 0) : (report?.guests ?? 0);
+  const accountOpens = chosen ? chosen.opens : (report?.opens ?? 0);
+  const guestOpens = chosen ? (chosen.guestOpens ?? 0) : (report?.guestOpens ?? 0);
+  const opens = accountOpens + guestOpens;
+  const peak = Math.max(1, ...days.map((entry) => entry.opens + (entry.guestOpens ?? 0)));
   const gap = length <= 7 ? "gap-2" : length <= 30 ? "gap-[3px]" : "gap-px";
   const ticks = length > 1 ? [0, Math.floor((length - 1) / 2), length - 1] : [];
 
@@ -180,8 +183,19 @@ export function AppOpens({ initial, now }: { initial: AppOpens | null; now: numb
             </p>
             <p className="mt-1 text-[13px] text-muted">{people === 1 ? "Unique account" : "Unique accounts"}</p>
           </div>
+          <div>
+            <p className="text-[22px] leading-none font-semibold tracking-[-0.03em] text-accent tabular-nums">
+              {guestPeople.toLocaleString("en-US")}
+            </p>
+            <p className="mt-1 text-[13px] text-muted">{guestPeople === 1 ? "Unique guest" : "Unique guests"}</p>
+          </div>
         </div>
-        {report && report.people === 0 && report.opens === 0 && !chosen && status !== "loading" && (
+        {accountOpens + guestOpens > 0 && (
+          <p className="mt-2 text-[13px] text-muted tabular-nums">
+            {accountOpens.toLocaleString("en-US")} by accounts, {guestOpens.toLocaleString("en-US")} by guests
+          </p>
+        )}
+        {report && report.people === 0 && report.opens === 0 && (report.guestOpens ?? 0) === 0 && !chosen && status !== "loading" && (
           <p className="mt-3 text-[13px] text-muted">No one opened the app in this time.</p>
         )}
       </div>
@@ -201,7 +215,7 @@ export function AppOpens({ initial, now }: { initial: AppOpens | null; now: numb
         </div>
       )}
 
-      {length > 1 && (report?.opens ?? 0) > 0 && (
+      {length > 1 && (report?.opens ?? 0) + (report?.guestOpens ?? 0) > 0 && (
         <>
           <div className="mt-4 flex gap-3">
             <div
@@ -232,18 +246,38 @@ export function AppOpens({ initial, now }: { initial: AppOpens | null; now: numb
               )}
             >
               <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-line" />
-              {days.map((entry, position) => (
-                <span key={entry.day} className="relative flex h-full min-w-0 flex-1 items-end">
+              {days.map((entry, position) => {
+                const guest = entry.guestOpens ?? 0;
+                const combined = entry.opens + guest;
+                return (
                   <span
+                    key={entry.day}
                     className={cn(
-                      "h-full w-full origin-bottom rounded-t-[3px] bg-foreground transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none",
+                      "relative flex h-full min-w-0 flex-1 flex-col justify-end",
                       index !== null && index !== position && "opacity-30",
-                      entry.opens === 0 && index === null && "opacity-15",
                     )}
-                    style={{ transform: `scaleY(${entry.opens === 0 ? 0.03 : Math.max(0.06, entry.opens / peak)})` }}
-                  />
-                </span>
-              ))}
+                  >
+                    {combined === 0 ? (
+                      <span className="h-[3%] w-full rounded-t-[3px] bg-foreground opacity-15" />
+                    ) : (
+                      <>
+                        {guest > 0 && (
+                          <span
+                            className="w-full rounded-t-[3px] bg-accent"
+                            style={{ height: `${(guest / peak) * 100}%`, minHeight: 2 }}
+                          />
+                        )}
+                        {entry.opens > 0 && (
+                          <span
+                            className={cn("w-full bg-foreground", guest === 0 && "rounded-t-[3px]")}
+                            style={{ height: `${(entry.opens / peak) * 100}%`, minHeight: 2 }}
+                          />
+                        )}
+                      </>
+                    )}
+                  </span>
+                );
+              })}
             </div>
           </div>
           <div className="mt-2 flex justify-between pl-9 text-[12px] text-muted" aria-hidden>
