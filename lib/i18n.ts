@@ -1012,7 +1012,7 @@ export const COPY: Record<Locale, Copy> = {
       checkInLocating: "Confirming where you are",
     checkInSending: "Checking in",
     checkInPrivacy:
-      "Posting confirms you are near this bridge, then discards your location. Messages show your first name for 6 hours.",
+      "Posting confirms you are near this bridge, then discards your location. Messages show your first name until the chat resets at 4am.",
           checkInRecent: "Recent messages",
     checkInEmpty: "No one has posted yet. Be the first to say how the line looks.",
     checkInYou: "You",
@@ -1672,7 +1672,7 @@ export const COPY: Record<Locale, Copy> = {
       checkInLocating: "Confirmando dónde estás",
     checkInSending: "Registrando",
     checkInPrivacy:
-      "Al publicar confirmamos que estás cerca de este puente y descartamos tu ubicación. Los mensajes muestran tu primer nombre durante 6 horas.",
+      "Al publicar confirmamos que estás cerca de este puente y descartamos tu ubicación. Los mensajes muestran tu primer nombre hasta que el chat se reinicia a las 4am.",
           checkInRecent: "Mensajes recientes",
     checkInEmpty: "Nadie ha escrito todavía. Cuenta cómo se ve la fila.",
     checkInYou: "Tú",

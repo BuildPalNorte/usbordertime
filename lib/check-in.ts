@@ -1,5 +1,6 @@
 import type { PortWaitTime } from "@/lib/border-wait-times";
-import { thresholdQuiet } from "@/lib/notify-window";
+import { THRESHOLD_QUIET_END, THRESHOLD_ZONE, thresholdQuiet } from "@/lib/notify-window";
+import { localMoment } from "@/lib/schedule";
 import { haversineMiles, portLocation, type GeoPoint } from "@/lib/port-locations";
 
 /** Client-safe. No server imports here. */
@@ -34,8 +35,16 @@ export function isReaction(value: unknown): value is Reaction {
 export function chatClosed(at: Date = new Date()): boolean {
   return thresholdQuiet(at);
 }
-/** Check-ins stay on a crossing this long. The line they describe is gone by then. */
-export const CHECK_IN_VISIBLE_HOURS = 6;
+/**
+ * The chat resets each day at 4:00am Central, when it reopens. A post is shown only if it was made
+ * since then; older posts stay in the database but are never read or served. Returns that moment
+ * as an ISO time.
+ */
+export function chatDayStart(at: Date = new Date()): string {
+  const sinceReset = (localMoment(THRESHOLD_ZONE, at).minute - THRESHOLD_QUIET_END + 1440) % 1440;
+  const minuteStart = Math.floor(at.getTime() / 60_000) * 60_000;
+  return new Date(minuteStart - sinceReset * 60_000).toISOString();
+}
 
 /**
  * How far from a crossing still counts as "at the bridge". Crossings are placed by city

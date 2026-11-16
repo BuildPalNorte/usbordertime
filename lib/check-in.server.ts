@@ -1,6 +1,6 @@
 import { ensureTables as ensureAlertTables } from "@/lib/alert.server";
 import {
-  CHECK_IN_VISIBLE_HOURS,
+  chatDayStart,
   firstName,
   REACTIONS,
   REPORTS_TO_HIDE,
@@ -45,7 +45,7 @@ function ensureTable(): Promise<void> {
         create index if not exists check_in_port_created_idx on check_in (port_number, created_at desc)
       `;
       // One report per rider and post. Reports go with the post when it is deleted; what stays is the
-      // count on the author's account (`usage_event`), which is all moderation needs after 6 hours.
+      // count on the author's account (`usage_event`), which is all moderation needs once the chat resets.
       await sql`
         create table if not exists check_in_report (
           check_in_id text not null references check_in (id) on delete cascade,
@@ -119,7 +119,7 @@ export async function listCheckIns(
       from check_in
       where port_number = ${portNumber}
         and hidden_at is null
-        and created_at > now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
+        and created_at > ${chatDayStart()}::timestamptz
         and not exists (
           select 1 from check_in_report x where x.check_in_id = check_in.id and x.actor = ${me}
         )
@@ -176,7 +176,7 @@ export async function setReaction(
   const sql = database();
   const live = (await sql`
     select 1 from check_in
-    where id = ${id} and created_at > now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
+    where id = ${id} and created_at > ${chatDayStart()}::timestamptz
   `) as unknown[];
   if (live.length === 0) return false;
   if (on) {
@@ -215,7 +215,7 @@ export async function saveCheckIn(input: {
       where id = ${input.replyTo}
         and port_number = ${input.portNumber}
         and hidden_at is null
-        and created_at > now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
+        and created_at > ${chatDayStart()}::timestamptz
     `) as { id: string; user_id: string }[];
     if (parents[0]) reply = { id: parents[0].id, authorId: parents[0].user_id };
   }
@@ -249,7 +249,7 @@ export async function readCheckInPhoto(id: string): Promise<Buffer | null> {
   const rows = (await sql`
     select encode(photo, 'base64') as photo from check_in
     where id = ${id} and photo is not null and hidden_at is null
-      and created_at > now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
+      and created_at > ${chatDayStart()}::timestamptz
   `) as { photo: string }[];
   return rows[0] ? Buffer.from(rows[0].photo, "base64") : null;
 }
@@ -273,7 +273,7 @@ export async function reportCheckIn(
   const sql = database();
   const posts = (await sql`
     select user_id from check_in
-    where id = ${id} and created_at > now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
+    where id = ${id} and created_at > ${chatDayStart()}::timestamptz
   `) as { user_id: string }[];
   const post = posts[0];
   if (!post) return { status: "missing" };
@@ -293,23 +293,6 @@ export async function reportCheckIn(
     update check_in set hidden_at = now() where id = ${id} and hidden_at is null returning user_id
   `) as { user_id: string }[];
   return hidden[0] ? { status: "hidden", authorId: hidden[0].user_id } : { status: "ok" };
-}
-
-/**
- * Deletes posts with their photos, reactions and reports. Returns how many. Normally that is every
- * post past the visible window; with `everything` (the chat has closed for the night) it is all of them.
- */
-export async function purgeExpiredCheckIns(everything = false): Promise<number> {
-  await ensureTable();
-  const sql = database();
-  const rows = (everything
-    ? await sql`delete from check_in returning id`
-    : await sql`
-        delete from check_in
-        where created_at < now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
-        returning id
-      `) as unknown[];
-  return rows.length;
 }
 
 /**
@@ -333,7 +316,7 @@ export async function unreadCheckIns(
     from unnest(${watch.map((w) => w.port)}::text[], ${watch.map((w) => String(w.since))}::bigint[]) as w(port, since)
     join check_in c
       on c.port_number = w.port
-     and c.created_at > greatest(now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS}), to_timestamp(w.since / 1000.0))
+     and c.created_at > greatest(${chatDayStart()}::timestamptz, to_timestamp(w.since / 1000.0))
     left join check_in q on q.id = c.reply_to
     where c.hidden_at is null
       and c.user_id <> ${me}

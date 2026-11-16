@@ -143,7 +143,7 @@ export async function POST(request: Request) {
       milesAway: presence.miles,
       replyTo,
     });
-    // The count outlives the post, which is deleted after 6 hours.
+    // The count is kept apart from the post, which stops showing when the chat resets at 4am.
     // After the response is sent, so the rider does not wait on a counter.
     after(() => recordUsage(userId, "chat"));
     // The author of the post being answered hears about it. Also after the response.
