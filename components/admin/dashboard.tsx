@@ -6,7 +6,7 @@ import { Campaigns } from "@/components/admin/campaigns";
 import { GrowthChart } from "@/components/admin/growth-chart";
 import { MoreRows } from "@/components/admin/more-rows";
 import { SignOutButton } from "@/components/admin/sign-out-button";
-import { formatAgo } from "@/lib/admin-time";
+import { formatAgo, formatMoment } from "@/lib/admin-time";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
 import type { AdminCamera, AdminData, AdminFeedGroup, AdminViewer } from "@/lib/admin.server";
 import { OFTEN_OPENS } from "@/lib/analytics";
@@ -371,6 +371,60 @@ export function AdminDashboard({ viewer, data }: { viewer: AdminViewer; data: Ad
                       </p>
                     )}
                   </div>
+                )}
+              </Section>
+
+              <Section
+                title="Chat by bridge"
+                hint="Messages riders sent, grouped by the bridge they were sent at, busiest first. Messages stay in the database; riders only see today's."
+              >
+                {data.chat.length === 0 ? (
+                  <p className="text-[15px] text-muted">No one has sent a message yet.</p>
+                ) : (
+                  <MoreRows noun="bridges" initial={5}>
+                    {data.chat.map((bridge) => (
+                      <li key={bridge.portNumber} className="w-full">
+                        <details className="group">
+                          <summary className={`${LINE} cursor-pointer list-none px-4 py-3 [&::-webkit-details-marker]:hidden`}>
+                            <div>
+                              <p className="text-[15px] font-medium">{bridge.label}</p>
+                              <p className="text-[13px] text-muted">
+                                {bridge.riders} {bridge.riders === 1 ? "rider" : "riders"}, last{" "}
+                                {formatAgo(bridge.lastAt, now)}
+                              </p>
+                            </div>
+                            <p className="shrink-0 text-[15px] font-semibold tabular-nums">
+                              {bridge.total.toLocaleString("en-US")} {bridge.total === 1 ? "message" : "messages"}
+                            </p>
+                          </summary>
+                          <ul className="divide-y divide-line border-t border-line bg-surface-strong/40">
+                            {bridge.messages.map((message) => (
+                              <li key={message.id} className="max-w-[min(36rem,calc(100vw-4rem))] px-4 py-3">
+                                <p className="text-[13px] text-muted" title={formatMoment(message.at, now)}>
+                                  <span className="font-medium text-foreground">{message.name}</span> · {message.email} ·{" "}
+                                  {formatAgo(message.at, now)}
+                                </p>
+                                {message.replyTo && (
+                                  <p className="mt-1 border-l-2 border-line pl-2 text-[13px] text-muted">{message.replyTo}</p>
+                                )}
+                                <p className="mt-1 whitespace-pre-wrap break-words text-[15px]">
+                                  {message.message ?? ""}
+                                  {message.hasPhoto && <span className="text-muted"> [photo]</span>}
+                                </p>
+                                {(message.hidden || message.reports > 0 || message.reactions > 0) && (
+                                  <p className="mt-1 text-[12px] text-muted">
+                                    {message.hidden ? "Hidden by reports · " : ""}
+                                    {message.reports > 0 ? `${message.reports} reports · ` : ""}
+                                    {message.reactions} reactions
+                                  </p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      </li>
+                    ))}
+                  </MoreRows>
                 )}
               </Section>
 

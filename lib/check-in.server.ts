@@ -327,3 +327,73 @@ export async function unreadCheckIns(
   `) as { port_number: string; messages: number; replies: number }[];
   return Object.fromEntries(rows.map((r) => [r.port_number, { messages: r.messages, replies: r.replies }]));
 }
+
+/** One message as the admin sees it: who wrote it, where, and whether it was hidden by reports. */
+export type AdminChatMessage = {
+  id: string;
+  portNumber: string;
+  name: string;
+  email: string;
+  message: string | null;
+  hasPhoto: boolean;
+  at: string;
+  hidden: boolean;
+  reactions: number;
+  reports: number;
+  /** First name and start of the message this one answers, when there is one. */
+  replyTo: string | null;
+};
+
+/** How many messages the admin reads at most, newest first. A safety ceiling, not a page size. */
+export const ADMIN_CHAT_LIMIT = 2000;
+
+/**
+ * The newest messages across every crossing, hidden ones included (marked), with the full name and
+ * email of the author. Admin only. Reads no photo bytes. `excluded` emails are left out.
+ */
+export async function readAdminChat(excluded: string[]): Promise<AdminChatMessage[]> {
+  await ensureTable();
+  const sql = database();
+  const rows = (await sql`
+    select c.id, c.port_number, p.name, p.email, c.message, (c.photo is not null) as has_photo,
+           c.created_at, (c.hidden_at is not null) as hidden,
+           (select count(*)::int from check_in_reaction r where r.check_in_id = c.id) as reactions,
+           (select count(*)::int from check_in_report x where x.check_in_id = c.id) as reports,
+           qp.name as quote_name, q.message as quote_message
+    from check_in c
+    join profile p on p.id = c.user_id
+    left join check_in q on q.id = c.reply_to
+    left join profile qp on qp.id = q.user_id
+    where lower(p.email) <> all(${excluded})
+    order by c.created_at desc
+    limit ${ADMIN_CHAT_LIMIT}
+  `) as {
+    id: string;
+    port_number: string;
+    name: string | null;
+    email: string;
+    message: string | null;
+    has_photo: boolean;
+    created_at: Date | string;
+    hidden: boolean;
+    reactions: number;
+    reports: number;
+    quote_name: string | null;
+    quote_message: string | null;
+  }[];
+  return rows.map((row) => ({
+    id: row.id,
+    portNumber: row.port_number,
+    name: row.name?.trim() || firstName(row.name),
+    email: row.email,
+    message: row.message,
+    hasPhoto: row.has_photo,
+    at: new Date(row.created_at).toISOString(),
+    hidden: row.hidden,
+    reactions: Number(row.reactions),
+    reports: Number(row.reports),
+    replyTo: row.quote_name
+      ? `${firstName(row.quote_name)}: ${row.quote_message ? snippet(row.quote_message, 60) : "photo"}`
+      : null,
+  }));
+}

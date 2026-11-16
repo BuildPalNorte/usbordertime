@@ -17,6 +17,7 @@ import type { PortWaitTime } from "@/lib/border-wait-times";
 import { database } from "@/lib/db.server";
 import { ANALYTICS_EXCLUDED_EMAILS, isExcludedFromAnalytics } from "@/lib/analytics";
 import { readExchangeSummary, type ExchangeSummary } from "@/lib/exchange-use.server";
+import { readAdminChat, type AdminChatMessage } from "@/lib/check-in.server";
 import { readPortViews } from "@/lib/port-view.server";
 import { readGuestPortViews, type GuestPortViews } from "@/lib/guest-activity.server";
 import { readArrivals, readGuestDays, type Arrivals } from "@/lib/visitor.server";
@@ -113,6 +114,16 @@ export type AdminCrossing = {
   waitMinutes: number | null;
 };
 
+/** Chat messages grouped by the crossing they were sent at, busiest first. */
+export type AdminChatBridge = {
+  portNumber: string;
+  label: string;
+  total: number;
+  riders: number;
+  lastAt: string;
+  messages: AdminChatMessage[];
+};
+
 export type AdminData = {
   insights: Insights;
   crossings: AdminCrossing[];
@@ -133,6 +144,7 @@ export type AdminData = {
   exchange: ExchangeSummary | null;
   /** Display name for every crossing in the feed, by port number. */
   portLabels: Record<string, string>;
+  chat: AdminChatBridge[];
   problem: boolean;
 };
 
@@ -262,6 +274,13 @@ async function readDashboard(): Promise<AdminData> {
     return null;
   });
 
+  const chatQuery = readAdminChat(ANALYTICS_EXCLUDED_EMAILS.map((email) => email.trim().toLowerCase())).catch(
+    (error: unknown) => {
+      mark(error, true);
+      return [] as AdminChatMessage[];
+    },
+  );
+
   const campaignsQuery = listCampaigns().catch((error: unknown) => {
     mark(error, true);
     return [];
@@ -272,7 +291,7 @@ async function readDashboard(): Promise<AdminData> {
     return null;
   });
 
-  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, guestDays, guestViews, campaigns, exchange, opens] =
+  const [facts, accounts, alertTotals, devices, schedules, cameras, feeds, feed, rawUsageRows, announcements, arrivals, guestDays, guestViews, campaigns, exchange, opens, chatRows] =
     await Promise.all([
     factsQuery,
     accountsQuery.then(
@@ -331,6 +350,7 @@ async function readDashboard(): Promise<AdminData> {
     campaignsQuery,
     exchangeQuery,
     opensQuery,
+    chatQuery,
   ]);
 
   const out = new Set(facts.profiles.filter((row) => isExcludedFromAnalytics(row.email)).map((row) => row.id));
@@ -406,8 +426,28 @@ async function readDashboard(): Promise<AdminData> {
     opens,
     exchange,
     portLabels,
+    chat: chatByBridge(chatRows, labelOf),
     problem,
   };
+}
+
+function chatByBridge(rows: AdminChatMessage[], labelOf: (portNumber: string) => string): AdminChatBridge[] {
+  const groups = new Map<string, AdminChatMessage[]>();
+  for (const row of rows) {
+    const list = groups.get(row.portNumber);
+    if (list) list.push(row);
+    else groups.set(row.portNumber, [row]);
+  }
+  return [...groups.entries()]
+    .map(([portNumber, messages]) => ({
+      portNumber,
+      label: labelOf(portNumber),
+      total: messages.length,
+      riders: new Set(messages.map((message) => message.email)).size,
+      lastAt: messages[0].at,
+      messages,
+    }))
+    .sort((a, b) => b.total - a.total || b.lastAt.localeCompare(a.lastAt));
 }
 
 /** Across every account: how many people used each feature, and how many were active at all. */
