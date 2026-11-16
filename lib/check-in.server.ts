@@ -4,6 +4,7 @@ import {
   firstName,
   REACTIONS,
   REPORTS_TO_HIDE,
+  snippet,
   type CheckIn,
   type Reaction,
   type ReportReason,
@@ -34,6 +35,11 @@ function ensureTable(): Promise<void> {
         )
       `;
       await sql`alter table check_in add column if not exists hidden_at timestamptz`;
+      // A reply points at the post it answers. If that post is deleted, the reply stays as a plain message.
+      await sql`
+        alter table check_in
+        add column if not exists reply_to text references check_in (id) on delete set null
+      `;
       await sql`
         create index if not exists check_in_port_created_idx on check_in (port_number, created_at desc)
       `;
@@ -78,6 +84,10 @@ type Row = {
   helpfuls: number;
   liked: boolean;
   helped: boolean;
+  quote_id: string | null;
+  quote_name: string | null;
+  quote_message: string | null;
+  quote_photo: boolean | null;
 };
 
 /**
@@ -100,9 +110,11 @@ export async function listCheckIns(
            coalesce(r.likes, 0)::int as likes,
            coalesce(r.helpfuls, 0)::int as helpfuls,
            coalesce(r.liked, false) as liked,
-           coalesce(r.helped, false) as helped
+           coalesce(r.helped, false) as helped,
+           q.id as quote_id, qp.name as quote_name, q.message as quote_message,
+           (q.photo is not null) as quote_photo
     from (
-      select id, user_id, message, (photo is not null) as has_photo, created_at
+      select id, user_id, message, (photo is not null) as has_photo, created_at, reply_to
       from check_in
       where port_number = ${portNumber}
         and hidden_at is null
@@ -114,6 +126,8 @@ export async function listCheckIns(
       limit 50
     ) c
     join profile p on p.id = c.user_id
+    left join check_in q on q.id = c.reply_to and q.hidden_at is null
+    left join profile qp on qp.id = q.user_id
     left join lateral (
       select count(*) filter (where kind = 'like') as likes,
              count(*) filter (where kind = 'helpful') as helpfuls,
@@ -133,6 +147,14 @@ export async function listCheckIns(
     mine: row.mine,
     reactions: { like: row.likes, helpful: row.helpfuls },
     reacted: { like: row.liked, helpful: row.helped },
+    replyTo: row.quote_id
+      ? {
+          id: row.quote_id,
+          name: firstName(row.quote_name),
+          message: row.quote_message ? snippet(row.quote_message) : null,
+          hasPhoto: Boolean(row.quote_photo),
+        }
+      : null,
   }));
 }
 
@@ -169,26 +191,44 @@ export async function setReaction(
   return true;
 }
 
+/** The post a new one answers, when it can still be answered: live, visible, and at the same crossing. */
+export type ReplyTarget = { id: string; authorId: string };
+
 export async function saveCheckIn(input: {
   userId: string;
   portNumber: string;
   message: string | null;
   photo: Uint8Array | null;
   milesAway: number;
-}): Promise<string> {
+  /** The id of the post being answered. Ignored when that post is gone, hidden, or elsewhere. */
+  replyTo?: string | null;
+}): Promise<{ id: string; reply: ReplyTarget | null }> {
   await ensureTable();
   const sql = database();
   const encoded = input.photo ? Buffer.from(input.photo).toString("base64") : null;
+
+  let reply: ReplyTarget | null = null;
+  if (input.replyTo) {
+    const parents = (await sql`
+      select id, user_id from check_in
+      where id = ${input.replyTo}
+        and port_number = ${input.portNumber}
+        and hidden_at is null
+        and created_at > now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS})
+    `) as { id: string; user_id: string }[];
+    if (parents[0]) reply = { id: parents[0].id, authorId: parents[0].user_id };
+  }
+
   const rows = (await sql`
-    insert into check_in (user_id, port_number, message, photo, miles_away)
+    insert into check_in (user_id, port_number, message, photo, miles_away, reply_to)
     values (
       ${input.userId}, ${input.portNumber}, ${input.message},
       case when ${encoded}::text is null then null else decode(${encoded}::text, 'base64') end,
-      ${input.milesAway}
+      ${input.milesAway}, ${reply?.id ?? null}
     )
     returning id
   `) as { id: string }[];
-  return rows[0].id;
+  return { id: rows[0].id, reply };
 }
 
 /** Removes one of the account's own check-ins. False when it was not theirs or is already gone. */

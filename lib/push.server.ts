@@ -27,12 +27,17 @@ export type PushResult = "sent" | "gone" | "failed";
  * One notification to one device. `gone` means the push service no longer knows this address
  * (the app was removed or permission was revoked), so the caller deletes it.
  */
-export async function sendPush(device: PushDevice, payload: PushPayload): Promise<PushResult> {
+export async function sendPush(
+  device: PushDevice,
+  payload: PushPayload,
+  /** Seconds the push service holds it for a phone that is off. A wait is stale in minutes; a reply is not. */
+  ttl: number = 600,
+): Promise<PushResult> {
   configure();
   try {
     await webpush.sendNotification(device, JSON.stringify(payload), {
       // A wait is only worth reading for a few minutes. After that the push service drops it.
-      TTL: 600,
+      TTL: ttl,
       urgency: "high",
       timeout: 10_000,
     });

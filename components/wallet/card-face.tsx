@@ -106,19 +106,22 @@ export function CardFace({
         <div className="shrink-0 text-right">
           {reading.minutes !== null ? (
             <>
-              <p className="flex items-baseline justify-end">
-                <WaitDuration
-                  key={mode}
-                  minutes={reading.minutes}
-                  checking={checking}
-                  animate
-                  numberClassName="text-[36px] leading-none font-semibold tracking-[-0.045em]"
-                  unitClassName="text-[13px] font-medium opacity-[0.72]"
+              <p className="flex items-center justify-end gap-2">
+                <span
+                  role="img"
+                  aria-label={copy.tone[reading.tone]}
+                  className={cn("size-2 shrink-0 rounded-full", TONE_DOT[reading.tone])}
                 />
-              </p>
-              <p className="mt-1.5 flex items-center justify-end gap-1.5 text-[12px] leading-none font-medium opacity-[0.85]">
-                <span className={cn("size-1.5 rounded-full", TONE_DOT[reading.tone])} />
-                {copy.tone[reading.tone]}
+                <span className="flex items-baseline">
+                  <WaitDuration
+                    key={mode}
+                    minutes={reading.minutes}
+                    checking={checking}
+                    animate
+                    numberClassName="text-[36px] leading-none font-semibold tracking-[-0.045em]"
+                    unitClassName="text-[13px] font-medium opacity-[0.72]"
+                  />
+                </span>
               </p>
               <AverageWait
                 wait={usual}

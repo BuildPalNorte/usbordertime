@@ -71,6 +71,25 @@ export function checkPresence(
   return { ok: true, miles };
 }
 
+/** How much of the message a reply quotes, in characters. Long enough to recognise it, short enough to skim. */
+export const REPLY_QUOTE_CHARS = 100;
+
+/** The start of a message on one line, for a quote or a notification body. */
+export function snippet(text: string, max: number = REPLY_QUOTE_CHARS): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  const chars = [...flat];
+  return chars.length > max ? `${chars.slice(0, max - 1).join("").trimEnd()}…` : flat;
+}
+
+/** The post a reply answers, as much of it as the reply shows. */
+export type ReplyQuote = {
+  id: string;
+  /** First name only. */
+  name: string;
+  message: string | null;
+  hasPhoto: boolean;
+};
+
 /** What a crossing shows for one check-in. No location is ever part of it. */
 export type CheckIn = {
   id: string;
@@ -86,6 +105,8 @@ export type CheckIn = {
   reactions: Record<Reaction, number>;
   /** Which of those this viewer gave. */
   reacted: Record<Reaction, boolean>;
+  /** The post this one answers. Null for a plain message, or once the original is gone or hidden. */
+  replyTo?: ReplyQuote | null;
   /** Browser only, never sent by the server: a post shown before the server has confirmed it. */
   pending?: boolean;
   /** Browser only: the id the row first had, so confirming it does not remount it. */

@@ -398,6 +398,13 @@ export type Copy = {
   checkInPhotoOf: (name: string) => string;
   checkInPhotoFailed: string;
   checkInFailed: string;
+  checkInReply: (name: string) => string;
+  checkInReplyingTo: (name: string) => string;
+  checkInReplyCancel: string;
+  checkInReplyPhoto: string;
+  checkInNotifyReplies: string;
+  checkInNotifyRepliesOn: string;
+  checkInReplyPushTitle: (name: string) => string;
   scheduleTitle: (time: string, lane: string) => string;
   scheduleWait: (name: string, minutes: number) => string;
   scheduleStatus: (name: string, status: string) => string;
@@ -679,7 +686,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Wait alerts",
-        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about every 15 minutes and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make an alarm, we also save its time, days, time zone, lane, bridges, and any name you gave it with your account, and send one notification with the current waits around that time. If you named it, that name is the notification's title. Deleting an alarm deletes it. Signing out removes this device's push address.",
+        body: "If you turn on a wait alert, we save the crossing, the lane, and the wait you picked with your account. To reach you, your browser gives us a private push address for that device. We check the public wait times about every 15 minutes and send one notification when a lane drops under your number. The notification passes through the push service your browser uses: Apple, Google, or Mozilla. Turning an alert off deletes it. If you make an alarm, we also save its time, days, time zone, lane, bridges, and any name you gave it with your account, and send one notification with the current waits around that time. If you named it, that name is the notification's title. Deleting an alarm deletes it. If you allow notifications from the bridge chat, we also send you one when someone replies to your message; it shows their first name and the start of their reply. Signing out removes this device's push address.",
       },
       {
         heading: "Visit streak",
@@ -1036,6 +1043,13 @@ export const COPY: Record<Locale, Copy> = {
     checkInGuest: "Sign in to leave a message. You can still like and react.",
     checkInReactFailed: "Could not save that reaction.",
     checkInPhotoOf: (name) => `Photo from ${name}`,
+    checkInReply: (name) => `Reply to ${name}`,
+    checkInReplyingTo: (name) => `Replying to ${name}`,
+    checkInReplyCancel: "Cancel reply",
+    checkInReplyPhoto: "Photo",
+    checkInNotifyReplies: "Notify me when someone replies",
+    checkInNotifyRepliesOn: "Done. We'll notify you when someone replies to you.",
+    checkInReplyPushTitle: (name) => `${name} replied to you`,
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
     scheduleWait: (name, minutes) =>
       `${name}: ${formatDuration(minutes, "hr", "min")}`,
@@ -1315,7 +1329,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       {
         heading: "Alertas de espera",
-        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada 15 minutos y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas una alarma, también guardamos con tu cuenta su hora, días, zona horaria, carril, puentes y el nombre que le hayas puesto, y enviamos una notificación con las esperas actuales alrededor de esa hora. Si le pusiste nombre, ese nombre es el título de la notificación. Al eliminar una alarma, se borra. Al cerrar sesión, se quita la dirección push de este dispositivo.",
+        body: "Si activas una alerta de espera, guardamos con tu cuenta el cruce, el carril y la espera que elegiste. Para avisarte, tu navegador nos da una dirección push privada de ese dispositivo. Revisamos los tiempos públicos más o menos cada 15 minutos y enviamos una notificación cuando un carril baja de tu número. La notificación pasa por el servicio push que usa tu navegador: Apple, Google o Mozilla. Al apagar una alerta, se borra. Si creas una alarma, también guardamos con tu cuenta su hora, días, zona horaria, carril, puentes y el nombre que le hayas puesto, y enviamos una notificación con las esperas actuales alrededor de esa hora. Si le pusiste nombre, ese nombre es el título de la notificación. Al eliminar una alarma, se borra. Si permites las notificaciones desde el chat del puente, también te enviamos una cuando alguien responda a tu mensaje; muestra su nombre de pila y el inicio de su respuesta. Al cerrar sesión, se quita la dirección push de este dispositivo.",
       },
       {
         heading: "Racha de visitas",
@@ -1680,6 +1694,13 @@ export const COPY: Record<Locale, Copy> = {
     checkInGuest: "Inicia sesión para dejar un mensaje. Aun así puedes reaccionar.",
     checkInReactFailed: "No se pudo guardar esa reacción.",
     checkInPhotoOf: (name) => `Foto de ${name}`,
+    checkInReply: (name) => `Responder a ${name}`,
+    checkInReplyingTo: (name) => `Respondiendo a ${name}`,
+    checkInReplyCancel: "Cancelar respuesta",
+    checkInReplyPhoto: "Foto",
+    checkInNotifyReplies: "Avísame cuando alguien me responda",
+    checkInNotifyRepliesOn: "Listo. Te avisaremos cuando alguien te responda.",
+    checkInReplyPushTitle: (name) => `${name} te respondió`,
     scheduleTitle: (time, lane) => `${time} · ${lane}`,
     scheduleWait: (name, minutes) =>
       `${name}: ${formatDuration(minutes, "h", "min")}`,

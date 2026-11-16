@@ -11,6 +11,8 @@ import {
   MAX_CHECK_IN_PHOTO_BYTES,
 } from "@/lib/check-in";
 import { countRecentUsage, recordUsage } from "@/lib/usage.server";
+import { notifyReply } from "@/lib/check-in-notify.server";
+import { portName } from "@/lib/ports";
 import { deleteCheckIn, listCheckIns, reactorKey, saveCheckIn } from "@/lib/check-in.server";
 import { geoPointFrom } from "@/lib/port-locations";
 import { hasProfanity } from "@/lib/profanity";
@@ -93,6 +95,9 @@ export async function POST(request: Request) {
     if (!isJpeg(photo)) return Response.json({ error: "photo" }, { status: 400, headers: NO_STORE });
   }
 
+  const replyField = form.get("replyTo");
+  const replyTo = typeof replyField === "string" && replyField.length > 0 && replyField.length <= 64 ? replyField : null;
+
   const message = cleanMessage(form.get("message"));
   if (!message && !photo) return Response.json({ error: "empty" }, { status: 400, headers: NO_STORE });
   // The browser checks first for instant feedback. This is the check that counts.
@@ -130,10 +135,29 @@ export async function POST(request: Request) {
       return Response.json({ error: presence.reason }, { status: 403, headers: NO_STORE });
     }
 
-    const id = await saveCheckIn({ userId, portNumber, message, photo, milesAway: presence.miles });
+    const { id, reply } = await saveCheckIn({
+      userId,
+      portNumber,
+      message,
+      photo,
+      milesAway: presence.miles,
+      replyTo,
+    });
     // The count outlives the post, which is deleted after 6 hours.
     // After the response is sent, so the rider does not wait on a counter.
     after(() => recordUsage(userId, "chat"));
+    // The author of the post being answered hears about it. Also after the response.
+    if (reply) {
+      after(() =>
+        notifyReply({
+          authorId: userId,
+          recipientId: reply.authorId,
+          parentId: reply.id,
+          place: { portNumber: port.portNumber, bridge: portName(port).title },
+          message,
+        }).catch((error: unknown) => console.error("reply push", error)),
+      );
+    }
     return Response.json({ id }, { status: 201, headers: NO_STORE });
   } catch (error) {
     return serverError("Could not save the post.", error);

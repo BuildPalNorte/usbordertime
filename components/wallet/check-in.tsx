@@ -9,15 +9,20 @@ import {
   POSITION_REUSE_MS,
   REACTIONS,
   REPORT_REASONS,
+  snippet,
   type CheckIn,
   type CheckInProblem,
   type Reaction,
+  type ReplyQuote,
   type ReportReason,
 } from "@/lib/check-in";
 import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { hasProfanity } from "@/lib/profanity";
 import type { GeoPoint } from "@/lib/port-locations";
+import { enablePush, pushSupport, resyncPush, type PushSupport } from "@/lib/push-client";
+import { ArrowUturnLeftIcon } from "@heroicons-animated/react/arrow-uturn-left";
+import { BellIcon } from "@heroicons-animated/react/bell";
 import { PaperAirplaneIcon } from "@heroicons-animated/react/paper-airplane";
 import { CameraIcon, type CameraIconHandle } from "@heroicons-animated/react/camera";
 import { CheckIcon } from "@heroicons-animated/react/check";
@@ -39,6 +44,7 @@ import {
   AnimatePresence,
   motion,
   useMotionValue,
+  useMotionValueEvent,
   useReducedMotion,
   useTransform,
 } from "motion/react";
@@ -53,6 +59,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ReactNode,
   type SyntheticEvent,
 } from "react";
 import { createPortal } from "react-dom";
@@ -81,6 +88,17 @@ export function CheckInButton({ port, name }: { port: PortWaitTime; name: string
   const pin = useRef<MapPinIconHandle>(null);
   const [open, setOpen] = useState(false);
   const closed = useChatClosed();
+
+  // A reply notification opens the crossing with `?chat=1`. Open that chat once and drop the flag,
+  // so a refresh or a shared link does not pop it up again. It exists only in the browser.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("chat") !== "1" || url.pathname !== `/${port.portNumber}`) return;
+    url.searchParams.delete("chat");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setOpen(true);
+  }, [port.portNumber]);
 
   // Overnight the chat shuts, even on a sheet that was left open.
   if (closed) {
@@ -209,6 +227,11 @@ function CheckInSheet({
   const [confirming, setConfirming] = useState<CheckIn | null>(null);
   const [reporting, setReporting] = useState<CheckIn | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** The post the next message answers. */
+  const [replyingTo, setReplyingTo] = useState<CheckIn | null>(null);
+  // Whether this device can be told about replies. Read once when the sheet opens: the sheet only
+  // exists in the browser, so there is no server render to match.
+  const [push, setPush] = useState<PushSupport>(() => pushSupport());
   const busy = stage === "locating";
 
   const thread = useQuery({
@@ -247,6 +270,12 @@ function CheckInSheet({
       for (const url of urls) URL.revokeObjectURL(url);
     };
   }, []);
+
+  // A rider who already allowed notifications keeps a current push address, so a reply reaches them.
+  // Nothing is asked here: this only refreshes an address the browser already gave.
+  useEffect(() => {
+    if (signedIn) void resyncPush();
+  }, [signedIn]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -334,6 +363,15 @@ function CheckInSheet({
     // upload and the check all happen behind it. If any of them says no, it goes away and the
     // words come back to the box.
     const sent = photo;
+    const answering = replyingTo;
+    const quote: ReplyQuote | null = answering
+      ? {
+          id: answering.id,
+          name: answering.name,
+          message: answering.message ? snippet(answering.message) : null,
+          hasPhoto: answering.hasPhoto,
+        }
+      : null;
     const tempId = `pending-${(pendingSeq.current += 1)}`;
     const localPhoto = sent ? URL.createObjectURL(sent.blob) : undefined;
     if (localPhoto) objectUrls.current.push(localPhoto);
@@ -349,12 +387,14 @@ function CheckInSheet({
         mine: true,
         reactions: { like: 0, helpful: 0 },
         reacted: { like: false, helpful: false },
+        replyTo: quote,
         pending: true,
         localPhoto,
       },
     ]);
     setNote("");
     setPhoto(null);
+    setReplyingTo(null);
     if (noteRef.current) noteRef.current.style.height = "auto";
     stick.current = true;
 
@@ -365,6 +405,7 @@ function CheckInSheet({
       // Give back what they wrote, unless they have already started something new.
       setNote((current) => current || text);
       if (sent) setPhoto((current) => current ?? { blob: sent.blob, url: URL.createObjectURL(sent.blob) });
+      setReplyingTo((current) => current ?? answering);
     };
 
     void enqueue(async () => {
@@ -401,6 +442,7 @@ function CheckInSheet({
       form.set("accuracy", String(current.accuracy));
       if (text) form.set("message", text);
       if (sent) form.set("photo", sent.blob, "check-in.jpg");
+      if (answering) form.set("replyTo", answering.id);
 
       try {
         const response = await fetch("/api/check-in", { method: "POST", body: form });
@@ -491,6 +533,51 @@ function CheckInSheet({
     haptic("selection");
     setReporting(item);
   }, []);
+  const onReply = useCallback((item: CheckIn) => {
+    haptic("selection");
+    setReplyingTo(item);
+    noteRef.current?.focus();
+  }, []);
+  /** Brings the original of a quoted reply into view and nudges it, so the eye finds it. */
+  const jumpTo = useCallback(
+    (id: string) => {
+      const target = scrollerRef.current?.querySelector<HTMLElement>(`[data-post="${CSS.escape(id)}"]`);
+      // The original may be older than the thread shows, or hidden. Nothing to find then.
+      if (!target) {
+        haptic("light");
+        return;
+      }
+      haptic("selection");
+      stick.current = false;
+      target.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+      if (!reduce) {
+        target.querySelector<HTMLElement>("[data-bubble]")?.animate(
+          [{ transform: "scale(1)" }, { transform: "scale(1.04)" }, { transform: "scale(1)" }],
+          { duration: 480, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+        );
+      }
+    },
+    [reduce],
+  );
+  /** From the bell: asks for permission on this tap, then registers the device for replies. */
+  const enableReplies = () => {
+    haptic("selection");
+    void enablePush().then((result) => {
+      setPush(pushSupport());
+      if (result === "ok") {
+        haptic("success");
+        setNotice(copy.checkInNotifyRepliesOn);
+        window.setTimeout(() => setNotice(null), 5000);
+        return;
+      }
+      haptic("error");
+      if (result === "denied") setNotice(copy.alertDenied);
+      else if (result === "needs-install") setNotice(copy.alertNeedsInstall);
+      else if (result === "unsupported") setNotice(copy.alertUnsupported);
+      else setNotice(copy.alertFailed);
+      window.setTimeout(() => setNotice(null), 6000);
+    });
+  };
   const onOpenPhoto = useCallback((src: string, alt: string) => {
     haptic("light");
     setViewing({ src, alt });
@@ -560,7 +647,20 @@ function CheckInSheet({
         }}
       >
         <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 px-5 pt-5">
-          <span />
+          {signedIn && (push === "ask" || push === "needs-install") ? (
+            <button
+              type="button"
+              aria-label={copy.checkInNotifyReplies}
+              title={copy.checkInNotifyReplies}
+              onClick={enableReplies}
+              className="relative grid size-10 place-items-center justify-self-start rounded-full bg-surface text-foreground active:scale-95"
+            >
+              <HapticPad />
+              <BellIcon size={18} aria-hidden />
+            </button>
+          ) : (
+            <span />
+          )}
           <h2 id={titleId} className="truncate text-center text-[22px] font-bold tracking-[-0.03em]">
             {copy.checkInSheetTitle}
           </h2>
@@ -596,6 +696,9 @@ function CheckInSheet({
             failed={thread.isError}
             reduce={Boolean(reduce)}
             onReact={onReact}
+            canReply={signedIn}
+            onReply={onReply}
+            onJump={jumpTo}
             onRemove={onAskRemove}
             onReport={onAskReport}
             onOpenPhoto={onOpenPhoto}
@@ -666,6 +769,51 @@ function CheckInSheet({
                   className="glass ask-composer pointer-events-none absolute inset-0 rounded-[28px]"
                 />
                 <div className="relative">
+                  <AnimatePresence initial={false}>
+                    {replyingTo && (
+                      <motion.div
+                        key="replying"
+                        initial={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                        animate={reduce ? { opacity: 1 } : { height: "auto", opacity: 1 }}
+                        exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                        transition={reduce ? { duration: 0.12 } : SPRING.snap}
+                        className="overflow-hidden"
+                      >
+                        {/* Concentric with the composer: 28px outer, 6px inset, so 22px would match; 16px reads as one family with the bubbles. */}
+                        <div className="mx-0.5 mt-0.5 mb-1.5 flex items-center gap-3 rounded-2xl bg-foreground/[0.06] py-2 pr-2 pl-3">
+                          <span aria-hidden className="h-9 w-[3px] shrink-0 rounded-full bg-accent" />
+                          {replyingTo.hasPhoto && (
+                            // eslint-disable-next-line @next/next/no-img-element -- our own route, already shrunk by the sender
+                            <img
+                              src={replyingTo.localPhoto ?? `/api/check-in/photo/${encodeURIComponent(replyingTo.id)}`}
+                              alt=""
+                              className="size-9 shrink-0 rounded-lg bg-surface-strong object-cover"
+                            />
+                          )}
+                          <p className="min-w-0 flex-1 leading-snug">
+                            <span className="block truncate text-[13px] font-semibold tracking-[-0.005em] text-accent">
+                              {copy.checkInReplyingTo(replyingTo.name)}
+                            </span>
+                            <span className="block truncate text-[13px] text-muted">
+                              {replyingTo.message ? snippet(replyingTo.message, 80) : copy.checkInReplyPhoto}
+                            </span>
+                          </p>
+                          <button
+                            type="button"
+                            aria-label={copy.checkInReplyCancel}
+                            onClick={() => {
+                              haptic("light");
+                              setReplyingTo(null);
+                            }}
+                            className="relative grid size-8 shrink-0 place-items-center rounded-full bg-foreground/[0.08] text-muted transition-transform duration-100 ease-out before:absolute before:-inset-1.5 active:scale-90"
+                          >
+                            <HapticPad />
+                            <XMarkIcon size={14} aria-hidden />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   {photo && (
                     <div className="flex items-center gap-3 px-2 pt-1.5 pb-2">
                       {/* eslint-disable-next-line @next/next/no-img-element -- a local object URL, nothing to optimize */}
@@ -1147,11 +1295,82 @@ function problemText(
   }
 }
 
+/** How far the bubble travels before letting go replies. The finger moves about twice this. */
+const SWIPE_REPLY_AT = 44;
+
+/**
+ * Drag a message to the right to reply, the way Messages does. The bubble follows the finger with
+ * resistance (it never goes left), an arrow grows in behind it, and a tick marks the point where
+ * letting go will reply. Past that point a release replies; short of it, the bubble springs home.
+ * The reply button under the message still does the same for a mouse or a keyboard.
+ */
+function SwipeToReply({
+  enabled,
+  onReply,
+  className,
+  children,
+}: {
+  enabled: boolean;
+  onReply: () => void;
+  className?: string;
+  children: ReactNode;
+}) {
+  const x = useMotionValue(0);
+  const armed = useRef(false);
+  const progress = useTransform(x, [0, SWIPE_REPLY_AT], [0, 1], { clamp: true });
+  const grow = useTransform(x, [0, SWIPE_REPLY_AT], [0.5, 1], { clamp: true });
+
+  // The tick lands on the frame the bubble crosses the line, and again if it comes back.
+  useMotionValueEvent(x, "change", (value) => {
+    const past = value >= SWIPE_REPLY_AT;
+    if (past === armed.current) return;
+    armed.current = past;
+    haptic(past ? "light" : "soft");
+  });
+
+  if (!enabled) return <div className={className}>{children}</div>;
+
+  return (
+    <div className={cn("relative", className)}>
+      <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 flex items-center">
+        <motion.span
+          style={{ opacity: progress, scale: grow }}
+          className="grid size-8 place-items-center rounded-full bg-foreground/[0.08] text-muted"
+        >
+          <ArrowUturnLeftIcon size={15} />
+        </motion.span>
+      </span>
+      <motion.div
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={{ left: 0, right: 0.5 }}
+        dragSnapToOrigin
+        dragTransition={{ bounceStiffness: 500, bounceDamping: 40 }}
+        style={{ x }}
+        onDragEnd={(_, info) => {
+          const replied = x.get() >= SWIPE_REPLY_AT || (info.velocity.x > 700 && info.offset.x > 24);
+          armed.current = false;
+          if (replied) {
+            haptic("medium");
+            onReply();
+          }
+        }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
 const Thread = memo(function Thread({
   items,
   pending,
   failed,
   reduce,
+  canReply,
+  onReply,
+  onJump,
   onReact,
   onRemove,
   onReport,
@@ -1161,6 +1380,11 @@ const Thread = memo(function Thread({
   pending: boolean;
   failed: boolean;
   reduce: boolean;
+  /** Replying needs an account, like posting. */
+  canReply: boolean;
+  onReply: (item: CheckIn) => void;
+  /** Scrolls to the message a reply quotes. */
+  onJump: (id: string) => void;
   onReact: (item: CheckIn, kind: Reaction) => void;
   onRemove: (item: CheckIn) => void;
   onReport: (item: CheckIn) => void;
@@ -1208,6 +1432,7 @@ const Thread = memo(function Thread({
         {items.map((item) => (
           <motion.li
             key={item.ref ?? item.id}
+            data-post={item.id}
             layout={!reduce}
             initial={reduce ? false : { opacity: 0, y: 12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1225,14 +1450,52 @@ const Thread = memo(function Thread({
                 {sentAt(item.at)}
               </time>
             </p>
+            <SwipeToReply
+              enabled={canReply && !item.mine && !item.pending}
+              onReply={() => onReply(item)}
+              className="max-w-[85%]"
+            >
             <div
+              data-bubble
               className={cn(
-                "max-w-[85%] overflow-hidden rounded-3xl",
+                "overflow-hidden rounded-3xl",
+                item.replyTo && "min-w-52",
                 item.mine
                   ? "rounded-br-md bg-accent text-accent-ink"
                   : "rounded-bl-md bg-surface text-foreground",
               )}
             >
+              {item.replyTo && (
+                <div className="px-2 pt-2">
+                  <button
+                    type="button"
+                    aria-label={copy.checkInReplyingTo(item.replyTo.name)}
+                    onClick={() => onJump(item.replyTo!.id)}
+                    className={cn(
+                      "flex w-full gap-2.5 rounded-2xl py-2 pr-3 pl-2.5 text-left transition-opacity duration-100 active:opacity-70",
+                      item.mine ? "bg-accent-ink/[0.12]" : "bg-foreground/[0.06]",
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className={cn("w-[3px] shrink-0 rounded-full", item.mine ? "bg-accent-ink/55" : "bg-accent")}
+                    />
+                    <span className="min-w-0 leading-snug">
+                      <span
+                        className={cn(
+                          "block truncate text-[12px] font-semibold",
+                          item.mine ? "text-accent-ink" : "text-accent",
+                        )}
+                      >
+                        {item.replyTo.name}
+                      </span>
+                      <span className="line-clamp-2 text-[13px] break-words opacity-75">
+                        {item.replyTo.message ?? copy.checkInReplyPhoto}
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              )}
               {item.hasPhoto && (
                 <button
                   type="button"
@@ -1261,6 +1524,7 @@ const Thread = memo(function Thread({
                 </p>
               )}
             </div>
+            </SwipeToReply>
             {!item.pending && (
             <div className={cn("mt-1.5 flex items-center gap-1.5", item.mine && "flex-row-reverse")}>
               {REACTIONS.map((kind) => (
@@ -1273,6 +1537,17 @@ const Thread = memo(function Thread({
                   onClick={() => onReact(item, kind)}
                 />
               ))}
+              {!item.mine && canReply && (
+                <button
+                  type="button"
+                  aria-label={copy.checkInReply(item.name)}
+                  onClick={() => onReply(item)}
+                  className="relative grid size-8 place-items-center rounded-full text-muted active:scale-95 active:text-foreground"
+                >
+                  <HapticPad />
+                  <ArrowUturnLeftIcon size={15} aria-hidden />
+                </button>
+              )}
               {!item.mine && (
                 <button
                   type="button"
