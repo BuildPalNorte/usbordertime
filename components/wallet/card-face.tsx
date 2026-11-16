@@ -10,8 +10,10 @@ import { motion, useMotionTemplate, useMotionValue } from "motion/react";
 import { useEffect, useRef, type PointerEvent } from "react";
 import { AlertButton } from "./alert-control";
 import { AverageWait } from "./average-wait";
+import { ChatUnreadPill } from "./chat-unread-pill";
 import { HapticPad } from "./haptic-pad";
 import { CARD_H } from "./motion";
+import { useChatUnread } from "./use-chat-unread";
 import { shownAverage, useLaneAverages } from "./use-lane-averages";
 import { WaitDuration } from "./wait-duration";
 
@@ -39,6 +41,7 @@ export function CardFace({
   const averages = useLaneAverages(port.portNumber);
   const usual = shownAverage(averages.data, mode, port.time, reading.available);
   const light = palette.ink === "light";
+  const unread = useChatUnread(port.portNumber);
 
   // Pointer-tracked sheen lives in motion values so moving the mouse never re-renders React.
   const sheenX = useMotionValue(50);
@@ -98,9 +101,14 @@ export function CardFace({
           <p className="truncate text-[19px] leading-[1.15] font-semibold tracking-[-0.02em]">
             {name.title}
           </p>
-          <p className="mt-1 truncate text-[13px] leading-none opacity-[0.72]">
-            {placeSubtitle(name, copy)}
-          </p>
+          <div className="mt-1 flex items-center gap-1.5">
+            {unread && (
+              <ChatUnreadPill unread={unread} tone={light ? "card-light" : "card-dark"} />
+            )}
+            <p className="truncate text-[13px] leading-none opacity-[0.72]">
+              {placeSubtitle(name, copy)}
+            </p>
+          </div>
         </div>
 
         <div className="shrink-0 text-right">

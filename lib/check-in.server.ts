@@ -8,6 +8,7 @@ import {
   type CheckIn,
   type Reaction,
   type ReportReason,
+  type Unread,
 } from "@/lib/check-in";
 import { database } from "@/lib/db.server";
 
@@ -309,4 +310,37 @@ export async function purgeExpiredCheckIns(everything = false): Promise<number> 
         returning id
       `) as unknown[];
   return rows.length;
+}
+
+/**
+ * For each `{ port, since }`: how many live posts by others are newer than `since` (capped to the
+ * hours the chat shows), and how many of those answer one of `userId`'s posts. One query for all
+ * of a rider's bridges, on the (port, time) index. Bridges with nothing new are left out.
+ */
+export async function unreadCheckIns(
+  watch: { port: string; since: number }[],
+  userId: string | null,
+  actor: string | null,
+): Promise<Record<string, Unread>> {
+  if (watch.length === 0) return {};
+  await ensureTable();
+  const sql = database();
+  const me = userId ?? "";
+  const reporter = actor ?? "";
+  const rows = (await sql`
+    select c.port_number, count(*)::int as messages,
+           (count(*) filter (where q.user_id = ${me}))::int as replies
+    from unnest(${watch.map((w) => w.port)}::text[], ${watch.map((w) => String(w.since))}::bigint[]) as w(port, since)
+    join check_in c
+      on c.port_number = w.port
+     and c.created_at > greatest(now() - make_interval(hours => ${CHECK_IN_VISIBLE_HOURS}), to_timestamp(w.since / 1000.0))
+    left join check_in q on q.id = c.reply_to
+    where c.hidden_at is null
+      and c.user_id <> ${me}
+      and not exists (
+        select 1 from check_in_report x where x.check_in_id = c.id and x.actor = ${reporter}
+      )
+    group by c.port_number
+  `) as { port_number: string; messages: number; replies: number }[];
+  return Object.fromEntries(rows.map((r) => [r.port_number, { messages: r.messages, replies: r.replies }]));
 }

@@ -339,6 +339,12 @@ export type Copy = {
   checkIn: string;
   checkInHint: string;
   checkInOpen: (bridge: string) => string;
+  /** The chat button's second line when there is something new. */
+  /** Title of the profile menu row that jumps to the chat with something new. */
+  chatUnreadMenu: string;
+  chatUnreadHint: (messages: number, replies: number) => string;
+  /** Screen-reader text for the unread badge on a card or the chat button. */
+  chatUnreadLabel: (messages: number, replies: number) => string;
   checkInClose: string;
   checkInSheetTitle: string;
   checkInAt: (bridge: string) => string;
@@ -977,6 +983,15 @@ export const COPY: Record<Locale, Copy> = {
     checkIn: "Bridge chat",
     checkInHint: "See what riders at the bridge are saying",
     checkInOpen: (bridge) => `Open the chat at ${bridge}`,
+    chatUnreadMenu: "New in the chat",
+    chatUnreadHint: (messages, replies) =>
+      replies > 0
+        ? `${messages} new · ${replies} ${replies === 1 ? "reply" : "replies"} to you`
+        : `${messages} new ${messages === 1 ? "message" : "messages"}`,
+    chatUnreadLabel: (messages, replies) =>
+      `${messages} new chat ${messages === 1 ? "message" : "messages"}${
+        replies > 0 ? `, ${replies} ${replies === 1 ? "reply" : "replies"} to you` : ""
+      }`,
     checkInClose: "Close chat",
     checkInSheetTitle: "Bridge chat",
     checkInAt: (bridge) => `At ${bridge}`,
@@ -1628,6 +1643,15 @@ export const COPY: Record<Locale, Copy> = {
     checkIn: "Chat del puente",
     checkInHint: "Mira lo que dicen quienes están en el puente",
     checkInOpen: (bridge) => `Abrir el chat en ${bridge}`,
+    chatUnreadMenu: "Nuevo en el chat",
+    chatUnreadHint: (messages, replies) =>
+      replies > 0
+        ? `${messages} ${messages === 1 ? "nuevo" : "nuevos"} · ${replies} ${replies === 1 ? "respuesta" : "respuestas"} para ti`
+        : `${messages} ${messages === 1 ? "mensaje nuevo" : "mensajes nuevos"}`,
+    chatUnreadLabel: (messages, replies) =>
+      `${messages} ${messages === 1 ? "mensaje nuevo" : "mensajes nuevos"} en el chat${
+        replies > 0 ? `, ${replies} ${replies === 1 ? "respuesta" : "respuestas"} para ti` : ""
+      }`,
     checkInClose: "Cerrar chat",
     checkInSheetTitle: "Chat del puente",
     checkInAt: (bridge) => `En ${bridge}`,

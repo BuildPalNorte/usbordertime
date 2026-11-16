@@ -91,6 +91,9 @@ export type ReplyQuote = {
 };
 
 /** What a crossing shows for one check-in. No location is ever part of it. */
+/** What is new at one bridge since the rider last looked: posts by others, and how many answer them. */
+export type Unread = { messages: number; replies: number };
+
 export type CheckIn = {
   id: string;
   /** First name only. */

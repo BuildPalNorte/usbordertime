@@ -18,6 +18,7 @@ import {
   EXPLORE_PATH,
   SCHEDULES_PATH,
 } from "@/lib/routes";
+import { crossingPath } from "@/lib/routes";
 import { QuestionMarkCircleIcon } from "@/components/wallet/question-mark-circle-icon";
 import { BanknotesIcon } from "@heroicons-animated/react/banknotes";
 import { ClockIcon } from "@heroicons-animated/react/clock";
@@ -37,6 +38,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { ChatUnreadPill } from "./chat-unread-pill";
 import { HapticPad } from "./haptic-pad";
 import { useInstall } from "./install-prompt";
 import { LanguageSwitch } from "./language-switch";
@@ -48,6 +50,7 @@ import { DevAnnouncementPreview } from "./dev-announcement-preview";
 import { DevLocationReplay } from "./dev-location-replay";
 import { DevStreakPicker } from "./dev-streak-picker";
 import { LEVEL_COLOR, LevelIcon, StreakBadge, useIconLoop } from "./streak-chip";
+import { useChatUnreadTotal } from "./use-chat-unread";
 import { useStreak } from "./use-streak";
 
 export function AccountButton({ className }: { className?: string }) {
@@ -70,6 +73,7 @@ export function AccountButton({ className }: { className?: string }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
   const streak = useStreak();
+  const unread = useChatUnreadTotal();
   const level = streakLevel(streak?.current ?? 0);
   const levelColor = LEVEL_COLOR[level] ?? LEVEL_COLOR[0];
   const levelHandle = useIconLoop(level, open);
@@ -139,10 +143,9 @@ export function AccountButton({ className }: { className?: string }) {
 
   const who = user?.name || user?.email || "";
   const streakLabel = streak && streak.current > 0 ? copy.streakDays(streak.current) : null;
+  const unreadLabel = user && unread ? copy.chatUnreadLabel(unread.messages, unread.replies) : null;
   const label = user
-    ? streakLabel
-      ? `${streakLabel}. ${copy.signedInAs(who)}`
-      : copy.signedInAs(who)
+    ? [unreadLabel, streakLabel, copy.signedInAs(who)].filter(Boolean).join(". ")
     : copy.signInWithGoogle;
   const initial = (user?.name || user?.email || "?")
     .trim()
@@ -186,6 +189,14 @@ export function AccountButton({ className }: { className?: string }) {
         {user ? <UserIcon size={20} aria-hidden /> : <GoogleMark />}
       </motion.button>
       {user && <StreakBadge />}
+      {user && unread && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[11px] leading-none font-semibold text-accent-ink tabular-nums ring-2 ring-background"
+        >
+          {unread.messages > 9 ? "9+" : unread.messages}
+        </span>
+      )}
 
       <AnimatePresence>
         {(open && user) || failed ? (
@@ -235,6 +246,28 @@ export function AccountButton({ className }: { className?: string }) {
                     </p>
                   </div>
                 </div>
+                {unread && (
+                  <Link
+                    href={`${crossingPath(unread.port)}?chat=1`}
+                    role="menuitem"
+                    onClick={() => {
+                      haptic("selection");
+                      setOpen(false);
+                    }}
+                    className="relative mx-2 mb-1 flex items-center gap-3 rounded-xl bg-accent px-3 py-2.5 text-accent-ink"
+                  >
+                    <HapticPad />
+                    <ChatUnreadPill unread={unread} tone="accent" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[14px] leading-tight font-semibold">
+                        {copy.chatUnreadMenu}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[12px] leading-tight opacity-85">
+                        {copy.chatUnreadHint(unread.messages, unread.replies)}
+                      </span>
+                    </span>
+                  </Link>
+                )}
                 {streak && streak.current > 0 && (
                   <div
                     className="mx-2 mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5"

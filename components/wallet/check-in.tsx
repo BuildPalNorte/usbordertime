@@ -65,9 +65,11 @@ import {
 import { createPortal } from "react-dom";
 import { useSignedIn } from "./account-context";
 import { prepareJpeg } from "./check-in-photo";
+import { ChatUnreadPill } from "./chat-unread-pill";
 import { HapticPad } from "./haptic-pad";
 import { SPRING } from "./motion";
 import { SignInButton } from "./sign-in-prompt";
+import { useChatUnread, useMarkChatSeen } from "./use-chat-unread";
 
 // Only a computer without a camera app ever opens this, so it stays out of the chat's first load.
 const CameraCapture = dynamic(() => import("./check-in-camera").then((m) => m.CameraCapture), {
@@ -88,6 +90,7 @@ export function CheckInButton({ port, name }: { port: PortWaitTime; name: string
   const pin = useRef<MapPinIconHandle>(null);
   const [open, setOpen] = useState(false);
   const closed = useChatClosed();
+  const unread = useChatUnread(port.portNumber);
 
   // A reply notification opens the crossing with `?chat=1`. Open that chat once and drop the flag,
   // so a refresh or a shared link does not pop it up again. It exists only in the browser.
@@ -113,6 +116,7 @@ export function CheckInButton({ port, name }: { port: PortWaitTime; name: string
           </span>
           <span className="mt-1 block truncate text-[13px] leading-none">{copy.checkInClosedHint}</span>
         </span>
+        {unread && <ChatUnreadPill unread={unread} tone="muted" />}
       </div>
     );
   }
@@ -144,9 +148,10 @@ export function CheckInButton({ port, name }: { port: PortWaitTime; name: string
             {copy.checkIn}
           </span>
           <span className="mt-1 block truncate text-[13px] leading-none opacity-85">
-            {copy.checkInHint}
+            {unread ? copy.chatUnreadHint(unread.messages, unread.replies) : copy.checkInHint}
           </span>
         </span>
+        {unread && <ChatUnreadPill unread={unread} tone="accent" />}
         <ChevronRightIcon size={18} aria-hidden className="shrink-0 opacity-85" />
       </button>
       <AnimatePresence>
@@ -262,6 +267,14 @@ function CheckInSheet({
     refetchInterval: () => (inflight.current > 0 ? false : 10_000),
   });
   const items = thread.data;
+
+  // Whatever is on screen is seen. Each refresh of an open chat moves the mark forward, so a
+  // message that lands while reading never turns into a badge behind the sheet.
+  const markSeen = useMarkChatSeen(port.portNumber);
+  useEffect(() => {
+    const newest = items?.reduce((latest, item) => (item.pending ? latest : Math.max(latest, Date.parse(item.at))), 0);
+    if (newest) markSeen(newest);
+  }, [items, markSeen]);
 
   useEffect(() => {
     panelRef.current?.focus({ preventScroll: true });

@@ -55,6 +55,7 @@ import type { StackItem } from "./card-stack";
 import { Glow } from "./glow";
 import { RoutesFocusSync } from "./route-row";
 import { TabBar, type Tab } from "./tab-bar";
+import { useChatUnreadSync } from "./use-chat-unread";
 import { Toast, type ToastState } from "./toast";
 // Only a first-time rider needs the tour, so it stays out of the main bundle.
 const Tour = dynamic(() => import("./tour").then((m) => m.Tour), { ssr: false });
@@ -284,6 +285,8 @@ export function WalletApp({
     () => new Set(entries.map((e) => e.portNumber)),
     [entries],
   );
+  // New chat messages and replies at the saved bridges, for the badges on cards and chat buttons.
+  useChatUnreadSync(hydrated ? entries.map((e) => e.portNumber).slice(0, 12) : []);
 
   // The notification's cards in the stack's order, so each one drops straight into its slot
   // when dismissed instead of crossing the other on the way. Bridges outside the wallet go last.
