@@ -236,7 +236,7 @@ function CheckInSheet({
     staleTime: 10_000,
     // A chat that is open stays current, but never while a tap is still on its way to the server:
     // a refresh then would show the old state for a moment and the tap would seem not to land.
-    refetchInterval: () => (inflight.current > 0 ? false : 15_000),
+    refetchInterval: () => (inflight.current > 0 ? false : 10_000),
   });
   const items = thread.data;
 
@@ -294,7 +294,7 @@ function CheckInSheet({
     setPhoto({ blob, url: URL.createObjectURL(blob) });
   };
 
-  /** Runs `job` after every earlier one, and holds the 15-second refresh back until it is done. */
+  /** Runs `job` after every earlier one, and holds the 10-second refresh back until it is done. */
   const enqueue = useCallback(<T,>(job: () => Promise<T>): Promise<T> => {
     inflight.current += 1;
     const run = queue.current.then(job, job);

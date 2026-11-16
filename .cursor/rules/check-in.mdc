@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Check-in chat
 
-`CheckInButton` (`check-in.tsx`) is the accent-filled button directly under the camera in `CardDetail` and in an expanded `BrowsePane` row. It opens a per-bridge chat sheet: the last `CHECK_IN_VISIBLE_HOURS` of posts, oldest first, mine on the right in the accent color, others on the left. The thread refetches every 15 seconds while the sheet is open and sticks to the newest message unless the rider has scrolled up.
+`CheckInButton` (`check-in.tsx`) is the accent-filled button directly under the camera in `CardDetail` and in an expanded `BrowsePane` row. It opens a per-bridge chat sheet: the last `CHECK_IN_VISIBLE_HOURS` of posts, oldest first, mine on the right in the accent color, others on the left. The thread refetches every 10 seconds while the sheet is open and sticks to the newest message unless the rider has scrolled up.
 
 ## Overnight
 
@@ -32,7 +32,7 @@ Sheet events are stopped at the portal root so a press inside it never reaches t
 
 A photo in the thread is a button that opens `PhotoViewer` full screen, inside the same portal at a higher layer. The picture follows a finger dragged up or down 1:1 while the backdrop thins, and closes past 110 px or on a flick; a tap on the backdrop, the close button, or Escape also closes it. Escape closes the viewer first, then the chat. Reduced motion turns the drag off and uses a fade.
 
-Everything the rider does shows on screen before the server answers. A sent post is added to the thread at once, dimmed (`pending`), with the rider's own photo (`localPhoto`) so nothing is fetched back; the position read, upload and check run behind it, and a refusal removes it and returns the words to the box. Reactions and deletes change the thread in the query cache first. Requests go through one ordered queue, so rapid taps reach the server in order and the last one wins, and the 15-second refresh is held off while any are in flight so it cannot paint stale state over a tap. A reaction reads the thread as it is now, not the render the tap came from. `ref` and `localPhoto` are browser-only fields the refresh merges back in, so confirming a post never remounts its row. A failed request invalidates the thread, which rolls the screen back to the server's truth.
+Everything the rider does shows on screen before the server answers. A sent post is added to the thread at once, dimmed (`pending`), with the rider's own photo (`localPhoto`) so nothing is fetched back; the position read, upload and check run behind it, and a refusal removes it and returns the words to the box. Reactions and deletes change the thread in the query cache first. Requests go through one ordered queue, so rapid taps reach the server in order and the last one wins, and the 10-second refresh is held off while any are in flight so it cannot paint stale state over a tap. A reaction reads the thread as it is now, not the render the tap came from. `ref` and `localPhoto` are browser-only fields the refresh merges back in, so confirming a post never remounts its row. A failed request invalidates the thread, which rolls the screen back to the server's truth.
 
 Deleting a post asks first (`ConfirmDelete`, an alert dialog over the chat). Cancel holds focus; the backdrop and Escape cancel, and Escape closes the confirmation before the photo viewer or the chat. Only Delete calls `remove`.
 
