@@ -316,7 +316,7 @@ export async function unreadCheckIns(
     from unnest(${watch.map((w) => w.port)}::text[], ${watch.map((w) => String(w.since))}::bigint[]) as w(port, since)
     join check_in c
       on c.port_number = w.port
-     and c.created_at > greatest(${chatDayStart()}::timestamptz, to_timestamp(w.since / 1000.0))
+     and date_trunc('milliseconds', c.created_at) > greatest(${chatDayStart()}::timestamptz, to_timestamp(w.since / 1000.0))
     left join check_in q on q.id = c.reply_to
     where c.hidden_at is null
       and c.user_id <> ${me}
