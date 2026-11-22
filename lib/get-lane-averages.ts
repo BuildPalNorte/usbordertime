@@ -20,6 +20,25 @@ export async function getLaneAverages(portNumber: string): Promise<LaneAverages 
   if (!bwtId) return null;
 
   const date = await portDate(portNumber);
+  const [today, past] = await Promise.all([
+    fetchDay(bwtId, date),
+    Promise.allSettled(TYPICAL_WEEKS.map((weeks) => fetchDay(bwtId, shiftDays(date, -7 * weeks)))),
+  ]);
+
+  const series = today ? seriesFromDay(today) : emptySeries();
+  const weeks = past.flatMap((result) =>
+    result.status === "fulfilled" && isRecord(result.value) ? [seriesFromDay(result.value)] : [],
+  );
+  return { portNumber, date, ...series, typical: typicalFrom(weeks) };
+}
+
+/** Same weekday, this many weeks back. */
+const TYPICAL_WEEKS = [1, 2, 3, 4];
+/** A typical hour needs this many past weeks that published it. */
+const MIN_WEEKS = 2;
+
+/** One day's graph row. Null when CBP has no row for that date. A failed request throws. */
+async function fetchDay(bwtId: string, date: string): Promise<Record<string, unknown> | null> {
   const response = await fetch(`${GRAPH_URL}/${bwtId}/${date}`, {
     headers: {
       Accept: "application/json",
@@ -34,8 +53,31 @@ export async function getLaneAverages(portNumber: string): Promise<LaneAverages 
 
   const body: unknown = await response.json();
   const day = Array.isArray(body) ? body[0] : null;
-  const series = isRecord(day) ? seriesFromDay(day) : emptySeries();
-  return { portNumber, date, ...series };
+  return isRecord(day) ? day : null;
+}
+
+function shiftDays(iso: string, days: number): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  const moved = new Date(Date.UTC(year, month - 1, day + days));
+  return moved.toISOString().slice(0, 10);
+}
+
+/** Median of the hours the past weeks published. An hour with fewer than two weeks stays blank. */
+function typicalFrom(weeks: Pick<LaneAverages, "hours" | "high">[]): LaneAverages["hours"] {
+  const typical = emptySeries().hours;
+  for (const mode of MODE_IDS) {
+    for (let hour = 0; hour < 24; hour += 1) {
+      const values = weeks
+        .map((week) => week.hours[mode][hour])
+        .filter((value): value is number => value != null)
+        .sort((a, b) => a - b);
+      if (values.length < MIN_WEEKS) continue;
+      const mid = Math.floor(values.length / 2);
+      typical[mode][hour] =
+        values.length % 2 === 1 ? values[mid] : Math.round((values[mid - 1] + values[mid]) / 2);
+    }
+  }
+  return typical;
 }
 
 async function crossingIds(): Promise<Record<string, string>> {

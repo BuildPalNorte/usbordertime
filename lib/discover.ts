@@ -37,7 +37,7 @@ export const DISCOVER: Record<Locale, DiscoverCopy> = {
         id: "how-estimate",
         question: "How does Border Time estimate a wait?",
         answer:
-          "The number is one stretch: from the back of that lane’s line to the primary inspection booth, the moment you reach the officer. When the queue is long, the back of the line can be in the other country. The drive to the line, the time with the officer, and a second inspection are left out. The average under the live number is the usual length of that same stretch for this hour. Border Time does not time the line.",
+          "The number is one stretch: from the back of that lane’s line to the primary inspection booth, the moment you reach the officer. When the queue is long, the back of the line can be in the other country. The drive to the line, the time with the officer, and a second inspection are left out. CBP posts that stretch for right now. The large number on a card is the wait Border Time expects half an hour from now: today’s CBP reading, moved by how that lane usually changes over the next half hour on the same weekday in recent weeks. The small number under it is the CBP reading right now, and the arrow shows where the wait is expected to go over the next hour. It is an estimate, not a promise, and Border Time does not time the line.",
       },
       {
         id: "official-source",
@@ -108,7 +108,7 @@ export const DISCOVER: Record<Locale, DiscoverCopy> = {
         id: "how-estimate",
         question: "¿Cómo estima Border Time una espera?",
         answer:
-          "El número es un solo tramo: del final de la fila de ese carril a la caseta de inspección primaria, el momento en que llegas con el oficial. Si la cola es larga, el final de la fila puede estar en el otro país. El trayecto hasta la fila, el tiempo con el oficial y una segunda revisión quedan fuera. El promedio debajo del número en vivo es el largo usual de ese mismo tramo para esta hora. Border Time no mide la fila.",
+          "El número es un solo tramo: del final de la fila de ese carril a la caseta de inspección primaria, el momento en que llegas con el oficial. Si la cola es larga, el final de la fila puede estar en el otro país. El trayecto hasta la fila, el tiempo con el oficial y una segunda revisión quedan fuera. CBP publica ese tramo para este momento. El número grande de una tarjeta es la espera que Border Time calcula para dentro de media hora: la lectura de hoy de CBP, movida según cómo suele cambiar ese carril en la próxima media hora el mismo día de la semana en las últimas semanas. El número pequeño debajo es la lectura de CBP de ahora, y la flecha muestra hacia dónde se espera que vaya la espera en la próxima hora. Es un cálculo, no una promesa, y Border Time no mide la fila.",
       },
       {
         id: "official-source",

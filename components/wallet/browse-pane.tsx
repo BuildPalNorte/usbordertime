@@ -31,7 +31,8 @@ import { CheckInButton } from "./check-in";
 import { CrossingCamera } from "./lazy-camera";
 import { CrossingFeeds } from "./lazy-camera";
 import { HapticPad } from "./haptic-pad";
-import { shownAverage, useLaneAverages } from "./use-lane-averages";
+import { shownAverage, shownOutlook, useLaneAverages } from "./use-lane-averages";
+import { OutlookCaption, TrendMark } from "./wait-outlook";
 import { UsualDay } from "./usual-day";
 import { haptic } from "@/lib/haptics";
 import { PaneTitle, usePublishPaneChrome } from "./pane-header";
@@ -601,6 +602,13 @@ function CrossingRow({
                   port.time,
                   lane.available,
                 );
+                const outlook = shownOutlook(
+                  averages.data,
+                  id,
+                  port.time,
+                  lane.available,
+                  lane.minutes,
+                );
                 return (
                   <div
                     key={id}
@@ -608,19 +616,23 @@ function CrossingRow({
                   >
                     <span className="flex items-center justify-between gap-2 text-[12px] font-medium text-muted">
                       {modeName(id, port, copy)}
-                      {lane.minutes !== null && (
-                        <span
-                          className={cn(
-                            "size-1.5 rounded-full",
-                            TONE_DOT[lane.tone],
-                          )}
-                        />
+                      {outlook ? (
+                        <TrendMark trend={outlook.trend} />
+                      ) : (
+                        lane.minutes !== null && (
+                          <span
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              TONE_DOT[lane.tone],
+                            )}
+                          />
+                        )
                       )}
                     </span>
                     <span className="mt-1 block text-[18px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
                       {lane.minutes !== null ? (
                         <WaitDuration
-                          minutes={lane.minutes}
+                          minutes={outlook ? outlook.in30 : lane.minutes}
                           unitClassName="text-[12px] font-medium tracking-normal text-muted"
                         />
                       ) : (
@@ -629,10 +641,17 @@ function CrossingRow({
                         </span>
                       )}
                     </span>
-                    <AverageWait
-                      wait={usual}
-                      className="mt-1 block text-[11px] leading-tight font-medium text-muted tabular-nums"
-                    />
+                    {outlook && lane.minutes !== null ? (
+                      <OutlookCaption
+                        live={lane.minutes}
+                        className="mt-1 block text-[11px] leading-tight font-medium text-muted tabular-nums"
+                      />
+                    ) : (
+                      <AverageWait
+                        wait={usual}
+                        className="mt-1 block text-[11px] leading-tight font-medium text-muted tabular-nums"
+                      />
+                    )}
                     <span className="mt-1 block truncate text-[11px] leading-none text-muted">
                       {lanesLabel(lane, copy)}
                     </span>

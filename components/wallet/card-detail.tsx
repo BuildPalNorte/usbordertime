@@ -12,18 +12,19 @@ import {
   waitLabel,
 } from "@/lib/i18n";
 import { crossingStream, MODE_IDS, portName, readLane, TONE_DOT, type Mode } from "@/lib/ports";
-import { hourFromClock } from "@/lib/lane-averages";
+import { hourFromClock, trendOf } from "@/lib/lane-averages";
 import { CheckInButton } from "./check-in";
 import { AverageWait } from "./average-wait";
 import { UsualDay } from "./usual-day";
 import { useCameraStreams } from "./camera-streams";
 import { CrossingCamera } from "./lazy-camera";
 import { CrossingFeeds } from "./lazy-camera";
-import { shownAverage, useLaneAverages } from "./use-lane-averages";
+import { shownAverage, shownOutlook, useLaneAverages } from "./use-lane-averages";
+import { OutlookCaption, TrendMark } from "./wait-outlook";
 import { BookmarkIcon, type BookmarkIconHandle } from "@heroicons-animated/react/bookmark";
 import { TrashIcon } from "@heroicons-animated/react/trash";
 import { motion, useReducedMotion } from "motion/react";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { HapticPad } from "./haptic-pad";
 import { WaitDuration } from "./wait-duration";
 import { haptic } from "@/lib/haptics";
@@ -52,6 +53,8 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
   const stream = crossingStream(port, streams);
   const selected = readLane(port, mode);
   const averages = useLaneAverages(port.portNumber);
+  const selectedUsual = shownAverage(averages.data, mode, port.time, selected.available);
+  const selectedOutlook = shownOutlook(averages.data, mode, port.time, selected.available, selected.minutes);
   // Only offer lane types this crossing actually publishes. The saved lane always stays selectable.
   const lanes = MODE_IDS.filter((id) => id === mode || readLane(port, id).available);
 
@@ -79,6 +82,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
         {lanes.map((id, index) => {
           const reading = readLane(port, id);
           const usual = shownAverage(averages.data, id, port.time, reading.available);
+          const outlook = shownOutlook(averages.data, id, port.time, reading.available, reading.minutes);
           const active = id === mode;
           return (
             <motion.button
@@ -110,24 +114,35 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
               )}
               <span className="flex items-center justify-between gap-2 text-[13px] font-medium text-muted">
                 {modeName(id, port, copy)}
-                {reading.minutes !== null && (
-                  <span className={cn("size-1.5 rounded-full", TONE_DOT[reading.tone])} />
+                {outlook ? (
+                  <TrendMark trend={outlook.trend} />
+                ) : (
+                  reading.minutes !== null && (
+                    <span className={cn("size-1.5 rounded-full", TONE_DOT[reading.tone])} />
+                  )
                 )}
               </span>
               <span className="mt-1.5 block text-[22px] leading-none font-semibold tracking-[-0.03em] tabular-nums">
                 {reading.minutes !== null ? (
                   <WaitDuration
-                    minutes={reading.minutes}
+                    minutes={outlook ? outlook.in30 : reading.minutes}
                     unitClassName="text-[13px] font-medium tracking-normal text-muted"
                   />
                 ) : (
                   <span className="text-[15px] tracking-[-0.01em]">{waitLabel(reading, copy)}</span>
                 )}
               </span>
-              <AverageWait
-                wait={usual}
-                className="mt-1.5 block text-[12px] leading-tight font-medium text-muted tabular-nums"
-              />
+              {outlook && reading.minutes !== null ? (
+                <OutlookCaption
+                  live={reading.minutes}
+                  className="mt-1.5 block text-[12px] leading-tight font-medium text-muted tabular-nums"
+                />
+              ) : (
+                <AverageWait
+                  wait={usual}
+                  className="mt-1.5 block text-[12px] leading-tight font-medium text-muted tabular-nums"
+                />
+              )}
               <span className="mt-1.5 block truncate text-[12px] leading-none text-muted">
                 {reading.available ? lanesLabel(reading, copy) : copy.notPublished}
               </span>
@@ -157,6 +172,37 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
       )}
 
       <dl className="rounded-2xl bg-surface px-4 py-1 text-[14px]">
+        {selected.available && (
+          <Row label={copy.outlookRightNow} value={waitLabel(selected, copy)} />
+        )}
+        {selectedOutlook && (
+          <Row
+            label={copy.outlookRowIn30}
+            value={
+              <span className="inline-flex items-center gap-2">
+                <TrendMark trend={trendOf(selectedOutlook.d30)} />
+                {copy.minutes(selectedOutlook.in30)}
+              </span>
+            }
+          />
+        )}
+        {selectedOutlook && selectedOutlook.in60 !== null && selectedOutlook.in60 !== selectedOutlook.in30 && (
+          <Row
+            label={copy.outlookRowIn60}
+            value={
+              <span className="inline-flex items-center gap-2">
+                <TrendMark trend={trendOf(selectedOutlook.d60 ?? 0)} />
+                {copy.minutes(selectedOutlook.in60)}
+              </span>
+            }
+          />
+        )}
+        {selectedUsual && (
+          <Row
+            label={copy.outlookUsualRow}
+            value={<AverageWait wait={selectedUsual} />}
+          />
+        )}
         <Row label={copy.status} value={presentPortStatus(port.portStatus, copy)} />
         <Row label={copy.hours} value={presentHours(port.hours, locale, copy)} />
         <Row
@@ -205,7 +251,7 @@ export function CardDetail({ port, mode, cityPinned, onMode, onPinCity, onRemove
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3">
       <dt className="text-muted">{label}</dt>

@@ -14,8 +14,9 @@ import { ChatUnreadPill } from "./chat-unread-pill";
 import { HapticPad } from "./haptic-pad";
 import { CARD_H } from "./motion";
 import { useChatUnread } from "./use-chat-unread";
-import { shownAverage, useLaneAverages } from "./use-lane-averages";
+import { shownAverage, shownOutlook, useLaneAverages } from "./use-lane-averages";
 import { WaitDuration } from "./wait-duration";
+import { TrendMark } from "./wait-outlook";
 
 /**
  * The physical card. The top ~76px is the "peek" that stays visible when cards stack,
@@ -40,6 +41,7 @@ export function CardFace({
   const reading = readLane(port, mode);
   const averages = useLaneAverages(port.portNumber);
   const usual = shownAverage(averages.data, mode, port.time, reading.available);
+  const outlook = shownOutlook(averages.data, mode, port.time, reading.available, reading.minutes);
   const light = palette.ink === "light";
   const unread = useChatUnread(port.portNumber);
 
@@ -115,15 +117,19 @@ export function CardFace({
           {reading.minutes !== null ? (
             <>
               <p className="flex items-center justify-end gap-2">
-                <span
-                  role="img"
-                  aria-label={copy.tone[reading.tone]}
-                  className={cn("size-2 shrink-0 rounded-full", TONE_DOT[reading.tone])}
-                />
+                {outlook ? (
+                  <TrendMark trend={outlook.trend} chip />
+                ) : (
+                  <span
+                    role="img"
+                    aria-label={copy.tone[reading.tone]}
+                    className={cn("size-2 shrink-0 rounded-full", TONE_DOT[reading.tone])}
+                  />
+                )}
                 <span className="flex items-baseline">
                   <WaitDuration
                     key={mode}
-                    minutes={reading.minutes}
+                    minutes={outlook ? outlook.in30 : reading.minutes}
                     checking={checking}
                     animate
                     numberClassName="text-[36px] leading-none font-semibold tracking-[-0.045em]"
@@ -131,10 +137,16 @@ export function CardFace({
                   />
                 </span>
               </p>
-              <AverageWait
-                wait={usual}
-                className="mt-1.5 block max-w-44 text-right text-[12px] leading-tight font-medium tabular-nums opacity-[0.72]"
-              />
+              {outlook ? (
+                <span className="mt-1.5 block max-w-44 truncate text-right text-[12px] leading-tight font-medium tabular-nums opacity-[0.72]">
+                  {copy.outlookNow(reading.minutes)}
+                </span>
+              ) : (
+                <AverageWait
+                  wait={usual}
+                  className="mt-1.5 block max-w-44 text-right text-[12px] leading-tight font-medium tabular-nums opacity-[0.72]"
+                />
+              )}
             </>
           ) : (
             <>

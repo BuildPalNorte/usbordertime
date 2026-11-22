@@ -8,6 +8,11 @@ export type LaneAverages = {
   hours: Record<Mode, (number | null)[]>;
   /** Highest wait CBP lists for that hour. */
   high: Record<Mode, (number | null)[]>;
+  /**
+   * Median usual wait for each hour over the same weekday in recent weeks. An hour that fewer than
+   * two of those weeks published is blank. Absent on an older cached response.
+   */
+  typical?: Record<Mode, (number | null)[]>;
 };
 
 /** A stretch of hours that stays near the quietest usual wait. `end` is included. */
@@ -121,4 +126,68 @@ export function hourFromClock(time: string): number | null {
   const hour = Number(match[1]);
   if (!Number.isInteger(hour) || hour < 0 || hour > 23) return null;
   return hour;
+}
+
+/** Minutes after midnight from a CBP clock such as `19:13:19`. Null when the clock is missing. */
+export function minutesFromClock(time: string): number | null {
+  const match = /^(\d{1,2}):(\d{2})/.exec(time.trim());
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return hour * 60 + minute;
+}
+
+/** A change smaller than this many minutes is not worth an arrow. */
+export const TREND_FLOOR = 5;
+
+export type Trend = "up" | "down" | "steady";
+
+/** Up or down once a change reaches the floor, steady otherwise. */
+export function trendOf(change: number): Trend {
+  if (change >= TREND_FLOOR) return "up";
+  if (change <= -TREND_FLOOR) return "down";
+  return "steady";
+}
+
+/** What the wait is expected to do over the next hour. */
+export type Outlook = {
+  /** Expected posted wait 30 minutes from now. */
+  in30: number;
+  /** Expected posted wait 60 minutes from now. Null when that hour has no typical wait. */
+  in60: number | null;
+  /** The arrow for the card: `d30` decides, and `d60` takes over only while `d30` is steady. */
+  trend: Trend;
+  /** In 30 minutes minus the live wait. */
+  d30: number;
+  /** In 60 minutes minus the live wait. Null when there is no 60 minute estimate. */
+  d60: number | null;
+};
+
+/**
+ * Where the wait is expected to go. The live wait carries today's offset, and the usual wait
+ * for the hour of arrival says how the day normally moves from here:
+ * `live + (usual then - usual now)`, never below 0.
+ * Null without a live wait, or when the typical day lacks this hour or the hour 30 minutes out.
+ */
+export function outlookFor(
+  typical: readonly (number | null)[] | undefined,
+  live: number | null,
+  clock: string,
+): Outlook | null {
+  const now = minutesFromClock(clock);
+  if (!typical || live === null || now === null) return null;
+  const atNow = typical[Math.floor(now / 60) % 24];
+  const at30 = typical[Math.floor((now + 30) / 60) % 24];
+  const at60 = typical[Math.floor((now + 60) / 60) % 24];
+  if (atNow == null || at30 == null) return null;
+
+  const in30 = Math.max(0, Math.round(live + at30 - atNow));
+  const in60 = at60 == null ? null : Math.max(0, Math.round(live + at60 - atNow));
+  const d30 = in30 - live;
+  const d60 = in60 === null ? null : in60 - live;
+
+  let trend = trendOf(d30);
+  if (trend === "steady" && d60 !== null) trend = trendOf(d60);
+  return { in30, in60, trend, d30, d60 };
 }

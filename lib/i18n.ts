@@ -212,6 +212,16 @@ export type Copy = {
   averageRangeShort: (low: number, high: number) => string;
   averageLabel: (count: number) => string;
   averageRangeLabel: (low: number, high: number) => string;
+  /** The live wait, under the expected one. */
+  outlookNow: (count: number) => string;
+  /** One line for a tile: the horizon and the live wait. */
+  outlookCaption: (count: number) => string;
+  /** What the arrow says to a screen reader. */
+  trendLabel: Record<"up" | "down" | "steady", string>;
+  outlookRightNow: string;
+  outlookRowIn30: string;
+  outlookRowIn60: string;
+  outlookUsualRow: string;
   usualFlat: (count: number) => string;
   usualQuietAt: (time: string, count: number) => string;
   usualQuietFrom: (start: string, end: string, count: number) => string;
@@ -822,6 +832,17 @@ export const COPY: Record<Locale, Copy> = {
       `Average wait at this hour, ${durationSpoken(count, "hour", "hours", "minute", "minutes")}`,
     averageRangeLabel: (low, high) =>
       `Average wait at this hour, ${durationSpoken(low, "hour", "hours", "minute", "minutes")} to ${durationSpoken(high, "hour", "hours", "minute", "minutes")}`,
+    outlookNow: (count) => `now ${formatDuration(count, "hr", "min")}`,
+    outlookCaption: (count) => `in 30 min · now ${formatDuration(count, "hr", "min")}`,
+    trendLabel: {
+      up: "Expected to rise in the next hour",
+      down: "Expected to fall in the next hour",
+      steady: "Expected to stay about the same in the next hour",
+    },
+    outlookRightNow: "Right now",
+    outlookRowIn30: "In 30 min",
+    outlookRowIn60: "In 1 hr",
+    outlookUsualRow: "Usual this hour",
     usualFlat: (count) =>
       `About the same all day, ${formatDuration(count, "hr", "min")}`,
     usualQuietAt: (time, count) =>
@@ -1477,6 +1498,17 @@ export const COPY: Record<Locale, Copy> = {
       `Espera promedio a esta hora, ${durationSpoken(count, "hora", "horas", "minuto", "minutos")}`,
     averageRangeLabel: (low, high) =>
       `Espera promedio a esta hora, de ${durationSpoken(low, "hora", "horas", "minuto", "minutos")} a ${durationSpoken(high, "hora", "horas", "minuto", "minutos")}`,
+    outlookNow: (count) => `ahora ${formatDuration(count, "h", "min")}`,
+    outlookCaption: (count) => `en 30 min · ahora ${formatDuration(count, "h", "min")}`,
+    trendLabel: {
+      up: "Se espera que suba en la próxima hora",
+      down: "Se espera que baje en la próxima hora",
+      steady: "Se espera que siga más o menos igual en la próxima hora",
+    },
+    outlookRightNow: "Ahora mismo",
+    outlookRowIn30: "En 30 min",
+    outlookRowIn60: "En 1 h",
+    outlookUsualRow: "Usual a esta hora",
     usualFlat: (count) =>
       `Casi igual todo el día, ${formatDuration(count, "h", "min")}`,
     usualQuietAt: (time, count) =>

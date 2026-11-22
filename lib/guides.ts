@@ -116,7 +116,7 @@ export const GUIDES: readonly Guide[] = [
       label: "How the estimate works",
       title: "How Border Time estimates a border wait",
       description:
-        "CBP’s wait runs from the back of the line to the primary inspection booth. The average under the live number is the usual length of that same stretch for this hour.",
+        "CBP’s wait runs from the back of the line to the primary inspection booth. The large number is the wait expected 30 minutes from now, and the usual length of that same stretch for this hour is on the open crossing.",
       lead: "A crossing shows two numbers, and both measure the same stretch of the trip. The clock starts at the back of the line and stops when you reach the officer. U.S. Customs and Border Protection (CBP) posts that stretch. Border Time does not time it.",
       sections: [
         {
@@ -124,26 +124,33 @@ export const GUIDES: readonly Guide[] = [
           paragraphs: [
             "CBP’s number is one stretch. It starts when you reach the back of the line for the lane you are in, and it ends when you reach that lane’s primary inspection booth, the moment you get to the officer. On a long line the back of the queue can sit in Mexico or Canada, before the port itself. On a short line it can already be on the U.S. side. The start point moves with the line.",
             "The clock stops at the booth. It leaves out the time the officer spends with you, a second inspection, and the road after you are waved through. It also leaves out everything before the line: the drive to the crossing and the distance up to wherever the queue happens to end.",
-            "Cars, Ready Lane, SENTRI, NEXUS, people on foot, and trucks each have their own line. The number is the back of the line you will join. The average under the live number is the usual length of that same stretch for this hour, not a measurement of a longer trip.",
+            "Cars, Ready Lane, SENTRI, NEXUS, people on foot, and trucks each have their own line. The number is the back of the line you will join. The usual wait for this hour is the usual length of that same stretch, not a measurement of a longer trip.",
           ],
         },
         {
           heading: "The live number",
           paragraphs: [
-            "The large number is that stretch, as CBP posts it for the lane right now. Border Time refreshes that reading through the day. A blank is still a missing reading, not a short line.",
+            "CBP posts that stretch for the lane right now, and Border Time refreshes that reading through the day. On a card it is the small number under the large one (“now 22 min”), and it is “Right now” on the open crossing. A blank is still a missing reading, not a short line.",
           ],
         },
         {
-          heading: "The average under it",
+          heading: "The large number and the arrow",
           paragraphs: [
-            "Under the live number the card says “avg” and a time. That is CBP’s average length of the same stretch, from the back of the line to the booth, for this hour on this lane. It is the usual wait, not a second measurement of the line you are in.",
+            "The large number is the wait Border Time expects 30 minutes from now, so it is labeled “in 30 min”. It starts from CBP’s reading now and adds how that lane usually changes between this hour and the hour you would be arriving, taken from the same weekday over the last few weeks. A crossing with too little history for that shows the live reading instead, with no label.",
+            "The arrow looks one hour ahead the same way. Red and up means the wait is expected to rise by at least 5 minutes, green and down means it is expected to fall by at least 5, and a dash means about the same. It is an estimate from usual days, not a promise: a bridge can fill or clear faster than a typical day does. The drive to the line is not included.",
+          ],
+        },
+        {
+          heading: "The usual wait",
+          paragraphs: [
+            "On the open crossing, “Usual this hour” says “avg” and a time. That is CBP’s average length of the same stretch, from the back of the line to the booth, for this hour on this lane. It is the usual wait, not a second measurement of the line you are in.",
             "Open the crossing and the same average is on every lane CBP publishes. The day chart draws those hourly averages for the lane on screen. It does not blend lanes together, and it does not fold today’s live reading into the bars.",
           ],
         },
         {
           heading: "The hour at the crossing",
           paragraphs: [
-            "The average on the card is for the hour on the crossing’s own clock, not the hour on your phone. CBP leaves later hours blank until they have an average, so a missing hour uses the latest earlier hour that already has one. A published 0 stays 0. It is a real average. A lane with no average at all leaves that line off the card.",
+            "The usual wait is for the hour on the crossing’s own clock, not the hour on your phone. CBP leaves later hours blank until they have an average, so a missing hour uses the latest earlier hour that already has one. A published 0 stays 0. It is a real average. A lane with no average at all leaves that line off.",
           ],
         },
         {
@@ -172,7 +179,7 @@ export const GUIDES: readonly Guide[] = [
       label: "Cómo funciona la estimación",
       title: "Cómo estima Border Time una espera en la frontera",
       description:
-        "La espera de CBP va del final de la fila a la caseta de inspección primaria. El promedio debajo del número en vivo es el largo usual de ese mismo tramo para esta hora.",
+        "La espera de CBP va del final de la fila a la caseta de inspección primaria. El número grande es la espera calculada para dentro de 30 minutos, y el largo usual de ese mismo tramo para esta hora está en el cruce abierto.",
       lead: "Un cruce muestra dos números, y los dos miden el mismo tramo del viaje. El reloj empieza al final de la fila y se detiene cuando llegas con el oficial. La Oficina de Aduanas y Protección Fronteriza de Estados Unidos (CBP) publica ese tramo. Border Time no lo mide.",
       sections: [
         {
@@ -180,26 +187,33 @@ export const GUIDES: readonly Guide[] = [
           paragraphs: [
             "El número de CBP es un solo tramo. Empieza cuando llegas al final de la fila del carril en el que vas, y termina cuando llegas a la caseta de inspección primaria de ese carril, en el momento en que estás con el oficial. Si la fila es larga, el final puede estar en México o en Canadá, antes del puerto. Si es corta, puede estar ya del lado de Estados Unidos. El punto de inicio se mueve con la fila.",
             "El reloj se detiene en la caseta. Deja fuera el tiempo que el oficial pasa contigo, una segunda revisión y el camino después de que te dejan pasar. También deja fuera todo lo que va antes de la fila: el trayecto al cruce y la distancia hasta donde la cola termine ese día.",
-            "Los autos, el carril Ready, SENTRI, NEXUS, quien va a pie y los camiones tienen cada uno su fila. El número es el final de la fila a la que te vas a formar. El promedio debajo del número en vivo es el largo usual de ese mismo tramo para esta hora, no la medición de un viaje más largo.",
+            "Los autos, el carril Ready, SENTRI, NEXUS, quien va a pie y los camiones tienen cada uno su fila. El número es el final de la fila a la que te vas a formar. La espera usual de esta hora es el largo usual de ese mismo tramo, no la medición de un viaje más largo.",
           ],
         },
         {
           heading: "El número en vivo",
           paragraphs: [
-            "El número grande es ese tramo, tal como CBP lo publica para el carril ahora. Border Time actualiza esa lectura a lo largo del día. Un espacio en blanco sigue siendo una lectura que falta, no una fila corta.",
+            "CBP publica ese tramo para el carril ahora, y Border Time actualiza esa lectura a lo largo del día. En una tarjeta es el número pequeño debajo del grande (“ahora 22 min”), y es “Ahora mismo” en el cruce abierto. Un espacio en blanco sigue siendo una lectura que falta, no una fila corta.",
           ],
         },
         {
-          heading: "El promedio debajo",
+          heading: "El número grande y la flecha",
           paragraphs: [
-            "Debajo del número en vivo la tarjeta dice “promedio” y un tiempo. Es el largo promedio que CBP da a ese mismo tramo, del final de la fila a la caseta, para esta hora en este carril. Es la espera usual, no una segunda medición de la fila en la que estás.",
+            "El número grande es la espera que Border Time calcula para dentro de 30 minutos, por eso dice “en 30 min”. Parte de la lectura de CBP de ahora y suma cómo suele cambiar ese carril entre esta hora y la hora en que llegarías, tomado del mismo día de la semana en las últimas semanas. Un cruce con poco historial muestra la lectura en vivo, sin etiqueta.",
+            "La flecha mira una hora adelante de la misma forma. Roja y hacia arriba significa que se espera que la espera suba al menos 5 minutos, verde y hacia abajo que baje al menos 5, y una raya que siga más o menos igual. Es un cálculo con días usuales, no una promesa: un puente puede llenarse o vaciarse más rápido que un día típico. El trayecto hasta la fila no está incluido.",
+          ],
+        },
+        {
+          heading: "La espera usual",
+          paragraphs: [
+            "En el cruce abierto, “Lo usual a esta hora” dice “promedio” y un tiempo. Es el largo promedio que CBP da a ese mismo tramo, del final de la fila a la caseta, para esta hora en este carril. Es la espera usual, no una segunda medición de la fila en la que estás.",
             "Al abrir el cruce, el mismo promedio aparece en cada carril que CBP publica. La gráfica del día dibuja esos promedios por hora del carril que estás viendo. No mezcla carriles, y no mete la lectura en vivo de hoy en las barras.",
           ],
         },
         {
           heading: "La hora del cruce",
           paragraphs: [
-            "El promedio de la tarjeta es el de la hora en el reloj del cruce, no el de la hora en tu teléfono. CBP deja las horas de más tarde en blanco hasta que tienen un promedio, así que una hora vacía usa la hora anterior más reciente que ya tiene uno. Un 0 publicado se queda en 0. Es un promedio real. Un carril sin ningún promedio deja esa línea fuera de la tarjeta.",
+            "La espera usual es la de la hora en el reloj del cruce, no el de la hora en tu teléfono. CBP deja las horas de más tarde en blanco hasta que tienen un promedio, así que una hora vacía usa la hora anterior más reciente que ya tiene uno. Un 0 publicado se queda en 0. Es un promedio real. Un carril sin ningún promedio deja esa línea fuera.",
           ],
         },
         {
