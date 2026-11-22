@@ -210,7 +210,10 @@ export function Tour({
     });
   }, [onGoHome, savedCount]);
 
-  activeRef.current = active;
+  // Read from the exit callback, which can fire after a replay has already started again.
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
 
   // A real unmount (sign-out mid-run) drops `playing`. Strict mode's fake unmount remounts
   // before the microtask, so a run that is still going is left alone. A normal finish

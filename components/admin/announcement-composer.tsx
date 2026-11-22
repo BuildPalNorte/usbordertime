@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/cn";
 import { haptic } from "@/lib/haptics";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useId, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useId, useState, type Dispatch, type SetStateAction } from "react";
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -51,20 +51,34 @@ export function AnnouncementComposer({
   const [toggleProblem, setToggleProblem] = useState(false);
   const [later, setLater] = useState(false);
   const [when, setWhen] = useState("");
+  const [now, setNow] = useState(() => Date.now());
   const whenId = useId();
+
+  // The minute-ahead check has to move as the clock does. Reading it during render is
+  // impure, so the clock lives in state and only advances from this timer and from the
+  // handlers that change the scheduled time.
+  useEffect(() => {
+    if (!later) return;
+    const id = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(id);
+  }, [later]);
 
   const titleLeft = MAX_ANNOUNCEMENT_TITLE - title.length;
   const bodyLeft = MAX_ANNOUNCEMENT_BODY - body.length;
   const whenIso = later && when ? new Date(when) : null;
   const whenValid =
-    !later || (whenIso !== null && whenIso.getTime() >= Date.now() + 60_000);
+    !later || (whenIso !== null && whenIso.getTime() >= now + 60_000);
   const ready =
     title.trim().length > 0 && body.trim().length > 0 && whenValid && !sending;
 
   const send = async () => {
-    if (!ready) {
+    const timeOk =
+      !later || (whenIso !== null && whenIso.getTime() >= Date.now() + 60_000);
+    if (!timeOk) setNow(Date.now());
+    const filled = title.trim().length > 0 && body.trim().length > 0;
+    if (!filled || !timeOk || sending) {
       haptic("error");
-      setProblem("empty");
+      if (!filled) setProblem("empty");
       return;
     }
     haptic("selection");
@@ -317,6 +331,7 @@ export function AnnouncementComposer({
                 onClick={() => {
                   haptic("selection");
                   setProblem(null);
+                  setNow(Date.now());
                   setLater((value) => !value);
                 }}
                 className="group -my-2 -mr-1 grid size-11 shrink-0 place-items-center"
@@ -344,6 +359,7 @@ export function AnnouncementComposer({
                   value={when}
                   onChange={(event) => {
                     setProblem(null);
+                    setNow(Date.now());
                     setWhen(event.target.value);
                   }}
                   className="mt-2 block h-12 w-full appearance-none rounded-2xl bg-background px-4 text-[16px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-accent"
