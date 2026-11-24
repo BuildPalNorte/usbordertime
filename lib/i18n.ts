@@ -544,6 +544,13 @@ export type TramitesCopy = {
   footerHeadlineMuted: string;
   fineprint: string;
   backToWaits: string;
+  ask: {
+    label: string;
+    placeholder: string;
+    thinking: string;
+    disclaimer: string;
+    suggestions: readonly string[];
+  };
 };
 
 export type DurationParts = {
@@ -1248,9 +1255,9 @@ export const COPY: Record<Locale, Copy> = {
       unknown: "No data",
     },
     tramites: {
-      metaTitle: "US visa and border crossing card for Mexican citizens",
+      metaTitle: "US B1/B2 visa & border crossing card checklist for Mexicans",
       metaDescription:
-        "A plain checklist for a first B1/B2 visa, a border crossing card, a renewal, or a lost card. Official links, and what to bring.",
+        "Free checklist for a first B1/B2 visa, border crossing card (laser visa), renewal, or lost card. Documents to bring, DS-160, and official State Department links. No account needed.",
       title: "Show up to your visa appointment with everything ready.",
       lead: "A free checklist for your US visitor visa or border crossing card. Know what to bring before you book, and go straight to the official sites.",
       navServices: "Errands",
@@ -1380,6 +1387,18 @@ export const COPY: Record<Locale, Copy> = {
       },
       opensNewTab: "Opens in a new tab",
       backToWaits: "Back to bridge waits",
+      ask: {
+        label: "Ask what you need for your visa",
+        placeholder: "Ask what you need for your visa",
+        thinking: "Looking that up…",
+        disclaimer: "AI can be wrong. Confirm on official sites. Not legal advice.",
+        suggestions: [
+          "First B1/B2 — what do I bring?",
+          "I need a border crossing card",
+          "My card is lost",
+          "Where do I fill the DS-160?",
+        ],
+      },
     },
     laneStatus: {
       closed: "Closed",
@@ -2055,9 +2074,9 @@ export const COPY: Record<Locale, Copy> = {
       unknown: "Sin datos",
     },
     tramites: {
-      metaTitle: "Visa de EE. UU. y tarjeta de cruce fronterizo para mexicanos",
+      metaTitle: "Lista B1/B2 y tarjeta de cruce fronterizo para mexicanos",
       metaDescription:
-        "Una lista clara para la primera visa B1/B2, la tarjeta de cruce fronterizo, la renovación o una tarjeta perdida. Enlaces oficiales y qué llevar.",
+        "Lista gratis para la primera visa B1/B2, tarjeta de cruce (visa láser), renovación o tarjeta perdida. Qué llevar, DS-160 y enlaces oficiales del Departamento de Estado. Sin cuenta.",
       title: "Llega a tu cita de visa con todo listo.",
       lead: "Una lista gratis para tu visa de visitante o tu tarjeta de cruce. Sabe qué llevar antes de agendar y ve directo a los sitios oficiales.",
       navServices: "Trámites",
@@ -2187,6 +2206,18 @@ export const COPY: Record<Locale, Copy> = {
       },
       opensNewTab: "Se abre en una pestaña nueva",
       backToWaits: "Volver a las esperas de los puentes",
+      ask: {
+        label: "Pregunta qué necesitas para tu visa",
+        placeholder: "Pregunta qué necesitas para tu visa",
+        thinking: "Buscando…",
+        disclaimer: "La IA puede equivocarse. Confirma en sitios oficiales. No es asesoría legal.",
+        suggestions: [
+          "Primera B1/B2 — ¿qué llevo?",
+          "Necesito tarjeta de cruce",
+          "Perdí mi tarjeta",
+          "¿Dónde lleno el DS-160?",
+        ],
+      },
     },
     laneStatus: {
       closed: "Cerrado",

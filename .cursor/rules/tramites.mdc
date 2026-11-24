@@ -1,0 +1,15 @@
+---
+description: The /tramites page, its checklists, and the hero AI bar
+globs: components/tramites/**,app/tramites/**,app/api/tramites/**,lib/tramites.ts,lib/tramites-ask.server.ts
+alwaysApply: false
+---
+
+# Trámites
+
+`/tramites` is information only. Nothing about the person is stored. No account is required. Checklists cover four errands (`first`, `card`, `renewal`, `lost`) from `lib/tramites.ts`. Official links open in a new tab.
+
+SEO lives in `lib/tramites-seo.ts`: locale metadata (title, description, canonical `/tramites`, Open Graph, Twitter), plus JSON-LD for WebPage, FAQ, HowTo, and the four errands. The page is in `sitemap.ts` and `llms.txt`. Do not put AI chat replies into structured data.
+
+The hero AI bar (`TramitesAskBar`) mirrors the bridges Ask composer: glass bar, mic, send, chat bubbles, and stacked suggestions when empty. Voice stays in the browser. It posts to `POST /api/tramites/ask`. No session. Rate limited by client address through `withinLimit("tramites-ask", …)`. `lib/tramites-ask.server.ts` builds a short system prompt from visa/BCC checklist knowledge and official URLs only. It does not load wait times or Ask tools. The model is the same cheap chat model as Ask. Do not import that server module from client code.
+
+Answers are markdown rendered with `AskMarkdown`. Trámites-specific copy lives under `copy.tramites.ask`; mic/send/clear/errors reuse the Ask strings. Keep hedges: not legal advice, consulate wins, never invent fees or appointment dates.

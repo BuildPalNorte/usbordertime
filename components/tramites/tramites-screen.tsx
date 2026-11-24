@@ -2,6 +2,7 @@
 
 import { BrandLockup } from "@/components/wallet/brand-lockup";
 import { useLocale } from "@/components/locale-provider";
+import { TramitesAskBar } from "@/components/tramites/tramites-ask-bar";
 import { LanguageSwitch } from "@/components/wallet/language-switch";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
 import { cn } from "@/lib/cn";
@@ -197,7 +198,10 @@ export function TramitesScreen() {
                   {t.title}
                 </h1>
                 <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-white/90 text-pretty sm:text-[19px]">{t.lead}</p>
-                <div className="mt-8 flex flex-wrap gap-3">
+                <div className="mt-7">
+                  <TramitesAskBar />
+                </div>
+                <div className="mt-7 flex flex-wrap gap-3">
                   <a
                     href="#checklist"
                     className="inline-flex h-13 items-center gap-2 rounded-full bg-[color:var(--t-ink)] px-6 text-[15px] font-semibold text-white shadow-[0_18px_40px_-16px_rgba(11,27,63,0.8)] transition-transform active:scale-[0.97]"

@@ -26,6 +26,7 @@ Before changing a seam, read the matching rule in `.cursor/rules/`. Each one is 
 | The Ask tab, its chat or voice input, or the AI's knowledge | `ask.mdc` |
 | The Exchange tab or the USD/MXN rate | `exchange.mdc` |
 | The check-in button, its location check, or check-in notes and photos | `check-in.mdc` |
+| The /tramites page, checklists, or the hero AI bar | `tramites.mdc` |
 
 Data moves one way. `getBorderWaitTimes()` normalizes `https://bwt.cbp.gov/api/waittimes`. The home page passes that snapshot into `WalletApp`. The client refetches `GET /api/wait-times` about once a minute. Search and the Mexico/Canada filter run on that snapshot in the browser. They do not call the API again.
 

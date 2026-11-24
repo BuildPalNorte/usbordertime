@@ -1,17 +1,26 @@
 import { TramitesScreen } from "@/components/tramites/tramites-screen";
-import { COPY } from "@/lib/i18n";
+import { resolveLocale } from "@/lib/locale.server";
+import { tramitesJsonLdScript, tramitesMetadata } from "@/lib/tramites-seo";
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 
-export const metadata: Metadata = {
-  title: COPY.en.tramites.metaTitle,
-  description: COPY.en.tramites.metaDescription,
-};
+const localeForRequest = cache(resolveLocale);
 
-export default function TramitesPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  return tramitesMetadata(await localeForRequest());
+}
+
+export default async function TramitesPage() {
+  const locale = await localeForRequest();
   return (
-    <Suspense fallback={null}>
-      <TramitesScreen />
-    </Suspense>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: tramitesJsonLdScript(locale) }}
+      />
+      <Suspense fallback={null}>
+        <TramitesScreen />
+      </Suspense>
+    </>
   );
 }

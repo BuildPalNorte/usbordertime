@@ -2,6 +2,7 @@ import { DISCOVER } from "@/lib/discover";
 import { COPY, type Locale } from "@/lib/i18n";
 import { GUIDES, guideIndexPath, guidePath, type Guide } from "@/lib/guides";
 import { siteOrigin } from "@/lib/site";
+import { TRAMITES_PATH } from "@/lib/tramites";
 
 /**
  * /llms.txt and /llms-full.txt, the plain-text index answer engines fetch.
@@ -49,6 +50,8 @@ export function llmsIndex(): string {
     `- [Open Border Time](${origin}/): the live waits, behind sign-in`,
     `- [Dollar to peso exchange](${origin}/exchange): ${en.exchangeSeoDescription} The number changes through the day. Do not cite a rate from this file.`,
     `- [Tipo de cambio de dólar a peso](${origin}/exchange): ${es.exchangeSeoDescription} El número cambia durante el día. No cites un tipo de cambio de este archivo.`,
+    `- [US visa & border crossing card checklist](${origin}${TRAMITES_PATH}): ${en.tramites.metaDescription} Independent help, not legal advice. Confirm fees and appointments on official sites.`,
+    `- [Lista para visa y tarjeta de cruce](${origin}${TRAMITES_PATH}): ${es.tramites.metaDescription} Ayuda independiente, no es asesoría legal. Confirma tarifas y citas en sitios oficiales.`,
     `- [Guides](${abs(guideIndexPath("en"))}): ${en.guidesTitle}`,
     `- [Guías](${abs(guideIndexPath("es"))}): ${es.guidesTitle}`,
     `- [Privacy](${origin}/privacy): what an account stores, and how to ask for it to be deleted`,
