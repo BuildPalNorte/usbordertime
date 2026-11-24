@@ -489,9 +489,71 @@ export type Copy = {
   scheduleTourSheetBridges: string;
   scheduleTourSheetTime: string;
   scheduleTourSheetDays: string;
+  tramites: TramitesCopy;
   mode: ModeCopy;
   tone: Record<Tone, string>;
   laneStatus: Record<StatusKey, string>;
+};
+
+export type TramitesPathCopy = {
+  label: string;
+  blurb: string;
+  what: string;
+  docs: readonly string[];
+};
+
+export type TramitesLinkCopy = { title: string; body: string };
+
+export type TramitesCopy = {
+  metaTitle: string;
+  metaDescription: string;
+  title: string;
+  lead: string;
+  navHow: string;
+  navChoose: string;
+  navWhere: string;
+  navNotice: string;
+  heroCardLabel: string;
+  heroCardItems: string;
+  heroCardMore: (n: number) => string;
+  ctaChoose: string;
+  ctaOfficial: string;
+  officialTag: string;
+  ctaTitle: string;
+  ctaBody: string;
+  stats: readonly { value: string; label: string }[];
+  processTitle: string;
+  processLead: string;
+  steps: readonly { title: string; body: string }[];
+  footerHeadline: string;
+  footerHeadlineMuted: string;
+  footerLine: string;
+  stopTitle: string;
+  stopBody: string;
+  stopItems: readonly string[];
+  stopClosing: string;
+  chooseTitle: string;
+  chooseHint: string;
+  paths: Record<"first" | "card" | "renewal" | "lost", TramitesPathCopy>;
+  whatTitle: string;
+  docsTitle: string;
+  docsNote: string;
+  whereTitle: string;
+  whereLead: string;
+  ds160: TramitesLinkCopy;
+  appointment: TramitesLinkCopy;
+  embassy: TramitesLinkCopy;
+  opensNewTab: string;
+  feeTitle: string;
+  feeName: string;
+  feeBody: string;
+  feeLink: string;
+  waitTitle: string;
+  waitBody: string;
+  waitLink: string;
+  noticeTitle: string;
+  noticeItems: readonly string[];
+  backToWaits: string;
 };
 
 export type DurationParts = {
@@ -1195,6 +1257,141 @@ export const COPY: Record<Locale, Copy> = {
       closed: "Closed",
       unknown: "No data",
     },
+    tramites: {
+      metaTitle: "US visa and border crossing card for Mexican citizens",
+      metaDescription:
+        "A plain checklist for a first B1/B2 visa, a border crossing card, a renewal, or a lost card. Official links, and what to bring.",
+      title: "Your US visa, made clear.",
+      lead: "A plain checklist for a US visitor visa or a border crossing card for Mexican citizens. What to bring, where to apply, and what to confirm, with every official link in one place.",
+      navHow: "How it works",
+      navChoose: "Your errand",
+      navWhere: "Official links",
+      navNotice: "Good to know",
+      heroCardLabel: "Your checklist",
+      heroCardItems: "items",
+      heroCardMore: (n) => `+${n} more on your checklist`,
+      ctaChoose: "Choose your errand",
+      ctaOfficial: "See official links",
+      officialTag: "Official",
+      ctaTitle: "Ready when you are.",
+      ctaBody: "Pick your errand, gather your documents, and finish on the government's own pages. We just make the path clear.",
+      stats: [
+        { value: "4", label: "errands, each with its own checklist" },
+        { value: "3", label: "official sites, each in its own tab" },
+        { value: "0", label: "details about you collected" },
+      ],
+      processTitle: "Four calm steps",
+      processLead: "No account, no form. You read, you pick, you prepare, and you finish on the government's own pages.",
+      steps: [
+        { title: "Check the stop list", body: "Know in a minute whether this page fits your situation." },
+        { title: "Pick your errand", body: "First visa, border crossing card, renewal, or a lost card." },
+        { title: "Gather your documents", body: "The list people are usually asked for, in plain words." },
+        { title: "Finish on official sites", body: "Fill the DS-160, book, and pay on government pages only." },
+      ],
+      footerHeadline: "The border is confusing enough.",
+      footerHeadlineMuted: "We keep the first step clear, and point you to the official places for the rest.",
+      footerLine: "Independent help for the border, from the people behind Border Time.",
+      stopTitle: "Read this first",
+      stopBody: "Some situations need a person who can look at your whole file. If any of these is true, this page is not the right place to start:",
+      stopItems: [
+        "A past US visa refusal",
+        "A deportation or removal",
+        "A canceled visa",
+        "An entry without inspection",
+        "A stay past an authorized admission",
+      ],
+      stopClosing: "This page does not take those cases and does not name an office. Do not rely on the checklists below for them.",
+      chooseTitle: "What do you need?",
+      chooseHint: "Your choice only changes this page and its link. Nothing about you is saved.",
+      paths: {
+        first: {
+          label: "First visa",
+          blurb: "First B1/B2 visitor visa",
+          what: "The B1/B2 is a visitor visa for tourism, family visits, or business trips. This is the path if you have never held a US visa. Most of it is done online with the State Department, then an interview at a US consulate.",
+          docs: [
+            "A passport that is valid for your trip",
+            "The DS-160 confirmation page with its barcode",
+            "Your visa appointment confirmation",
+            "Proof that the government fee was paid",
+            "A photo that meets the State Department photo rules",
+            "Anything the consulate asks you to bring for your trip, such as proof of your plans or your ties to Mexico",
+          ],
+        },
+        card: {
+          label: "Border crossing card",
+          blurb: "Card for Mexican citizens",
+          what: "The border crossing card is a card version of the B1/B2 visa for Mexican citizens, made for frequent short visits near the border. The limits on where you can go and how long you can stay are on the embassy visa page. Confirm them there.",
+          docs: [
+            "A Mexican passport that is valid",
+            "The DS-160 confirmation page with its barcode",
+            "Your visa appointment confirmation",
+            "Proof that the government fee was paid",
+            "A photo that meets the State Department photo rules",
+            "For a child, the documents the consulate lists for minors, and the parent or guardian details it asks for",
+          ],
+        },
+        renewal: {
+          label: "Renewal",
+          blurb: "Visa or card that is expiring",
+          what: "A renewal is for a visa or card that is close to expiring or has expired. Some renewals may not need an interview. The embassy visa page says who qualifies. Do not assume you do.",
+          docs: [
+            "Your current or expired visa or border crossing card",
+            "A passport that is valid, and the older passport that holds the visa if you have one",
+            "The DS-160 confirmation page with its barcode",
+            "Your visa appointment confirmation, if you are asked to book one",
+            "Proof that the government fee was paid",
+            "A photo that meets the State Department photo rules",
+          ],
+        },
+        lost: {
+          label: "Lost card",
+          blurb: "Replace a lost or stolen card",
+          what: "If your card or visa was lost or stolen, you apply again for a new one. The consulate will ask what happened. Tell it plainly and exactly as it was.",
+          docs: [
+            "A passport that is valid",
+            "A copy or photo of the lost card or visa, if you still have one",
+            "Any report you made about the loss, if you made one",
+            "The DS-160 confirmation page with its barcode",
+            "Your visa appointment confirmation",
+            "Proof that the government fee was paid",
+            "A photo that meets the State Department photo rules",
+          ],
+        },
+      },
+      whatTitle: "What this application is",
+      docsTitle: "Documents people are usually asked for",
+      docsNote: "The consulate can ask for more, or for less. Its instructions on the day win over this list.",
+      whereTitle: "Where you do it",
+      whereLead: "Three official places. Each one opens in a new tab.",
+      ds160: {
+        title: "DS-160 online application",
+        body: "The State Department form every applicant completes. Free to fill out.",
+      },
+      appointment: {
+        title: "Visa appointment service for Mexico",
+        body: "Where you book your interview and pay the fee, on the official service for Mexico.",
+      },
+      embassy: {
+        title: "US embassy visa page for Mexico",
+        body: "The embassy's own instructions, including who can renew and what to bring.",
+      },
+      opensNewTab: "Opens in a new tab",
+      feeTitle: "Government fee",
+      feeName: "Nonimmigrant visa application processing fee",
+      feeBody: "The State Department sets the amount and can change it. Border Time does not show one. Confirm the current fee on the State Department fee page before you pay.",
+      feeLink: "State Department fee page",
+      waitTitle: "Your appointment date",
+      waitBody: "The consulate sets the appointment date. Border Time cannot get you a sooner one. The State Department publishes typical wait times for each post.",
+      waitLink: "Global visa wait times",
+      noticeTitle: "Good to know",
+      noticeItems: [
+        "Border Time is independent help. It is not a government office.",
+        "This page is not legal or immigration advice.",
+        "The consulate decides every application.",
+        "Anyone can complete the official application without using Border Time.",
+      ],
+      backToWaits: "Back to bridge waits",
+    },
     laneStatus: {
       closed: "Closed",
       notOffered: "Not offered",
@@ -1867,6 +2064,141 @@ export const COPY: Record<Locale, Copy> = {
       slow: "Larga espera",
       closed: "Cerrado",
       unknown: "Sin datos",
+    },
+    tramites: {
+      metaTitle: "Visa de EE. UU. y tarjeta de cruce fronterizo para mexicanos",
+      metaDescription:
+        "Una lista clara para la primera visa B1/B2, la tarjeta de cruce fronterizo, la renovación o una tarjeta perdida. Enlaces oficiales y qué llevar.",
+      title: "Tu visa de EE. UU., sin enredos.",
+      lead: "Una lista sencilla para la visa de visitante de EE. UU. o la tarjeta de cruce fronterizo para ciudadanos mexicanos. Qué llevar, dónde solicitarla y qué confirmar, con todos los enlaces oficiales en un solo lugar.",
+      navHow: "Cómo funciona",
+      navChoose: "Tu trámite",
+      navWhere: "Enlaces oficiales",
+      navNotice: "Conviene saber",
+      heroCardLabel: "Tu lista",
+      heroCardItems: "puntos",
+      heroCardMore: (n) => `+${n} más en tu lista`,
+      ctaChoose: "Elige tu trámite",
+      ctaOfficial: "Ver enlaces oficiales",
+      officialTag: "Oficial",
+      ctaTitle: "Cuando tú quieras.",
+      ctaBody: "Elige tu trámite, reúne tus documentos y termina en las páginas del propio gobierno. Nosotros solo te aclaramos el camino.",
+      stats: [
+        { value: "4", label: "trámites, cada uno con su lista" },
+        { value: "3", label: "sitios oficiales, cada uno en su pestaña" },
+        { value: "0", label: "datos tuyos que se recopilan" },
+      ],
+      processTitle: "Cuatro pasos con calma",
+      processLead: "Sin cuenta y sin formulario. Lees, eliges, te preparas y terminas en las páginas del propio gobierno.",
+      steps: [
+        { title: "Revisa lo que no atendemos", body: "Sabrás en un minuto si esta página aplica a tu situación." },
+        { title: "Elige tu trámite", body: "Primera visa, tarjeta de cruce, renovación o tarjeta perdida." },
+        { title: "Reúne tus documentos", body: "La lista que suelen pedir, en palabras sencillas." },
+        { title: "Termina en sitios oficiales", body: "Llena el DS-160, agenda y paga solo en páginas del gobierno." },
+      ],
+      footerHeadline: "La frontera ya es bastante confusa.",
+      footerHeadlineMuted: "Mantenemos claro el primer paso y te llevamos a los lugares oficiales para lo demás.",
+      footerLine: "Ayuda independiente para la frontera, de quienes hacen Border Time.",
+      stopTitle: "Lee esto primero",
+      stopBody: "Algunas situaciones necesitan a una persona que pueda revisar tu expediente completo. Si alguna de estas es tu caso, esta página no es el lugar para empezar:",
+      stopItems: [
+        "Una negativa de visa de EE. UU. en el pasado",
+        "Una deportación o remoción",
+        "Una visa cancelada",
+        "Una entrada sin inspección",
+        "Una estancia más allá de la admisión autorizada",
+      ],
+      stopClosing: "Esta página no atiende esos casos y no nombra ninguna oficina. No te guíes por las listas de abajo si te aplican.",
+      chooseTitle: "¿Qué necesitas?",
+      chooseHint: "Tu elección solo cambia esta página y su enlace. No se guarda nada sobre ti.",
+      paths: {
+        first: {
+          label: "Primera visa",
+          blurb: "Primera visa de visitante B1/B2",
+          what: "La B1/B2 es una visa de visitante para turismo, visitas familiares o viajes de negocios. Es el camino si nunca has tenido una visa de EE. UU. Casi todo se hace en línea con el Departamento de Estado y después hay una entrevista en un consulado de EE. UU.",
+          docs: [
+            "Un pasaporte vigente para tu viaje",
+            "La hoja de confirmación del DS-160 con su código de barras",
+            "La confirmación de tu cita de visa",
+            "Comprobante de que se pagó la tarifa del gobierno",
+            "Una foto que cumpla las reglas de fotos del Departamento de Estado",
+            "Lo que el consulado te pida para tu viaje, como pruebas de tus planes o de tus vínculos con México",
+          ],
+        },
+        card: {
+          label: "Tarjeta de cruce",
+          blurb: "Tarjeta para ciudadanos mexicanos",
+          what: "La tarjeta de cruce fronterizo es la versión en tarjeta de la visa B1/B2 para ciudadanos mexicanos, pensada para visitas cortas y frecuentes cerca de la frontera. Los límites de hasta dónde puedes ir y cuánto tiempo quedarte están en la página de visas de la embajada. Confírmalos ahí.",
+          docs: [
+            "Un pasaporte mexicano vigente",
+            "La hoja de confirmación del DS-160 con su código de barras",
+            "La confirmación de tu cita de visa",
+            "Comprobante de que se pagó la tarifa del gobierno",
+            "Una foto que cumpla las reglas de fotos del Departamento de Estado",
+            "Para un menor, los documentos que el consulado indica para menores y los datos del padre, madre o tutor que pide",
+          ],
+        },
+        renewal: {
+          label: "Renovación",
+          blurb: "Visa o tarjeta por vencer",
+          what: "La renovación es para una visa o tarjeta que está por vencer o ya venció. Algunas renovaciones quizá no necesiten entrevista. La página de visas de la embajada dice quién califica. No lo des por hecho.",
+          docs: [
+            "Tu visa o tarjeta de cruce actual o vencida",
+            "Un pasaporte vigente y, si lo tienes, el pasaporte anterior que lleva la visa",
+            "La hoja de confirmación del DS-160 con su código de barras",
+            "La confirmación de tu cita de visa, si te piden agendar una",
+            "Comprobante de que se pagó la tarifa del gobierno",
+            "Una foto que cumpla las reglas de fotos del Departamento de Estado",
+          ],
+        },
+        lost: {
+          label: "Tarjeta perdida",
+          blurb: "Reponer una tarjeta perdida o robada",
+          what: "Si tu tarjeta o visa se perdió o te la robaron, vuelves a solicitar una nueva. El consulado te preguntará qué pasó. Cuéntalo con claridad y tal como fue.",
+          docs: [
+            "Un pasaporte vigente",
+            "Una copia o foto de la tarjeta o visa perdida, si todavía la tienes",
+            "Cualquier reporte que hayas hecho de la pérdida, si lo hiciste",
+            "La hoja de confirmación del DS-160 con su código de barras",
+            "La confirmación de tu cita de visa",
+            "Comprobante de que se pagó la tarifa del gobierno",
+            "Una foto que cumpla las reglas de fotos del Departamento de Estado",
+          ],
+        },
+      },
+      whatTitle: "Qué es este trámite",
+      docsTitle: "Documentos que suelen pedir",
+      docsNote: "El consulado puede pedir más o menos. Sus instrucciones el día de la cita valen más que esta lista.",
+      whereTitle: "Dónde se hace",
+      whereLead: "Tres lugares oficiales. Cada uno se abre en una pestaña nueva.",
+      ds160: {
+        title: "Solicitud en línea DS-160",
+        body: "El formulario del Departamento de Estado que llena todo solicitante. Llenarlo no tiene costo.",
+      },
+      appointment: {
+        title: "Servicio de citas de visa para México",
+        body: "Donde agendas tu entrevista y pagas la tarifa, en el servicio oficial para México.",
+      },
+      embassy: {
+        title: "Página de visas de la embajada de EE. UU. en México",
+        body: "Las instrucciones de la propia embajada, incluido quién puede renovar y qué llevar.",
+      },
+      opensNewTab: "Se abre en una pestaña nueva",
+      feeTitle: "Tarifa del gobierno",
+      feeName: "Tarifa de procesamiento de la solicitud de visa de no inmigrante",
+      feeBody: "El Departamento de Estado fija el monto y puede cambiarlo. Border Time no muestra uno. Confirma la tarifa vigente en la página de tarifas del Departamento de Estado antes de pagar.",
+      feeLink: "Página de tarifas del Departamento de Estado",
+      waitTitle: "La fecha de tu cita",
+      waitBody: "El consulado fija la fecha de la cita. Border Time no puede conseguirte una más pronto. El Departamento de Estado publica los tiempos de espera típicos de cada sede.",
+      waitLink: "Tiempos de espera de visas en el mundo",
+      noticeTitle: "Conviene saber",
+      noticeItems: [
+        "Border Time es una ayuda independiente. No es una oficina de gobierno.",
+        "Esta página no es asesoría legal ni migratoria.",
+        "El consulado decide cada solicitud.",
+        "Cualquiera puede completar la solicitud oficial sin usar Border Time.",
+      ],
+      backToWaits: "Volver a las esperas de los puentes",
     },
     laneStatus: {
       closed: "Cerrado",

@@ -855,3 +855,19 @@ input[inputmode="decimal"]:focus-visible {
     animation: none;
   }
 }
+
+/* Trámites hero: the illustrated card drifts and the approval badge pulses. Off for reduced motion. */
+@keyframes tramites-float {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50% { transform: translateY(-8px) rotate(var(--r, 0deg)); }
+}
+
+@keyframes tramites-ring {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tramites-float { animation: tramites-float 6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+  .tramites-ring { animation: tramites-ring 2.4s ease-out infinite; }
+}
