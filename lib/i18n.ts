@@ -509,50 +509,40 @@ export type TramitesCopy = {
   metaDescription: string;
   title: string;
   lead: string;
+  navServices: string;
   navHow: string;
-  navChoose: string;
-  navWhere: string;
-  navNotice: string;
-  heroCardLabel: string;
-  heroCardItems: string;
-  heroCardMore: (n: number) => string;
-  ctaChoose: string;
-  ctaOfficial: string;
-  officialTag: string;
-  ctaTitle: string;
-  ctaBody: string;
-  stats: readonly { value: string; label: string }[];
-  processTitle: string;
-  processLead: string;
+  navFaq: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+  trust: readonly string[];
+  previewLabel: string;
+  previewItems: string;
+  previewMore: (n: number) => string;
+  servicesTitle: string;
+  servicesLead: string;
+  serviceCta: string;
+  paths: Record<"first" | "card" | "renewal" | "lost", TramitesPathCopy>;
+  howTitle: string;
   steps: readonly { title: string; body: string }[];
-  footerHeadline: string;
-  footerHeadlineMuted: string;
-  footerLine: string;
+  checklistLead: string;
+  chooseTitle: string;
+  docsTitle: string;
+  docsNote: string;
   stopTitle: string;
   stopBody: string;
   stopItems: readonly string[];
-  stopClosing: string;
-  chooseTitle: string;
-  chooseHint: string;
-  paths: Record<"first" | "card" | "renewal" | "lost", TramitesPathCopy>;
-  whatTitle: string;
-  docsTitle: string;
-  docsNote: string;
-  whereTitle: string;
-  whereLead: string;
+  nextTitle: string;
   ds160: TramitesLinkCopy;
   appointment: TramitesLinkCopy;
   embassy: TramitesLinkCopy;
   opensNewTab: string;
-  feeTitle: string;
-  feeName: string;
-  feeBody: string;
-  feeLink: string;
-  waitTitle: string;
-  waitBody: string;
-  waitLink: string;
-  noticeTitle: string;
-  noticeItems: readonly string[];
+  faqTitle: string;
+  faq: readonly { q: string; a: string; link?: { label: string; to: "fees" | "waitTimes" } }[];
+  finalTitle: string;
+  finalBody: string;
+  footerHeadline: string;
+  footerHeadlineMuted: string;
+  fineprint: string;
   backToWaits: string;
 };
 
@@ -1261,38 +1251,32 @@ export const COPY: Record<Locale, Copy> = {
       metaTitle: "US visa and border crossing card for Mexican citizens",
       metaDescription:
         "A plain checklist for a first B1/B2 visa, a border crossing card, a renewal, or a lost card. Official links, and what to bring.",
-      title: "Your US visa, made clear.",
-      lead: "A plain checklist for a US visitor visa or a border crossing card for Mexican citizens. What to bring, where to apply, and what to confirm, with every official link in one place.",
+      title: "Show up to your visa appointment with everything ready.",
+      lead: "A free checklist for your US visitor visa or border crossing card. Know what to bring before you book, and go straight to the official sites.",
+      navServices: "Errands",
       navHow: "How it works",
-      navChoose: "Your errand",
-      navWhere: "Official links",
-      navNotice: "Good to know",
-      heroCardLabel: "Your checklist",
-      heroCardItems: "items",
-      heroCardMore: (n) => `+${n} more on your checklist`,
-      ctaChoose: "Choose your errand",
-      ctaOfficial: "See official links",
-      officialTag: "Official",
-      ctaTitle: "Ready when you are.",
-      ctaBody: "Pick your errand, gather your documents, and finish on the government's own pages. We just make the path clear.",
-      stats: [
-        { value: "4", label: "errands, each with its own checklist" },
-        { value: "3", label: "official sites, each in its own tab" },
-        { value: "0", label: "details about you collected" },
-      ],
-      processTitle: "Four calm steps",
-      processLead: "No account, no form. You read, you pick, you prepare, and you finish on the government's own pages.",
+      navFaq: "Questions",
+      ctaPrimary: "Get my free checklist",
+      ctaSecondary: "How it works",
+      trust: ["Free", "No account needed", "Official sites only"],
+      previewLabel: "Your checklist",
+      previewItems: "items",
+      previewMore: (n) => `+${n} more`,
+      servicesTitle: "What do you need to do?",
+      servicesLead: "Pick your errand and get the list of documents for it.",
+      serviceCta: "See checklist",
+      howTitle: "Ready in three steps",
       steps: [
-        { title: "Check the stop list", body: "Know in a minute whether this page fits your situation." },
         { title: "Pick your errand", body: "First visa, border crossing card, renewal, or a lost card." },
         { title: "Gather your documents", body: "The list people are usually asked for, in plain words." },
-        { title: "Finish on official sites", body: "Fill the DS-160, book, and pay on government pages only." },
+        { title: "Finish on the official sites", body: "Fill out the DS-160, book, and pay on government pages." },
       ],
-      footerHeadline: "The border is confusing enough.",
-      footerHeadlineMuted: "We keep the first step clear, and point you to the official places for the rest.",
-      footerLine: "Independent help for the border, from the people behind Border Time.",
-      stopTitle: "Read this first",
-      stopBody: "Some situations need a person who can look at your whole file. If any of these is true, this page is not the right place to start:",
+      checklistLead: "Switch errands anytime. Nothing about you is saved.",
+      chooseTitle: "What do you need?",
+      docsTitle: "What to bring",
+      docsNote: "The consulate can ask for more, or for less. Its instructions on the day win over this list.",
+      stopTitle: "Not for every case",
+      stopBody: "If any of these applies to you, this checklist does not. Talk to someone who can review your whole file.",
       stopItems: [
         "A past US visa refusal",
         "A deportation or removal",
@@ -1300,9 +1284,33 @@ export const COPY: Record<Locale, Copy> = {
         "An entry without inspection",
         "A stay past an authorized admission",
       ],
-      stopClosing: "This page does not take those cases and does not name an office. Do not rely on the checklists below for them.",
-      chooseTitle: "What do you need?",
-      chooseHint: "Your choice only changes this page and its link. Nothing about you is saved.",
+      nextTitle: "Then, on the official sites",
+      faqTitle: "Questions people ask",
+      faq: [
+        {
+          q: "Is this free?",
+          a: "Yes. The checklist is free, and you don't need an account. You only pay the government fee, on the government's own site.",
+        },
+        {
+          q: "How much is the visa fee?",
+          a: "The State Department sets the amount and can change it, so we don't show one. Confirm the current fee before you pay.",
+          link: { label: "Current government fee", to: "fees" },
+        },
+        {
+          q: "Can you get me a sooner appointment?",
+          a: "No. The consulate sets appointment dates, and nobody outside it can move them. The State Department publishes typical waits for each consulate.",
+          link: { label: "Appointment wait times", to: "waitTimes" },
+        },
+        {
+          q: "Is Border Time part of the government?",
+          a: "No. Border Time is independent help, and this is not legal or immigration advice. The consulate decides every application.",
+        },
+      ],
+      finalTitle: "Your checklist is one tap away.",
+      finalBody: "Free, no account, and every step ends on an official site.",
+      footerHeadline: "The border is confusing enough.",
+      footerHeadlineMuted: "We keep the first step clear, and point you to the official places for the rest.",
+      fineprint: "Independent help from the people behind Border Time. Not a government office.",
       paths: {
         first: {
           label: "First visa",
@@ -1358,38 +1366,19 @@ export const COPY: Record<Locale, Copy> = {
           ],
         },
       },
-      whatTitle: "What this application is",
-      docsTitle: "Documents people are usually asked for",
-      docsNote: "The consulate can ask for more, or for less. Its instructions on the day win over this list.",
-      whereTitle: "Where you do it",
-      whereLead: "Three official places. Each one opens in a new tab.",
       ds160: {
-        title: "DS-160 online application",
-        body: "The State Department form every applicant completes. Free to fill out.",
+        title: "Fill out the DS-160",
+        body: "The form every applicant completes. Free.",
       },
       appointment: {
-        title: "Visa appointment service for Mexico",
-        body: "Where you book your interview and pay the fee, on the official service for Mexico.",
+        title: "Book your appointment",
+        body: "Schedule the interview and pay the fee.",
       },
       embassy: {
-        title: "US embassy visa page for Mexico",
-        body: "The embassy's own instructions, including who can renew and what to bring.",
+        title: "Embassy instructions",
+        body: "Who can renew, and what to bring.",
       },
       opensNewTab: "Opens in a new tab",
-      feeTitle: "Government fee",
-      feeName: "Nonimmigrant visa application processing fee",
-      feeBody: "The State Department sets the amount and can change it. Border Time does not show one. Confirm the current fee on the State Department fee page before you pay.",
-      feeLink: "State Department fee page",
-      waitTitle: "Your appointment date",
-      waitBody: "The consulate sets the appointment date. Border Time cannot get you a sooner one. The State Department publishes typical wait times for each post.",
-      waitLink: "Global visa wait times",
-      noticeTitle: "Good to know",
-      noticeItems: [
-        "Border Time is independent help. It is not a government office.",
-        "This page is not legal or immigration advice.",
-        "The consulate decides every application.",
-        "Anyone can complete the official application without using Border Time.",
-      ],
       backToWaits: "Back to bridge waits",
     },
     laneStatus: {
@@ -2069,38 +2058,32 @@ export const COPY: Record<Locale, Copy> = {
       metaTitle: "Visa de EE. UU. y tarjeta de cruce fronterizo para mexicanos",
       metaDescription:
         "Una lista clara para la primera visa B1/B2, la tarjeta de cruce fronterizo, la renovación o una tarjeta perdida. Enlaces oficiales y qué llevar.",
-      title: "Tu visa de EE. UU., sin enredos.",
-      lead: "Una lista sencilla para la visa de visitante de EE. UU. o la tarjeta de cruce fronterizo para ciudadanos mexicanos. Qué llevar, dónde solicitarla y qué confirmar, con todos los enlaces oficiales en un solo lugar.",
+      title: "Llega a tu cita de visa con todo listo.",
+      lead: "Una lista gratis para tu visa de visitante o tu tarjeta de cruce. Sabe qué llevar antes de agendar y ve directo a los sitios oficiales.",
+      navServices: "Trámites",
       navHow: "Cómo funciona",
-      navChoose: "Tu trámite",
-      navWhere: "Enlaces oficiales",
-      navNotice: "Conviene saber",
-      heroCardLabel: "Tu lista",
-      heroCardItems: "puntos",
-      heroCardMore: (n) => `+${n} más en tu lista`,
-      ctaChoose: "Elige tu trámite",
-      ctaOfficial: "Ver enlaces oficiales",
-      officialTag: "Oficial",
-      ctaTitle: "Cuando tú quieras.",
-      ctaBody: "Elige tu trámite, reúne tus documentos y termina en las páginas del propio gobierno. Nosotros solo te aclaramos el camino.",
-      stats: [
-        { value: "4", label: "trámites, cada uno con su lista" },
-        { value: "3", label: "sitios oficiales, cada uno en su pestaña" },
-        { value: "0", label: "datos tuyos que se recopilan" },
-      ],
-      processTitle: "Cuatro pasos con calma",
-      processLead: "Sin cuenta y sin formulario. Lees, eliges, te preparas y terminas en las páginas del propio gobierno.",
+      navFaq: "Preguntas",
+      ctaPrimary: "Obtener mi lista gratis",
+      ctaSecondary: "Cómo funciona",
+      trust: ["Gratis", "Sin cuenta", "Solo sitios oficiales"],
+      previewLabel: "Tu lista",
+      previewItems: "puntos",
+      previewMore: (n) => `+${n} más`,
+      servicesTitle: "¿Qué trámite necesitas?",
+      servicesLead: "Elige tu trámite y recibe la lista de documentos que le corresponde.",
+      serviceCta: "Ver lista",
+      howTitle: "Listo en tres pasos",
       steps: [
-        { title: "Revisa lo que no atendemos", body: "Sabrás en un minuto si esta página aplica a tu situación." },
         { title: "Elige tu trámite", body: "Primera visa, tarjeta de cruce, renovación o tarjeta perdida." },
         { title: "Reúne tus documentos", body: "La lista que suelen pedir, en palabras sencillas." },
-        { title: "Termina en sitios oficiales", body: "Llena el DS-160, agenda y paga solo en páginas del gobierno." },
+        { title: "Termina en los sitios oficiales", body: "Llena el DS-160, agenda y paga en páginas del gobierno." },
       ],
-      footerHeadline: "La frontera ya es bastante confusa.",
-      footerHeadlineMuted: "Mantenemos claro el primer paso y te llevamos a los lugares oficiales para lo demás.",
-      footerLine: "Ayuda independiente para la frontera, de quienes hacen Border Time.",
-      stopTitle: "Lee esto primero",
-      stopBody: "Algunas situaciones necesitan a una persona que pueda revisar tu expediente completo. Si alguna de estas es tu caso, esta página no es el lugar para empezar:",
+      checklistLead: "Cambia de trámite cuando quieras. No se guarda nada sobre ti.",
+      chooseTitle: "¿Qué necesitas?",
+      docsTitle: "Qué llevar",
+      docsNote: "El consulado puede pedir más o menos. Sus instrucciones el día de la cita valen más que esta lista.",
+      stopTitle: "No aplica a todos los casos",
+      stopBody: "Si alguna de estas es tu caso, esta lista no te aplica. Habla con alguien que pueda revisar tu expediente completo.",
       stopItems: [
         "Una negativa de visa de EE. UU. en el pasado",
         "Una deportación o remoción",
@@ -2108,9 +2091,33 @@ export const COPY: Record<Locale, Copy> = {
         "Una entrada sin inspección",
         "Una estancia más allá de la admisión autorizada",
       ],
-      stopClosing: "Esta página no atiende esos casos y no nombra ninguna oficina. No te guíes por las listas de abajo si te aplican.",
-      chooseTitle: "¿Qué necesitas?",
-      chooseHint: "Tu elección solo cambia esta página y su enlace. No se guarda nada sobre ti.",
+      nextTitle: "Después, en los sitios oficiales",
+      faqTitle: "Preguntas frecuentes",
+      faq: [
+        {
+          q: "¿Es gratis?",
+          a: "Sí. La lista es gratis y no necesitas cuenta. Solo pagas la tarifa del gobierno, en el sitio del propio gobierno.",
+        },
+        {
+          q: "¿Cuánto cuesta la visa?",
+          a: "El Departamento de Estado fija el monto y puede cambiarlo, así que no mostramos uno. Confirma la tarifa vigente antes de pagar.",
+          link: { label: "Tarifa vigente del gobierno", to: "fees" },
+        },
+        {
+          q: "¿Me pueden conseguir una cita más pronto?",
+          a: "No. El consulado fija las fechas de las citas y nadie fuera de él puede moverlas. El Departamento de Estado publica las esperas típicas de cada consulado.",
+          link: { label: "Espera para citas de visa", to: "waitTimes" },
+        },
+        {
+          q: "¿Border Time es parte del gobierno?",
+          a: "No. Border Time es una ayuda independiente y esto no es asesoría legal ni migratoria. El consulado decide cada solicitud.",
+        },
+      ],
+      finalTitle: "Tu lista está a un toque.",
+      finalBody: "Gratis, sin cuenta, y cada paso termina en un sitio oficial.",
+      footerHeadline: "La frontera ya es bastante confusa.",
+      footerHeadlineMuted: "Mantenemos claro el primer paso y te llevamos a los lugares oficiales para lo demás.",
+      fineprint: "Ayuda independiente de quienes hacen Border Time. No es una oficina de gobierno.",
       paths: {
         first: {
           label: "Primera visa",
@@ -2166,38 +2173,19 @@ export const COPY: Record<Locale, Copy> = {
           ],
         },
       },
-      whatTitle: "Qué es este trámite",
-      docsTitle: "Documentos que suelen pedir",
-      docsNote: "El consulado puede pedir más o menos. Sus instrucciones el día de la cita valen más que esta lista.",
-      whereTitle: "Dónde se hace",
-      whereLead: "Tres lugares oficiales. Cada uno se abre en una pestaña nueva.",
       ds160: {
-        title: "Solicitud en línea DS-160",
-        body: "El formulario del Departamento de Estado que llena todo solicitante. Llenarlo no tiene costo.",
+        title: "Llena el DS-160",
+        body: "El formulario que llena todo solicitante. Gratis.",
       },
       appointment: {
-        title: "Servicio de citas de visa para México",
-        body: "Donde agendas tu entrevista y pagas la tarifa, en el servicio oficial para México.",
+        title: "Agenda tu cita",
+        body: "Programa la entrevista y paga la tarifa.",
       },
       embassy: {
-        title: "Página de visas de la embajada de EE. UU. en México",
-        body: "Las instrucciones de la propia embajada, incluido quién puede renovar y qué llevar.",
+        title: "Instrucciones de la embajada",
+        body: "Quién puede renovar y qué llevar.",
       },
       opensNewTab: "Se abre en una pestaña nueva",
-      feeTitle: "Tarifa del gobierno",
-      feeName: "Tarifa de procesamiento de la solicitud de visa de no inmigrante",
-      feeBody: "El Departamento de Estado fija el monto y puede cambiarlo. Border Time no muestra uno. Confirma la tarifa vigente en la página de tarifas del Departamento de Estado antes de pagar.",
-      feeLink: "Página de tarifas del Departamento de Estado",
-      waitTitle: "La fecha de tu cita",
-      waitBody: "El consulado fija la fecha de la cita. Border Time no puede conseguirte una más pronto. El Departamento de Estado publica los tiempos de espera típicos de cada sede.",
-      waitLink: "Tiempos de espera de visas en el mundo",
-      noticeTitle: "Conviene saber",
-      noticeItems: [
-        "Border Time es una ayuda independiente. No es una oficina de gobierno.",
-        "Esta página no es asesoría legal ni migratoria.",
-        "El consulado decide cada solicitud.",
-        "Cualquiera puede completar la solicitud oficial sin usar Border Time.",
-      ],
       backToWaits: "Volver a las esperas de los puentes",
     },
     laneStatus: {
