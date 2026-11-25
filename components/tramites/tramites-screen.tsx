@@ -12,7 +12,15 @@ import { Libre_Baskerville } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { motion, useMotionValue, useReducedMotion, useSpring, type Transition } from "motion/react";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+  type Transition,
+} from "motion/react";
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 
 const serif = Libre_Baskerville({ subsets: ["latin"], weight: ["400"], style: ["normal", "italic"] });
@@ -122,6 +130,159 @@ function MagneticLink({ href, className, children }: { href: string; className?:
     >
       {children}
     </motion.a>
+  );
+}
+
+/** Footer: text staggers in, the cobalt bloom expands, and the mark rises through the grain as you scroll. */
+function TramitesFooter({
+  brandName,
+  headline,
+  headlineMuted,
+  fineprint,
+  backToWaits,
+  privacy,
+  terms,
+  reduce,
+  enter,
+  stagger,
+}: {
+  brandName: string;
+  headline: string;
+  headlineMuted: string;
+  fineprint: string;
+  backToWaits: string;
+  privacy: string;
+  terms: string;
+  reduce: boolean | null;
+  enter: Transition;
+  stagger: number;
+}) {
+  const footerRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: footerRef,
+    offset: ["start end", "end end"],
+  });
+  const progress = useSpring(scrollYProgress, { stiffness: 90, damping: 28, mass: 0.6 });
+  const logoY = useTransform(progress, [0, 1], reduce ? [0, 0] : [120, 0]);
+  const logoOpacity = useTransform(progress, [0, 0.35, 1], reduce ? [1, 1, 1] : [0.15, 0.55, 1]);
+  const logoBlur = useTransform(progress, [0, 0.55, 1], reduce ? [0, 0, 0] : [12, 4, 0]);
+  const logoFilter = useTransform(logoBlur, (b) => `blur(${b}px)`);
+  const glowScale = useTransform(progress, [0, 1], reduce ? [1, 1] : [0.55, 1.2]);
+  const glowOpacity = useTransform(progress, [0, 0.4, 1], reduce ? [0.4, 0.4, 0.4] : [0.15, 0.45, 0.7]);
+  const gridOpacity = useTransform(progress, [0, 1], reduce ? [0.08, 0.08] : [0, 0.1]);
+
+  return (
+    <footer
+      ref={footerRef}
+      className="relative isolate mt-24 overflow-hidden bg-[color:var(--t-ink)] px-4 pt-20 pb-0 text-white sm:px-6 sm:pt-28"
+    >
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 -z-10"
+        style={{
+          opacity: glowOpacity,
+          background:
+            "radial-gradient(45% 60% at 20% 120%, rgba(43,100,240,0.6), transparent 60%), radial-gradient(45% 55% at 85% 110%, rgba(157,192,255,0.28), transparent 65%)",
+        }}
+      />
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 -z-10"
+        style={{
+          opacity: gridOpacity,
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: "radial-gradient(80% 100% at 50% 100%, black, transparent)",
+        }}
+      />
+
+      <div className="mx-auto max-w-6xl">
+        <motion.div
+          initial="hidden"
+          whileInView="shown"
+          viewport={{ once: true, margin: "-8% 0px" }}
+          variants={{
+            hidden: {},
+            shown: { transition: { staggerChildren: stagger, delayChildren: reduce ? 0 : 0.05 } },
+          }}
+        >
+          <motion.p
+            className="max-w-3xl text-[28px] leading-[1.12] font-bold tracking-[-0.035em] text-balance sm:text-[44px]"
+            variants={{
+              hidden: reduce ? shown : { opacity: 0, y: 28, filter: "blur(8px)" },
+              shown: { opacity: 1, y: 0, filter: "blur(0px)" },
+            }}
+            transition={enter}
+          >
+            {headline}
+            <span className="text-white/45"> {headlineMuted}</span>
+          </motion.p>
+
+          <motion.div
+            className="mt-12 flex flex-wrap items-end justify-between gap-8"
+            variants={{
+              hidden: reduce ? shown : hidden,
+              shown,
+            }}
+            transition={enter}
+          >
+            <p className="max-w-xs text-[15px] leading-relaxed text-white/60">{fineprint}</p>
+            <nav aria-label={brandName} className="flex flex-wrap gap-2.5 text-[15px] font-semibold">
+              <MagneticLink
+                href="/"
+                className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-5 text-[color:var(--t-ink)] transition-transform active:scale-[0.97]"
+              >
+                {backToWaits}
+                <Icon d={RIGHT} />
+              </MagneticLink>
+              <Link
+                href="/privacy"
+                className="inline-flex h-12 items-center rounded-full bg-white/10 px-5 text-white ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/20 active:scale-[0.97]"
+              >
+                {privacy}
+              </Link>
+              <Link
+                href="/terms"
+                className="inline-flex h-12 items-center rounded-full bg-white/10 px-5 text-white ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/20 active:scale-[0.97]"
+              >
+                {terms}
+              </Link>
+            </nav>
+          </motion.div>
+        </motion.div>
+
+        <div className="relative mt-14 sm:mt-20">
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-[6%] -top-24 bottom-0 -z-10 rounded-full bg-[color:var(--t-blue)]/40 blur-[110px]"
+            style={{ scale: glowScale, opacity: glowOpacity }}
+          />
+          <motion.div
+            className="aspect-[2424/720] select-none overflow-hidden will-change-transform"
+            style={{ y: logoY, opacity: logoOpacity, filter: logoFilter }}
+          >
+            <Image
+              src="/usbt-logo.svg"
+              alt={brandName}
+              width={2424}
+              height={1024}
+              unoptimized
+              className="h-auto w-full"
+              style={{
+                maskImage: "linear-gradient(to bottom, #000 25%, rgba(0,0,0,0) 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, #000 25%, rgba(0,0,0,0) 100%)",
+              }}
+            />
+          </motion.div>
+        </div>
+      </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-10 opacity-[0.2]"
+        style={{ backgroundImage: GRAIN, backgroundSize: "220px 220px" }}
+      />
+    </footer>
   );
 }
 
@@ -465,88 +626,18 @@ export function TramitesScreen() {
         </div>
       </div>
 
-      <footer className="relative isolate mt-24 overflow-hidden bg-[color:var(--t-ink)] px-4 pt-20 pb-0 text-white sm:px-6 sm:pt-28">
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(45% 60% at 20% 120%, rgba(43,100,240,0.6), transparent 60%), radial-gradient(45% 55% at 85% 110%, rgba(157,192,255,0.28), transparent 65%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 opacity-[0.08]"
-          style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
-            maskImage: "radial-gradient(80% 100% at 50% 100%, black, transparent)",
-          }}
-        />
-        <div className="mx-auto max-w-6xl">
-          <motion.p
-            className="max-w-3xl text-[28px] leading-[1.12] font-bold tracking-[-0.035em] text-balance sm:text-[44px]"
-            initial={reduce ? false : hidden}
-            whileInView={shown}
-            viewport={view}
-            transition={enter}
-          >
-            {t.footerHeadline}
-            <span className="text-white/45"> {t.footerHeadlineMuted}</span>
-          </motion.p>
-
-          <div className="mt-12 flex flex-wrap items-end justify-between gap-8">
-            <p className="max-w-xs text-[15px] leading-relaxed text-white/60">{t.fineprint}</p>
-            <nav aria-label={copy.brandName} className="flex flex-wrap gap-2.5 text-[15px] font-semibold">
-              <Link
-                href="/"
-                className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-5 text-[color:var(--t-ink)] transition-transform active:scale-[0.97]"
-              >
-                {t.backToWaits}
-                <Icon d={RIGHT} />
-              </Link>
-              <Link
-                href="/privacy"
-                className="inline-flex h-12 items-center rounded-full bg-white/10 px-5 text-white ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/20 active:scale-[0.97]"
-              >
-                {copy.privacyPolicy}
-              </Link>
-              <Link
-                href="/terms"
-                className="inline-flex h-12 items-center rounded-full bg-white/10 px-5 text-white ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/20 active:scale-[0.97]"
-              >
-                {copy.termsOfUse}
-              </Link>
-            </nav>
-          </div>
-
-          <div className="relative mt-14 sm:mt-20">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-[6%] -top-24 bottom-0 -z-10 rounded-full bg-[color:var(--t-blue)]/40 blur-[110px]"
-            />
-            <div className="aspect-[2424/720] select-none overflow-hidden">
-              <Image
-                src="/usbt-logo.svg"
-                alt={copy.brandName}
-                width={2424}
-                height={1024}
-                unoptimized
-                className="h-auto w-full"
-                style={{
-                  maskImage: "linear-gradient(to bottom, #000 25%, rgba(0,0,0,0) 100%)",
-                  WebkitMaskImage: "linear-gradient(to bottom, #000 25%, rgba(0,0,0,0) 100%)",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-10 opacity-[0.2]"
-          style={{ backgroundImage: GRAIN, backgroundSize: "220px 220px" }}
-        />
-      </footer>
+      <TramitesFooter
+        brandName={copy.brandName}
+        headline={t.footerHeadline}
+        headlineMuted={t.footerHeadlineMuted}
+        fineprint={t.fineprint}
+        backToWaits={t.backToWaits}
+        privacy={copy.privacyPolicy}
+        terms={copy.termsOfUse}
+        reduce={reduce}
+        enter={enter}
+        stagger={stagger}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 ---
-description: The /tramites page, its checklists, and the hero AI bar
+description: The /tramites page — product rules, design language, and motion
 globs: components/tramites/**,app/tramites/**,app/api/tramites/**,lib/tramites.ts,lib/tramites-ask.server.ts
 alwaysApply: false
 ---
@@ -15,3 +15,65 @@ SEO lives in `lib/tramites-seo.ts`: locale metadata (title, description, canonic
 The hero AI bar (`TramitesAskBar`) mirrors the bridges Ask composer: glass bar, mic, send, chat bubbles, and stacked suggestions when empty. Voice stays in the browser. It posts to `POST /api/tramites/ask`. No session. Rate limited by client address through `withinLimit("tramites-ask", …)`. `lib/tramites-ask.server.ts` builds a short system prompt from visa/BCC checklist knowledge and official URLs only. It does not load wait times or Ask tools. The model is the same cheap chat model as Ask. Do not import that server module from client code.
 
 Answers are markdown rendered with `AskMarkdown`. Trámites-specific copy lives under `copy.tramites.ask`; mic/send/clear/errors reuse the Ask strings. Keep hedges: not legal advice, consulate wins, never invent fees or appointment dates.
+
+## Design language
+
+`/tramites` is its own surface. It does not follow the wallet's light/dark theme or card stack. Keep building against this look; do not drift back toward wallet chrome, sky gradients with clouds, or white content cards.
+
+### Atmosphere
+
+- Always dark. Page background `#050608`. Text white / white at reduced opacity. Ignore device color scheme for the page body.
+- Cobalt glow, not flat black: hero and CTA panels use radial blues over navy (`GLOW`, `CARD_GLOW` in `tramites-screen.tsx`). Palette tokens stay page-scoped (`--t-ink`, `--t-blue`, `--t-sky`, `--t-wash`).
+- Hero is a rounded panel (`rounded-[20px]`) inset from the page edge, not full-bleed edge-to-edge. Content column maxes around `1200px`.
+- Footer is the big navy block with grain, grid wash, and the large masked logo. Keep that footer as-is unless the product asks to change it.
+
+### Type
+
+- Display / section titles: Libre Baskerville (serif). Body and UI: Geist (the app sans).
+- Hero title is large, centered, balanced. Section titles are quieter — serif, often with a muted continuation in `text-white/40` for the supporting phrase (errands).
+- Body copy stays small and soft (`text-[12px]`–`text-[15px]`, `text-white/60`–`/75`). Do not make body type compete with titles.
+- Numbers and counts use mono at low opacity (`font-mono text-[11px] text-white/45`).
+
+### Layout
+
+- One job per section: errands, how it works, checklist, FAQ, closing CTA. Generous vertical space (`pt-24` / `sm:pt-40`).
+- Prefer hairline dividers and column lists over cards. No bordered white cards, no floating checklist mockups in the hero.
+- Errands and how-it-works: multi-column grids with a top border rule, not card tiles.
+- Checklist: two columns on large screens — picker + caveats on the left, docs + official links on the right. Path switch is pill chips (`?path=`), not tabs chrome.
+- FAQ: title left, accordion list right on large screens. Thin dividers; chevron rotates open.
+- Closing CTA: one glowing rounded panel, short serif line, one white pill button.
+
+### Header
+
+- Sticky. At the top of the page it sits over the hero (transparent), aligned with the hero's inset — use the same top padding as the page inset so logo and controls match the hero corners.
+- When stuck, pull flush to the viewport (negative `top` offsets the inset padding) and add a dark frosted bar.
+- Contents: brand left; primary pill (hidden on small screens) + theme + language right. No middle nav links.
+
+### Controls
+
+- Primary actions are white pills on dark (`PILL`): white fill, navy text, full radius. Secondary is ghost / ring-only.
+- Path chips: active = white fill; inactive = ring at low opacity.
+- Official links stay plain rows with mono step numbers — the first can be emphasized, but keep the divider list language.
+
+### Motion
+
+Use Motion (`motion/react`) and the wallet springs (`SPRING`, `REDUCED` from `components/wallet/motion.ts`). Do not add Animate UI or extra animation libraries for this page.
+
+- Hero: word-by-word title (`SplitTitle` — blur + rise, staggered). Lead, ask bar, and CTAs fade up after with short delays.
+- Primary CTAs: `MagneticLink` soft pointer pull on desktop; off for reduced motion / no hover.
+- Sections: `whileInView` once, short rise (`y: ~18–22`, ease-out ~0.55s). Stagger children in grids and FAQ rows.
+- Checklist path change: remount the right column with a short fade (`SPRING.snap`); docs list staggers in.
+- Footer (`TramitesFooter`): headline clears from blur; fineprint and links follow; scroll-linked mark rises and sharpens while the cobalt bloom expands behind it. Back-to-waits uses `MagneticLink`. Layout and grain stay the same — only motion is added.
+- Reduced motion: skip travel, blur, and scroll-linked travel; keep opacity fades brief via `REDUCED`.
+- Stay restrained. Premium here means quiet entrances, magnetic affordances, and one scroll-tied footer reveal — not particles, loops, or continuous decoration.
+
+### Loading
+
+`TramitesSkeleton` mirrors the dark hero: cobalt glow, centered pulse bars (`.tramites-pulse` / `.tramites-glow` in `globals.css`), header placeholders. Never show the wallet stack skeleton on this route.
+
+### Do not
+
+- Reintroduce the old sky/cloud hero, illustrated BCC card, or white checklist card in the hero.
+- Use wallet surface/line tokens as the page's main chrome.
+- Add eyebrow/dot chapter labels above section titles (removed on purpose).
+- Bloat the page with new animation packages when Motion already covers the language.
