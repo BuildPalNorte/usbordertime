@@ -871,3 +871,45 @@ input[inputmode="decimal"]:focus-visible {
   .tramites-float { animation: tramites-float 6s ease-in-out infinite; animation-delay: var(--d, 0s); }
   .tramites-ring { animation: tramites-ring 2.4s ease-out infinite; }
 }
+
+/* Trámites loading shell: soft white pulse on dark, plus a breathing blue glow. */
+.tramites-pulse {
+  background: rgba(255, 255, 255, 0.1);
+  animation: tramites-pulse 1.6s ease-in-out infinite;
+}
+
+.tramites-glow {
+  animation: tramites-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes tramites-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes tramites-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tramites-pulse,
+  .tramites-glow {
+    animation: none;
+  }
+  .tramites-pulse {
+    opacity: 0.7;
+  }
+}

@@ -7,6 +7,9 @@ import { LanguageSwitch } from "@/components/wallet/language-switch";
 import { ThemeSwitch } from "@/components/wallet/theme-switch";
 import { cn } from "@/lib/cn";
 import { OFFICIAL_LINKS, TRAMITES_PATH_IDS, tramitesHref, tramitesPathFrom } from "@/lib/tramites";
+import { Effect, Effects } from "@animate-ui/react/primitives/effects/effect";
+import { Magnetic } from "@animate-ui/react/primitives/effects/magnetic";
+import { SplittingText } from "@animate-ui/react/primitives/texts/splitting";
 import { Libre_Baskerville } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
@@ -40,6 +43,27 @@ const H2 = `${SERIF} text-[28px] leading-[1.15] tracking-[-0.01em] text-balance 
 const PILL =
   "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 text-[14px] font-medium text-[#0b1b3f] transition-transform active:scale-[0.97]";
 
+/** Soft entrance: short travel, light blur — premium, not flashy. */
+const enterTween = { duration: 0.65, ease: [0.23, 1, 0.32, 1] as const };
+const enter = {
+  fade: true,
+  blur: { initialBlur: 8, blur: 0 },
+  slide: { direction: "up" as const, offset: 28 },
+  transition: enterTween,
+};
+const enterSoft = {
+  fade: true,
+  blur: { initialBlur: 6, blur: 0 },
+  slide: { direction: "up" as const, offset: 18 },
+  transition: enterTween,
+};
+const wordIn = {
+  initial: { y: 28, opacity: 0, filter: "blur(6px)" },
+  animate: { y: 0, opacity: 1, filter: "blur(0px)" },
+  transition: { duration: 0.7, ease: "easeOut" as const },
+  stagger: 0.06,
+};
+
 function Icon({ d, className }: { d: string; className?: string }) {
   return (
     <svg aria-hidden viewBox="0 0 16 16" className={cn("size-4 shrink-0", className)} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -60,11 +84,6 @@ function External({ href, className, children }: { href: string; className?: str
     </a>
   );
 }
-
-function rise(i: number): CSSProperties {
-  return { "--i": i } as CSSProperties;
-}
-
 
 export function TramitesScreen() {
   const { copy } = useLocale();
@@ -116,67 +135,82 @@ export function TramitesScreen() {
       <div className="mx-auto w-full max-w-[1200px] px-2 pt-2 sm:px-4 sm:pt-4">
         {/* Hero */}
         <section className="relative isolate overflow-hidden rounded-[20px]" style={{ background: GLOW }}>
-          <div className="rise mx-auto flex max-w-3xl flex-col items-center px-5 pt-20 pb-24 text-center sm:pt-28 sm:pb-32" style={rise(1)}>
-            <h1 className={`${SERIF} text-[40px] leading-[1.1] tracking-[-0.02em] text-balance sm:text-[60px]`}>{t.title}</h1>
-            <p className="mt-6 max-w-xl text-[14px] leading-relaxed text-white/75 text-pretty sm:text-[15px]">{t.lead}</p>
-            <div className="mt-8 flex w-full justify-center">
+          <div className="mx-auto flex max-w-3xl flex-col items-center px-5 pt-20 pb-24 text-center sm:pt-28 sm:pb-32">
+            <h1 className={`${SERIF} text-[40px] leading-[1.1] tracking-[-0.02em] text-balance sm:text-[60px]`}>
+              <SplittingText text={t.title} type="words" {...wordIn} />
+            </h1>
+            <Effect {...enterSoft} delay={280} className="mt-6 max-w-xl">
+              <p className="text-[14px] leading-relaxed text-white/75 text-pretty sm:text-[15px]">{t.lead}</p>
+            </Effect>
+            <Effect {...enterSoft} delay={420} className="mt-8 flex w-full justify-center">
               <TramitesAskBar />
-            </div>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <a href="#checklist" className={PILL}>
-                {t.ctaPrimary}
-              </a>
+            </Effect>
+            <Effect {...enterSoft} delay={560} className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Magnetic strength={0.28} range={90} onlyOnHover>
+                <a href="#checklist" className={PILL}>
+                  {t.ctaPrimary}
+                </a>
+              </Magnetic>
               <a href="#how" className="inline-flex h-10 items-center rounded-full px-4 text-[14px] text-white/80 ring-1 ring-white/25 transition-colors hover:bg-white/10">
                 {t.ctaSecondary}
               </a>
-            </div>
+            </Effect>
           </div>
         </section>
 
         <div className="px-3 sm:px-8">
           {/* Errands */}
           <section id="errands" aria-labelledby="errands-title" className="scroll-mt-20 pt-24 sm:pt-40">
-            <h2 id="errands-title" className={`${SERIF} max-w-3xl text-[28px] leading-[1.2] text-balance sm:text-[40px]`}>
-              {t.servicesTitle}
-              <span className="text-white/40"> {t.servicesLead}</span>
-            </h2>
+            <Effect asChild inView {...enter}>
+              <h2 id="errands-title" className={`${SERIF} max-w-3xl text-[28px] leading-[1.2] text-balance sm:text-[40px]`}>
+                {t.servicesTitle}
+                <span className="text-white/40"> {t.servicesLead}</span>
+              </h2>
+            </Effect>
             <ul className="mt-16 grid gap-x-8 gap-y-10 border-t border-white/12 pt-8 sm:grid-cols-2 lg:grid-cols-4">
-              {TRAMITES_PATH_IDS.map((id) => {
-                const errand = t.paths[id];
-                return (
-                  <li key={id}>
-                    <Link href={`${tramitesHref(id)}#checklist`} className="group block">
-                      <span className={`${SERIF} block text-[18px] leading-tight`}>{errand.label}</span>
-                      <span className="mt-3 block text-[12px] leading-relaxed text-white/60">{errand.blurb}</span>
-                      <span className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-white/90">
-                        {t.serviceCta}
-                        <Icon d={RIGHT} className="size-3 transition-transform group-hover:translate-x-0.5" />
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
+              <Effects holdDelay={90} inView asChild {...enterSoft}>
+                {TRAMITES_PATH_IDS.map((id) => {
+                  const errand = t.paths[id];
+                  return (
+                    <li key={id}>
+                      <Link href={`${tramitesHref(id)}#checklist`} className="group block">
+                        <span className={`${SERIF} block text-[18px] leading-tight`}>{errand.label}</span>
+                        <span className="mt-3 block text-[12px] leading-relaxed text-white/60">{errand.blurb}</span>
+                        <span className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-white/90">
+                          {t.serviceCta}
+                          <Icon d={RIGHT} className="size-3 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </Effects>
             </ul>
           </section>
 
           {/* How it works */}
           <section id="how" aria-labelledby="how-title" className="scroll-mt-20 pt-24 sm:pt-40">
-            <h2 id="how-title" className={`${H2} max-w-md`}>{t.howTitle}</h2>
+            <Effect asChild inView {...enter}>
+              <h2 id="how-title" className={`${H2} max-w-md`}>{t.howTitle}</h2>
+            </Effect>
             <ol className="mt-16 grid gap-x-8 gap-y-10 border-t border-white/12 pt-8 md:grid-cols-3">
-              {t.steps.map((step, i) => (
-                <li key={step.title}>
-                  <span className="font-mono text-[11px] text-white/45">0{i + 1}</span>
-                  <p className={`${SERIF} mt-3 text-[18px] leading-tight`}>{step.title}</p>
-                  <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-white/60">{step.body}</p>
-                </li>
-              ))}
+              <Effects holdDelay={110} inView asChild {...enterSoft}>
+                {t.steps.map((step, i) => (
+                  <li key={step.title}>
+                    <span className="font-mono text-[11px] text-white/45">0{i + 1}</span>
+                    <p className={`${SERIF} mt-3 text-[18px] leading-tight`}>{step.title}</p>
+                    <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-white/60">{step.body}</p>
+                  </li>
+                ))}
+              </Effects>
             </ol>
           </section>
 
           {/* The checklist: where a visit converts */}
           <section id="checklist" aria-labelledby="checklist-title" className="scroll-mt-20 pt-24 sm:pt-40">
             <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
-              <div>
+              <Effect asChild inView {...enter}>
+                <div>
                 <h2 id="checklist-title" className={H2}>{t.chooseTitle}</h2>
                 <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-white/60">{t.checklistLead}</p>
                 <nav aria-label={t.chooseTitle} className="mt-8 flex flex-wrap gap-2">
@@ -208,9 +242,10 @@ export function TramitesScreen() {
                     ))}
                   </ul>
                 </section>
-              </div>
+                </div>
+              </Effect>
 
-              <div key={selected} className="rise" style={rise(1)}>
+              <Effect key={selected} {...enterSoft} className="min-w-0">
                 <div className="flex items-baseline justify-between gap-4 border-b border-white/12 pb-4">
                   <p className={`${SERIF} text-[22px] leading-tight`}>{path.label}</p>
                   <span className="shrink-0 font-mono text-[11px] text-white/50">
@@ -219,12 +254,14 @@ export function TramitesScreen() {
                 </div>
                 <p className="mt-4 text-[13px] leading-relaxed text-pretty text-white/65">{path.what}</p>
                 <ul className="mt-6 divide-y divide-white/10 border-y border-white/10">
-                  {path.docs.map((doc) => (
-                    <li key={doc} className="flex items-start gap-3 py-3 text-[13px] leading-snug text-white/85">
-                      <Icon d="M3.5 8.5 6.5 11.5 12.5 4.5" className="mt-0.5 size-3.5 text-[color:var(--t-sky)]" />
-                      <span>{doc}</span>
-                    </li>
-                  ))}
+                  <Effects holdDelay={45} asChild {...enterSoft}>
+                    {path.docs.map((doc) => (
+                      <li key={doc} className="flex items-start gap-3 py-3 text-[13px] leading-snug text-white/85">
+                        <Icon d="M3.5 8.5 6.5 11.5 12.5 4.5" className="mt-0.5 size-3.5 text-[color:var(--t-sky)]" />
+                        <span>{doc}</span>
+                      </li>
+                    ))}
+                  </Effects>
                 </ul>
                 <p className="mt-3 text-[11px] leading-relaxed text-white/45">{t.docsNote}</p>
 
@@ -243,15 +280,18 @@ export function TramitesScreen() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Effect>
             </div>
           </section>
 
           {/* FAQ */}
           <section id="faq" aria-labelledby="faq-title" className="scroll-mt-20 pt-24 sm:pt-40">
             <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-              <h2 id="faq-title" className={`${H2} max-w-xs`}>{t.faqTitle}</h2>
+              <Effect asChild inView {...enter}>
+                <h2 id="faq-title" className={`${H2} max-w-xs`}>{t.faqTitle}</h2>
+              </Effect>
               <div className="divide-y divide-white/10 border-y border-white/10">
+                <Effects holdDelay={70} inView asChild {...enterSoft}>
                 {t.faq.map((item) => (
                   <details key={item.q} className="group">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-[13px] text-white/90 [&::-webkit-details-marker]:hidden">
@@ -269,19 +309,24 @@ export function TramitesScreen() {
                     </div>
                   </details>
                 ))}
+                </Effects>
               </div>
             </div>
           </section>
 
           {/* Final call to action */}
           <section className="pt-24 sm:pt-40">
-            <div className="relative isolate overflow-hidden rounded-[20px] px-6 py-14 ring-1 ring-white/10 sm:px-12 sm:py-16" style={{ background: CARD_GLOW }}>
-              <p className={`${SERIF} max-w-md text-[26px] leading-[1.25] text-balance sm:text-[32px]`}>{t.finalTitle}</p>
-              <p className="mt-4 max-w-md text-[13px] leading-relaxed text-white/65">{t.finalBody}</p>
-              <a href="#checklist" className={cn(PILL, "mt-10")}>
-                {t.ctaPrimary}
-              </a>
-            </div>
+            <Effect asChild inView {...enter}>
+              <div className="relative isolate overflow-hidden rounded-[20px] px-6 py-14 ring-1 ring-white/10 sm:px-12 sm:py-16" style={{ background: CARD_GLOW }}>
+                <p className={`${SERIF} max-w-md text-[26px] leading-[1.25] text-balance sm:text-[32px]`}>{t.finalTitle}</p>
+                <p className="mt-4 max-w-md text-[13px] leading-relaxed text-white/65">{t.finalBody}</p>
+                <Magnetic strength={0.28} range={90} onlyOnHover className="mt-10 inline-flex">
+                  <a href="#checklist" className={PILL}>
+                    {t.ctaPrimary}
+                  </a>
+                </Magnetic>
+              </div>
+            </Effect>
           </section>
         </div>
       </div>
@@ -305,10 +350,12 @@ export function TramitesScreen() {
           }}
         />
         <div className="mx-auto max-w-6xl">
-          <p className="max-w-3xl text-[28px] leading-[1.12] font-bold tracking-[-0.035em] text-balance sm:text-[44px]">
-            {t.footerHeadline}
-            <span className="text-white/45"> {t.footerHeadlineMuted}</span>
-          </p>
+          <Effect asChild inView {...enter}>
+            <p className="max-w-3xl text-[28px] leading-[1.12] font-bold tracking-[-0.035em] text-balance sm:text-[44px]">
+              {t.footerHeadline}
+              <span className="text-white/45"> {t.footerHeadlineMuted}</span>
+            </p>
+          </Effect>
 
           <div className="mt-12 flex flex-wrap items-end justify-between gap-8">
             <p className="max-w-xs text-[15px] leading-relaxed text-white/60">{t.fineprint}</p>

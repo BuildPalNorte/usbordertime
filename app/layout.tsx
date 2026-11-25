@@ -1,5 +1,5 @@
+import { BootSkeleton } from "@/components/boot-skeleton";
 import { Providers } from "@/components/providers";
-import { ShellSkeleton } from "@/components/wallet/shell-skeleton";
 import { entityJsonLd, jsonLd } from "@/lib/guide-schema";
 import { COPY, LOCALE_COOKIE } from "@/lib/i18n";
 import { resolveLocale } from "@/lib/locale.server";
@@ -73,7 +73,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(entityJsonLd()) }} />
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
-        <Suspense fallback={<ShellSkeleton wordless />}>
+        <Suspense fallback={<BootSkeleton />}>
           <Localized>{children}</Localized>
         </Suspense>
       </body>

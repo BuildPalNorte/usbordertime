@@ -1,4 +1,5 @@
 import { TramitesScreen } from "@/components/tramites/tramites-screen";
+import { TramitesSkeleton } from "@/components/tramites/tramites-skeleton";
 import { resolveLocale } from "@/lib/locale.server";
 import { tramitesJsonLdScript, tramitesMetadata } from "@/lib/tramites-seo";
 import type { Metadata } from "next";
@@ -18,7 +19,7 @@ export default async function TramitesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: tramitesJsonLdScript(locale) }}
       />
-      <Suspense fallback={null}>
+      <Suspense fallback={<TramitesSkeleton />}>
         <TramitesScreen />
       </Suspense>
     </>
