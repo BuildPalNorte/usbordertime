@@ -9,6 +9,7 @@ import {
 } from "@/lib/ports";
 import { REFERRAL_LABEL, type Referral } from "@/lib/referral";
 import type { PortWaitTime } from "@/lib/border-wait-times";
+import { PACKET_COPY, type TramitesPacketCopy } from "@/lib/tramites-packet-copy";
 
 export type Locale = "en" | "es";
 
@@ -544,6 +545,7 @@ export type TramitesCopy = {
   footerHeadlineMuted: string;
   fineprint: string;
   backToWaits: string;
+  packet: TramitesPacketCopy;
   ask: {
     label: string;
     placeholder: string;
@@ -1387,6 +1389,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       opensNewTab: "Opens in a new tab",
       backToWaits: "Back to bridge waits",
+      packet: PACKET_COPY.en,
       ask: {
         label: "Ask what you need for your visa",
         placeholder: "Ask what you need for your visa",
@@ -2206,6 +2209,7 @@ export const COPY: Record<Locale, Copy> = {
       },
       opensNewTab: "Se abre en una pestaña nueva",
       backToWaits: "Volver a las esperas de los puentes",
+      packet: PACKET_COPY.es,
       ask: {
         label: "Pregunta qué necesitas para tu visa",
         placeholder: "Pregunta qué necesitas para tu visa",

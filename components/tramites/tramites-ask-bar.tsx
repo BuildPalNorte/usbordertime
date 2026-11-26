@@ -328,7 +328,7 @@ export function TramitesAskBar() {
     <div className="flex w-full max-w-xl flex-col gap-3">
       {!empty ? (
         <>
-          <ul className="flex max-h-[280px] flex-col gap-3 overflow-y-auto pr-1" aria-live="polite">
+          <ul className="flex max-h-[280px] flex-col gap-3 overflow-y-auto pr-1 text-left" aria-live="polite">
             {messages.map((message, index) => (
               <motion.li
                 key={index}
@@ -336,7 +336,7 @@ export function TramitesAskBar() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={SPRING.snap}
                 className={cn(
-                  "max-w-[88%] rounded-3xl px-4 py-2.5 text-[16px] leading-snug",
+                  "max-w-[88%] rounded-3xl px-4 py-2.5 text-left text-[16px] leading-snug",
                   message.role === "user"
                     ? "self-end rounded-br-lg bg-[color:var(--t-ink)] text-white whitespace-pre-wrap"
                     : "self-start rounded-bl-lg bg-white text-[color:var(--t-ink)] shadow-[0_18px_40px_-24px_rgba(5,20,70,0.45)]",
@@ -360,7 +360,7 @@ export function TramitesAskBar() {
                   exit={{ opacity: 0 }}
                   transition={SPRING.snap}
                   role="status"
-                  className="self-start rounded-3xl rounded-bl-lg bg-white/90 px-4 py-2.5 text-[15px] text-[color:var(--t-ink)]/55"
+                  className="self-start rounded-3xl rounded-bl-lg bg-white/90 px-4 py-2.5 text-left text-[15px] text-[color:var(--t-ink)]/55"
                   style={
                     reduce
                       ? undefined
@@ -375,7 +375,7 @@ export function TramitesAskBar() {
           <button
             type="button"
             onClick={clear}
-            className="relative -mt-1 cursor-pointer self-center rounded-full px-3 py-1.5 text-[13px] font-medium text-white/75"
+            className="relative -mt-1 cursor-pointer self-center rounded-full px-3 py-1.5 text-[13px] font-medium text-tfg/75"
           >
             <HapticPad />
             {copy.askClear}
@@ -391,7 +391,7 @@ export function TramitesAskBar() {
               exit={{ opacity: 0 }}
               transition={SPRING.snap}
               role="status"
-              className="self-start rounded-3xl rounded-bl-lg bg-white/90 px-4 py-2.5 text-[15px] text-[color:var(--t-ink)]/55"
+              className="self-start rounded-3xl rounded-bl-lg bg-white/90 px-4 py-2.5 text-left text-[15px] text-[color:var(--t-ink)]/55"
               style={
                 reduce
                   ? undefined
@@ -405,7 +405,7 @@ export function TramitesAskBar() {
       )}
 
       {error ? (
-        <p role="alert" className="px-1 text-center text-[14px] text-[#ffd0c8]">
+        <p role="alert" className="px-1 text-center text-[14px] text-tdanger">
           {error}
         </p>
       ) : null}
@@ -514,7 +514,7 @@ export function TramitesAskBar() {
                   haptic("selection");
                   void send(suggestion);
                 }}
-                className="relative cursor-pointer rounded-full bg-white/18 px-3.5 py-2 text-[13px] font-semibold text-white ring-1 ring-white/35 backdrop-blur transition-colors hover:bg-white/28 disabled:opacity-50"
+                className="relative cursor-pointer rounded-full bg-tfg/[0.08] px-3.5 py-2 text-[13px] font-semibold text-tfg ring-1 ring-tfg/20 backdrop-blur transition-colors hover:bg-tfg/[0.14] disabled:opacity-50"
               >
                 <HapticPad />
                 {suggestion}
@@ -524,7 +524,7 @@ export function TramitesAskBar() {
         </ul>
       ) : null}
 
-      <p className="px-1 text-center text-[12px] leading-snug text-white/70">
+      <p className="px-1 text-center text-[12px] leading-snug text-tfg/70">
         {t.disclaimer}
       </p>
       <div ref={endRef} aria-hidden />

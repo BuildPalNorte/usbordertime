@@ -4,7 +4,7 @@ export function TramitesSkeleton() {
     <div
       aria-busy
       aria-label="Loading"
-      className="min-h-[100dvh] bg-[#050608] text-white"
+      className="t-page min-h-[100dvh]"
     >
       <header className="sticky top-[-0.5rem] z-30 -mb-16 pt-2 sm:top-[-1rem] sm:-mb-20 sm:pt-4">
         <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center justify-between gap-3 px-7 sm:h-16 sm:px-12">
@@ -24,8 +24,7 @@ export function TramitesSkeleton() {
         <section
           className="relative isolate overflow-hidden rounded-[20px]"
           style={{
-            background:
-              "radial-gradient(60% 55% at 62% 0%, rgba(43,100,240,0.55), transparent 70%), radial-gradient(45% 45% at 20% 10%, rgba(26,73,199,0.35), transparent 70%), linear-gradient(180deg, #07122c 0%, #050608 100%)",
+            background: "var(--t-glow)",
           }}
         >
           <div

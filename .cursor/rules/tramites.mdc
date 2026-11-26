@@ -8,6 +8,22 @@ alwaysApply: false
 
 `/tramites` is information only. Nothing about the person is stored. No account is required. Checklists cover four errands (`first`, `card`, `renewal`, `lost`) from `lib/tramites.ts`. Official links open in a new tab.
 
+## Agency packet (`/tramites/packet`)
+
+The one exception to "nothing is stored". A guided wizard (`components/tramites/packet-*.tsx`) gathers near–DS-160 answers across `SECTION_IDS`, then a review and sign-off. The draft lives only in this browser: `lib/tramites-packet-store.ts` (`usbordertime.tramites-packet.v1`, a `useSyncExternalStore` singleton, empty on the server, bad JSON dropped). It is not sent to the server, not on `preference`, and not synced. Do not claim otherwise in copy until sync ships; do not rename the key without a migration.
+
+Questions are data in `lib/tramites-packet.ts` (`FieldDef`, `SECTION_FIELDS`, `OPTIONS`, `showIf`, `NOT_APPLICABLE`), never a model's guess. A new field needs an id in `BASE_FIELDS`, a place in `SECTION_FIELDS`, and words in both languages in `lib/tramites-packet-copy.ts` (`COPY.tramites.packet`); the types enforce it. Validation is `fieldProblem` / `sectionProblems`; Continue is blocked only on required visible fields. A step counts as done when it was continued and has no problems now, so editing an answer later reopens it in review. Any edit takes back the sign-off.
+
+Each section is a few short screens, never a wall: `SECTION_PAGES` splits it (a test checks every question lands on exactly one page), and `COPY.tramites.packet.pageTitles` names each one in both languages. A screen validates only its own questions; the last screen of a section checks the whole section, so an out-of-order edit sends the person back to the screen that needs it. Continue and Back step through screens, then sections. The top bar is one smooth percent over every screen, not a count of steps. Where a person is inside a section is not saved, only the section.
+
+Details that are true for the person, whatever the errand (name, birth, address, phone, email, passport: `PROFILE_FIELD_IDS`, none of them conditional), are also kept by `lib/tramites-profile-store.ts` (`usbordertime.tramites-profile.v1`, browser only, never sent or synced). `packetStore.setAnswer` remembers them as they are typed, and `packetStore.prefill()` fills the blanks of a new draft once (`draft.prefilled`, so a field cleared on purpose stays cleared), showing a short "check they are still right" note on those sections. A draft that began before the profile existed teaches it first. Delete my packet wipes the draft and the profile together, and its confirm says so. A new form or errand should read the profile instead of asking again; add a field to `PROFILE_FIELD_IDS` only if it does not depend on another answer and holds across errands.
+
+`PacketScan` (first screen of Personal and of Passport) reads a photo of a passport or ID card and offers to fill answers. The read is on-device: `lib/mrz-scan.ts` draws the photo to a canvas and runs Tesseract in a Web Worker (loaded with a dynamic `import`, only after a tap). The photo is never uploaded, stored, or kept past the read. Tesseract itself fetches its engine and English data from its default CDN on first use; that traffic carries no photo, so keep the privacy line in the card ("Read on this device") true and do not add a server upload of the image. `lib/mrz.ts` is the pure part: it finds the ICAO machine-readable strip (TD1 3x30, TD2 2x36, TD3 passport 2x44) in the OCR text, verifies every check digit, and sets `confident` only when all pass; a date whose check digit fails is left blank. It repairs common misreads (letters for digits, a "<" filler run read as KLLL). It also finds a Mexican CURP anywhere in the text. `mrzAnswers` turns a read into answers: only a passport sets `passportNumber`, `issueCountry`, and `expiryDate`, since an ID card's number is not a passport number; a country code missing from `lib/mrz-countries.ts` fills nothing. Nothing is applied until the person taps "Fill these in" on the confirm list; a read that is not `confident` says to check each answer. Applied answers go through `packetStore.setAnswer`, so they also reach the profile. Test changes against the ICAO 9303 specimens in `tests/mrz.test.ts`.
+
+Security yes answers that suggest a past removal, overstay, entry without inspection, or fraud (`SECURITY_FLAGS`) show a "read closely" note in review. The packet never advises on them.
+
+`PacketSignInNudge` shows once on the Travel step after Personal and Passport are done, only without a session. Dismissal is stored on the draft; Continue from Travel also clears it so it never follows later steps. Signing in is never required to continue. The page is `noindex`, not in the sitemap or `llms.txt`, and has no structured data. There is no payment, upload, or agency handoff yet; the ready state says so.
+
 Loading uses `TramitesSkeleton` (dark hero-shaped shell with a soft pulse), not the wallet `ShellSkeleton`. It shows from `app/tramites/loading.tsx`, the page Suspense fallback, and `BootSkeleton` in the root layout when the path is `/tramites`.
 
 SEO lives in `lib/tramites-seo.ts`: locale metadata (title, description, canonical `/tramites`, Open Graph, Twitter), plus JSON-LD for WebPage, FAQ, HowTo, and the four errands. The page is in `sitemap.ts` and `llms.txt`. Do not put AI chat replies into structured data.
@@ -18,12 +34,12 @@ Answers are markdown rendered with `AskMarkdown`. Trámites-specific copy lives 
 
 ## Design language
 
-`/tramites` is its own surface. It does not follow the wallet's light/dark theme or card stack. Keep building against this look; do not drift back toward wallet chrome, sky gradients with clouds, or white content cards.
+`/tramites` is its own surface. It follows the device theme but not the wallet's card stack or surface tokens. Keep building against this look; do not drift back toward wallet chrome, sky gradients with clouds, or white content cards.
 
 ### Atmosphere
 
-- Always dark. Page background `#050608`. Text white / white at reduced opacity. Ignore device color scheme for the page body.
-- Cobalt glow, not flat black: hero and CTA panels use radial blues over navy (`GLOW`, `CARD_GLOW` in `tramites-screen.tsx`). Palette tokens stay page-scoped (`--t-ink`, `--t-blue`, `--t-sky`, `--t-wash`).
+- Follows the device theme like the rest of the app. Dark is `#050608` with white text; light is `#f4f7fd` with navy text. The tokens live in `globals.css` under `.t-page` (`--t-fg`, `--t-bg`, `--t-pill`, `--t-sky`, `--t-danger`, `--t-glow`), exposed to Tailwind as `tfg`, `tbg`, `tpill`, `tdanger`. Write `text-tfg/60`, `ring-tfg/20`, `bg-tfg text-tpill`, never raw `white` or `#050608`, outside the footer. `.t-dark` pins a block to the dark values inside a light page (the closing panel). The theme switch works here.
+- Cobalt glow, not flat black or flat white: the hero uses `--t-glow` (deep blue in dark, pale blue wash in light); the closing panel and footer stay navy in both (`CARD_GLOW`). Brand colors stay page-scoped (`--t-ink`, `--t-blue`, `--t-wash`).
 - Hero is a rounded panel (`rounded-[20px]`) inset from the page edge, not full-bleed edge-to-edge. Content column maxes around `1200px`.
 - Footer is the big navy block with grain, grid wash, and the large masked logo. Keep that footer as-is unless the product asks to change it.
 
@@ -38,7 +54,7 @@ Answers are markdown rendered with `AskMarkdown`. Trámites-specific copy lives 
 
 - One job per section: errands, how it works, checklist, FAQ, closing CTA. Generous vertical space (`pt-24` / `sm:pt-40`).
 - Prefer hairline dividers and column lists over cards. No bordered white cards, no floating checklist mockups in the hero.
-- Errands and how-it-works: multi-column grids with a top border rule, not card tiles.
+- Errands and how-it-works: multi-column grids, each item a framed picture with its words below (see Pictures), not card tiles.
 - Checklist: two columns on large screens — picker + caveats on the left, docs + official links on the right. Path switch is pill chips (`?path=`), not tabs chrome.
 - FAQ: title left, accordion list right on large screens. Thin dividers; chevron rotates open.
 - Closing CTA: one glowing rounded panel, short serif line, one white pill button.
@@ -55,17 +71,28 @@ Answers are markdown rendered with `AskMarkdown`. Trámites-specific copy lives 
 - Path chips: active = white fill; inactive = ring at low opacity.
 - Official links stay plain rows with mono step numbers — the first can be emphasized, but keep the divider list language.
 
+### Pictures
+
+Many visitors are not comfortable with technology, so every step below the hero gets a picture that says the same thing as its words. The hero stays text only.
+
+- Drawings live in `components/tramites/tramites-art.tsx`: `ErrandArt` (one per errand), `StepArt` (one per how-it-works step), `DocGlyph` (24px icons for documents, official links, and the warning). Line art in `currentColor` with one `var(--t-sky)` accent; marks on the accent use `var(--t-bg)`. Always `aria-hidden` — the words carry the meaning.
+- Errand and step art sits in a faint frame (`ART_FRAME`: `bg-tfg/[0.04]`, 8% ring, rounded-2xl). Titles and body stay outside the frame, on the page. This is the only framed surface; do not turn it into cards with text inside.
+- Steps show a filled sky number with a dashed line to the next step on `md` and up.
+- Each checklist row has a `DocGlyph` in `GLYPH_BADGE`. The icon per row comes from `TRAMITES_DOC_ICONS` in `lib/tramites.ts`, in the same order as `copy.tramites.paths[id].docs`. When you add, remove, or reorder a document, update that array; `tests/tramites-doc-icons.test.ts` checks the counts in both languages.
+- Filled shapes that must hide lines behind them use the frame tint (`PANEL`), not plain `--t-bg`.
+
 ### Motion
 
 Use Motion (`motion/react`) and the wallet springs (`SPRING`, `REDUCED` from `components/wallet/motion.ts`). Do not add Animate UI or extra animation libraries for this page.
 
 - Hero: word-by-word title (`SplitTitle` — blur + rise, staggered). Lead, ask bar, and CTAs fade up after with short delays.
-- Primary CTAs: `MagneticLink` soft pointer pull on desktop; off for reduced motion / no hover.
+- Primary CTAs: plain `PillLink`, no pointer motion.
+- Errand art frames lift slightly and brighten on hover (CSS transition, not Motion).
 - Sections: `whileInView` once, short rise (`y: ~18–22`, ease-out ~0.55s). Stagger children in grids and FAQ rows.
 - Checklist path change: remount the right column with a short fade (`SPRING.snap`); docs list staggers in.
-- Footer (`TramitesFooter`): headline clears from blur; fineprint and links follow; scroll-linked mark rises and sharpens while the cobalt bloom expands behind it. Back-to-waits uses `MagneticLink`. Layout and grain stay the same — only motion is added.
+- Footer (`TramitesFooter`): headline clears from blur; fineprint and links follow; scroll-linked mark rises and sharpens while the cobalt bloom expands behind it. Layout and grain stay the same — only motion is added.
 - Reduced motion: skip travel, blur, and scroll-linked travel; keep opacity fades brief via `REDUCED`.
-- Stay restrained. Premium here means quiet entrances, magnetic affordances, and one scroll-tied footer reveal — not particles, loops, or continuous decoration.
+- Stay restrained. Premium here means quiet entrances and one scroll-tied footer reveal — not particles, loops, or continuous decoration.
 
 ### Loading
 

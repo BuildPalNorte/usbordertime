@@ -20,6 +20,30 @@ export function tramitesHref(id: TramitesPathId): string {
   return `${TRAMITES_PATH}?path=${id}`;
 }
 
+export type TramitesDocIcon =
+  | "passport"
+  | "passports"
+  | "barcode"
+  | "calendar"
+  | "receipt"
+  | "photo"
+  | "folder"
+  | "card"
+  | "copy"
+  | "report"
+  | "child"
+  | "form"
+  | "building"
+  | "warning";
+
+/** One picture per document, in the same order as `copy.tramites.paths[id].docs` in both languages. */
+export const TRAMITES_DOC_ICONS: Record<TramitesPathId, readonly TramitesDocIcon[]> = {
+  first: ["passport", "barcode", "calendar", "receipt", "photo", "folder"],
+  card: ["passport", "barcode", "calendar", "receipt", "photo", "child"],
+  renewal: ["card", "passports", "barcode", "calendar", "receipt", "photo"],
+  lost: ["passport", "copy", "report", "barcode", "calendar", "receipt", "photo"],
+};
+
 /** Official sources only. Each opens in a new tab. */
 export const OFFICIAL_LINKS = {
   ds160: "https://ceac.state.gov/genniv/",

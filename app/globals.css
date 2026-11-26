@@ -72,6 +72,10 @@
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-danger: var(--danger);
+  --color-tfg: var(--t-fg);
+  --color-tbg: var(--t-bg);
+  --color-tpill: var(--t-pill);
+  --color-tdanger: var(--t-danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -872,9 +876,59 @@ input[inputmode="decimal"]:focus-visible {
   .tramites-ring { animation: tramites-ring 2.4s ease-out infinite; }
 }
 
-/* Trámites loading shell: soft white pulse on dark, plus a breathing blue glow. */
+/*
+  Trámites palette. Follows data-theme like the rest of the app. `.t-page` is the page root and
+  `.t-dark` pins a block (the closing panel) to the dark values inside a light page.
+  --t-fg is the text and line color, --t-pill the text on a solid pill.
+*/
+.t-page {
+  --t-fg: #0b1b3f;
+  --t-bg: #f4f7fd;
+  --t-pill: #ffffff;
+  --t-sky: #2b64f0;
+  --t-danger: #c4283a;
+  --t-glow:
+    radial-gradient(60% 55% at 62% 0%, rgba(43, 100, 240, 0.26), transparent 70%),
+    radial-gradient(45% 45% at 20% 10%, rgba(157, 192, 255, 0.55), transparent 70%),
+    linear-gradient(180deg, #e1eafc 0%, #f4f7fd 100%);
+  background: var(--t-bg);
+  color: var(--t-fg);
+}
+
+:root[data-theme="dark"] .t-page,
+.t-dark {
+  --t-fg: #ffffff;
+  --t-bg: #050608;
+  --t-pill: #0b1b3f;
+  --t-sky: #9dc0ff;
+  --t-danger: #ffb1a3;
+  --t-glow:
+    radial-gradient(60% 55% at 62% 0%, rgba(43, 100, 240, 0.75), transparent 70%),
+    radial-gradient(45% 45% at 20% 10%, rgba(26, 73, 199, 0.45), transparent 70%),
+    linear-gradient(180deg, #07122c 0%, #050608 100%);
+}
+
+.t-dark {
+  color: var(--t-fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .t-page {
+    --t-fg: #ffffff;
+    --t-bg: #050608;
+    --t-pill: #0b1b3f;
+    --t-sky: #9dc0ff;
+    --t-danger: #ffb1a3;
+    --t-glow:
+      radial-gradient(60% 55% at 62% 0%, rgba(43, 100, 240, 0.75), transparent 70%),
+      radial-gradient(45% 45% at 20% 10%, rgba(26, 73, 199, 0.45), transparent 70%),
+      linear-gradient(180deg, #07122c 0%, #050608 100%);
+  }
+}
+
+/* Trámites loading shell: soft pulse in the text color, plus a breathing blue glow. */
 .tramites-pulse {
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--t-fg, #fff) 10%, transparent);
   animation: tramites-pulse 1.6s ease-in-out infinite;
 }
 

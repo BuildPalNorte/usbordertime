@@ -1,0 +1,37 @@
+/**
+ * ICAO three-letter codes to the words the visa form uses. Only places a rider here is likely to hold
+ * a document from. A code not listed fills nothing, and the rider types it.
+ */
+export const MRZ_COUNTRIES: Readonly<Record<string, { country: string; demonym: string }>> = {
+  MEX: { country: "Mexico", demonym: "Mexican" },
+  USA: { country: "United States", demonym: "American" },
+  CAN: { country: "Canada", demonym: "Canadian" },
+  GTM: { country: "Guatemala", demonym: "Guatemalan" },
+  SLV: { country: "El Salvador", demonym: "Salvadoran" },
+  HND: { country: "Honduras", demonym: "Honduran" },
+  NIC: { country: "Nicaragua", demonym: "Nicaraguan" },
+  CRI: { country: "Costa Rica", demonym: "Costa Rican" },
+  PAN: { country: "Panama", demonym: "Panamanian" },
+  CUB: { country: "Cuba", demonym: "Cuban" },
+  DOM: { country: "Dominican Republic", demonym: "Dominican" },
+  COL: { country: "Colombia", demonym: "Colombian" },
+  VEN: { country: "Venezuela", demonym: "Venezuelan" },
+  ECU: { country: "Ecuador", demonym: "Ecuadorian" },
+  PER: { country: "Peru", demonym: "Peruvian" },
+  BOL: { country: "Bolivia", demonym: "Bolivian" },
+  CHL: { country: "Chile", demonym: "Chilean" },
+  ARG: { country: "Argentina", demonym: "Argentine" },
+  URY: { country: "Uruguay", demonym: "Uruguayan" },
+  PRY: { country: "Paraguay", demonym: "Paraguayan" },
+  BRA: { country: "Brazil", demonym: "Brazilian" },
+  ESP: { country: "Spain", demonym: "Spanish" },
+  FRA: { country: "France", demonym: "French" },
+  DEU: { country: "Germany", demonym: "German" },
+  ITA: { country: "Italy", demonym: "Italian" },
+  GBR: { country: "United Kingdom", demonym: "British" },
+  CHN: { country: "China", demonym: "Chinese" },
+  IND: { country: "India", demonym: "Indian" },
+  PHL: { country: "Philippines", demonym: "Filipino" },
+  JPN: { country: "Japan", demonym: "Japanese" },
+  KOR: { country: "South Korea", demonym: "South Korean" },
+};
